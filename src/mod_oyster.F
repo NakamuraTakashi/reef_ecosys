@@ -36,14 +36,24 @@ CONTAINS
 
     IF (ng.eq.1) allocate ( OYSTER(Ngrids) )
     allocate( OYSTER(ng)%dens    (Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QC(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QN(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QP(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%CaCO3(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QCs(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QCv(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QCr(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QCg(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QNs(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QNv(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QNr(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QNg(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QPs(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QPv(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QPr(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%QPg(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
+     allocate( OYSTER(ng)%CaCO3(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
     allocate( OYSTER(ng)%Dead_CaCO3(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
 
-
     allocate( OYSTER(ng)%R       (Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%V       (Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( OYSTER(ng)%L       (Noy,Nz,LBi:UBi,LBj:UBj) )
 
     RETURN
 
@@ -73,14 +83,32 @@ CONTAINS
             OYSTER(ng)%dens(n,k,i,j) = 0.0d0
             OYSTER(ng)%R   (n,k,i,j) = 0.0d0
 
-            OYSTER(ng)%QC(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QN(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QP(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QCs(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QCv(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QCr(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QCg(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QNs(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QNv(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QNr(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QNg(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QPs(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QPv(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QPr(:,n,k,i,j) = 0.0d0
+            OYSTER(ng)%QPg(:,n,k,i,j) = 0.0d0
             OYSTER(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living oyster (mmol ind.-1)
             OYSTER(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead oyster (mmol m-3)
-            OYSTER(ng)%QC(iCt,n,i,j) = 15.0d0
-            OYSTER(ng)%QN(iNt,n,i,j) = 1.5d0
-            OYSTER(ng)%QP(iPt,n,i,j) = 0.1d0
+            OYSTER(ng)%QCs(iCt,n,i,j) = 15.0d0
+            OYSTER(ng)%QCv(iCt,n,i,j) = 15.0d0
+            OYSTER(ng)%QCr(iCt,n,i,j) = 15.0d0
+            OYSTER(ng)%QCg(iCt,n,i,j) = 15.0d0
+            OYSTER(ng)%QNs(iNt,n,i,j) = 1.5d0
+            OYSTER(ng)%QNv(iNt,n,i,j) = 1.5d0
+            OYSTER(ng)%QNr(iNt,n,i,j) = 1.5d0
+            OYSTER(ng)%QNg(iNt,n,i,j) = 1.5d0
+            OYSTER(ng)%QPs(iPt,n,i,j) = 0.1d0
+            OYSTER(ng)%QPv(iPt,n,i,j) = 0.1d0
+            OYSTER(ng)%QPr(iPt,n,i,j) = 0.1d0
+            OYSTER(ng)%QPg(iPt,n,i,j) = 0.1d0
           enddo
         enddo
       enddo
@@ -128,6 +156,7 @@ CONTAINS
 !-----------------------------------------------------------------------
     USE mod_reef_ecosys_param
     USE mod_geochem
+    USE mod_deb_model
     
     implicit none
 
@@ -175,11 +204,46 @@ CONTAINS
     real(8), parameter :: k_M(1) = [ 5.0d-8    ]  ! (L umol-1 s-1)   zooplankton mortality rate at 0 oC 3.0d0/86400.0d0(0.0088d0 umol-1 d-1; Kawamiya et al., 1995)
     real(8), parameter :: b_M(1) = [ 0.0693d0  ]  ! (degC-1)         Temperature coefficient for ZooC mortality (Kawamiya et al., 1995)
 
-    real(8) :: rQC(N_Csp),rPhyC(N_Csp,Nphy)
-    real(8) :: rQN(N_Nsp),rPhyN(N_Nsp,Nphy)
-    real(8) :: rQP(N_Psp),rPhyP(N_Psp,Nphy)
+! --- Dynamic Energy Budget (DEB) model parameters ---
+    real(8), parameter :: Tref(1)    = [  293.15d0] ! Refernce temperature (K)
+    real(8), parameter :: T_A(1)     = [ 5800.0d0 ] ! Arrhenius temperature (K), Van der Veer et al. (2006)
+!    real(8), parameter :: T_H(1)     = [  305.0d0 ] ! Upper boundary tolerance range (K), Van der Veer et al. (2006)
+    real(8), parameter :: T_Hing(1)  = [  298.0d0 ] ! Upper boundary tolerance range for ingestion (K), Bourles et al. (2009)
+    real(8), parameter :: T_Hresp(1) = [  305.0d0 ] ! Upper boundary tolerance range for respiration (K), Bourles et al. (2009)
+    real(8), parameter :: T_AH(1)    = [30000.0d0 ] ! Arrhenius temp. for upper boundary (K), Van der Veer et al. (2006)
+!    real(8), parameter :: T_L(1)     = [  281.0d0 ] ! Lower boundary tolerance range (K), Van der Veer et al. (2006)
+    real(8), parameter :: T_L(1)     = [  276.0d0 ] ! Lower boundary tolerance range (K), Bourles et al. (2009)
+    real(8), parameter :: T_AL(1)    = [75000.0d0 ] ! Arrhenius temp. for lower boundary (K), Van der Veer et al. (2006)
+  ! --- Photoplankton ingestion parameters ---
+    ! Maximum surface area specific clearance rate (L s-1 cm-2)
+    !  0.096 (m3 d−1 cm−2), Saraiva et al. (2011b)
+    real(8), parameter :: C_Rmax  (4,1) = reshape( [ 1.0d-6,    1.0d-6,    1.0d-8 ,    1.0d-8    ], [4,1] ) ! to Oyster1 
+    ! Maximum surface area specific filtration rate (umol s−1 cm−2)
+    !  4.8d-4 (molC d−1 cm−2), Rosland et al. (2009)
+    real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster1
+    ! Algal binding probability (no dim.)
+    !  0.4 (no dim.),  Saraiva et al. (2011a)
+    real(8), parameter :: rho_XiI (4,1) = reshape( [ 0.4d0, 0.4d0, 0.4d0, 0.4d0 ], [4,1] ) ! to Oyster1
+    ! Algal maximum ingestion rate (umol s−1)
+    !  1.3d4 (molC d-1), Saraiva et al. (2011a)
+    real(8), parameter :: J_XiImax(4,1) = reshape( [ 0.15d0,    0.15d0,    0.15d0,     0.15d0    ], [4,1] ) ! to Oyster1
+
+    real(8) :: kT  ! Temperature correction factor (no dimension)
+    real(8) :: C_R ! Clearance rate (m3 d−1)
+    real(8) :: V   ! Body Volume (cm3)
+    real(8) :: J_XiF(Nphy) ! Filtration rate (umol s−1)
+    real(8) :: J_XiI(Nphy) ! Ingestion rate (umol s−1)
+
+    real(8) :: rQCs(N_Csp),rQCv(N_Csp),rQCr(N_Csp),rQCg(N_Csp)
+    real(8) :: rQNs(N_Nsp),rQNv(N_Nsp),rQNr(N_Nsp),rQNg(N_Nsp)
+    real(8) :: rQPs(N_Psp),rQPv(N_Psp),rQPr(N_Psp),rQPg(N_Psp)
+    real(8) :: rPhyC(N_Csp,Nphy)
+    real(8) :: rPhyN(N_Nsp,Nphy)
+    real(8) :: rPhyP(N_Psp,Nphy)
     real(8) :: Gc,Gn,Gp
-    real(8) :: cPhyC,cPhyN,cPhyP
+    real(8) :: cDOx
+    real(8) :: cPhyC(Nphy),cPhyN(Nphy),cPhyP(Nphy)
+
 
     integer :: isp, m
 
@@ -201,70 +265,91 @@ CONTAINS
 
 !--- Carbon isotope or tracer ratio (R13C = 13C/Ct) -----------------
     DO isp=1,N_Csp
-      rQC(isp) = Iso_ratio( OYSTER(ng)%QC(isp,k,n,i,j), OYSTER(ng)%QC(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
+      rQCs(isp) = Iso_ratio( OYSTER(ng)%QCs(isp,k,n,i,j), OYSTER(ng)%QCs(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
+      rQCv(isp) = Iso_ratio( OYSTER(ng)%QCv(isp,k,n,i,j), OYSTER(ng)%QCv(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
+      rQCr(isp) = Iso_ratio( OYSTER(ng)%QCr(isp,k,n,i,j), OYSTER(ng)%QCr(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
+      rQCg(isp) = Iso_ratio( OYSTER(ng)%QCg(isp,k,n,i,j), OYSTER(ng)%QCg(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
       DO m=1,Nphy
         rPhyC(isp,m) = Iso_ratio( PhyC(isp,m), PhyC(iCt,m) ) ! PhyC
       END DO
     END DO
 !--- Nitrogen isotope or tracer ratio (R15N = 15N/Nt) -----------------
     DO isp=1,N_Nsp
-      rQN(isp) = Iso_ratio( OYSTER(ng)%QN(isp,k,n,i,j), OYSTER(ng)%QN(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
+      rQNs(isp) = Iso_ratio( OYSTER(ng)%QNs(isp,k,n,i,j), OYSTER(ng)%QNs(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
+      rQNv(isp) = Iso_ratio( OYSTER(ng)%QNv(isp,k,n,i,j), OYSTER(ng)%QNv(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
+      rQNr(isp) = Iso_ratio( OYSTER(ng)%QNr(isp,k,n,i,j), OYSTER(ng)%QNr(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
+      rQNg(isp) = Iso_ratio( OYSTER(ng)%QNg(isp,k,n,i,j), OYSTER(ng)%QNg(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
       DO m=1,Nphy
         rPhyN(isp,m) = Iso_ratio( PhyN(isp,m), PhyN(iCt,m) ) ! PhyN
       END DO
     END DO
 !--- Phosphrous tracer ratio (RP = P1/Pt) -----------------
     DO isp=1,N_Psp
-      rQP(isp) = Iso_ratio( OYSTER(ng)%QP(isp,k,n,i,j), OYSTER(ng)%QP(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
+      rQPs(isp) = Iso_ratio( OYSTER(ng)%QPs(isp,k,n,i,j), OYSTER(ng)%QPs(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
+      rQPv(isp) = Iso_ratio( OYSTER(ng)%QPv(isp,k,n,i,j), OYSTER(ng)%QPv(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
+      rQPr(isp) = Iso_ratio( OYSTER(ng)%QPr(isp,k,n,i,j), OYSTER(ng)%QPr(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
+      rQPg(isp) = Iso_ratio( OYSTER(ng)%QPg(isp,k,n,i,j), OYSTER(ng)%QPg(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
       DO m=1,Nphy
         rPhyP(isp,m) = Iso_ratio( PhyP(isp,m), PhyP(iPt,m) ) ! PhyP
       END DO
     END DO
 
-! === Phtoplankton ingestion Rate (mmolC ind.-1) =========================
-    DO m=1,Nphy
-      cPhyC = MAX(PhyC(iCt,m),0.0d0) !!! Error handling
-      cPhyN = MAX(PhyN(iNt,m),0.0d0) !!! Error handling
-      cPhyP = MAX(PhyP(iPt,m),0.0d0) !!! Error handling
 
-      if (cPhyC == 0.0d0) then !!! Error handling
-        Gc = 0.0d0
-        Gn = 0.0d0
-        Gp = 0.0d0
-      else
-        Gc = k_G(m,k) * exp(b_G(m,k)*Tmp)    &
-              * (cPhyC/(K_phy(m,k) + cPhyC)) &
-              * OYSTER(ng)%QC(iCt,k,n,i,j)**(2.0d0/3.0d0)
-        Gn = Gc*cPhyN/cPhyC
-        Gp = Gc*cPhyP/cPhyC
-      endif
+    cDOx = MAX(DOx,0.0d0) !!! Error handling
+    DO m=1,Nphy
+      cPhyC(m) = MAX(PhyC(iCt,m),0.0d0) !!! Error handling
+      cPhyN(m) = MAX(PhyN(iNt,m),0.0d0) !!! Error handling
+      cPhyP(m) = MAX(PhyP(iPt,m),0.0d0) !!! Error handling
+    END DO
+!--- Body  Volume (cm3) -----------------
+    V = OYSTER(ng)%QC(iCt,k,n,i,j) *????? ! Volume (cm3) ??? Need Ref !!!!!!
+
+! === Maximum respiration rate (mmol O2 ind.-1) =========================
+    ! Temperature correction factor for respiration (no dimension)
+    kT = tempcorr(Tmp+273.15d0, Tref(n), T_A(n), T_Hresp(n), T_AH(n), T_L(n), T_AL(n))
+    ! Clearance rate (L s-1)
+    CALL clearance_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n), J_XiF)
+
+
+
+! === Phtoplankton ingestion Rate (umolC s−1 ind.-1) =========================
+
+    ! Temperature correction factor for ingestion (no dimension)
+    kT = tempcorr(Tmp+273.15d0, Tref(n), T_A(n), T_Hing(n), T_AH(n), T_L(n), T_AL(n))
+    ! Filtration rate (umol s−1)
+    CALL filtration_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n), J_XiF)
+    ! Ingestion rate (umol s−1)
+    CALL ingestion_rate(Nphy, J_XiF, rho_XiI(1:Nphy,n), J_XiImax(1:Nphy,n), J_XiI)
+
+! === Assimilation rate (umolC s−1 ind.-1) =========================
 
 !     === Mass balance ===
+    DO m=1,Nphy
+      Gc = J_XiI(m)
+      Gn = Gc*cPhyN(m)/cPhyC(m)
+      Gp = Gc*cPhyP(m)/cPhyC(m)
       
       dPhyC_dt(:,m)    = dPhyC_dt(:,m)    - Gc*rPhyC(:,m)
       dPOC_dt(:,iLPOM) = dPOC_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPOC_dt(:,iRPOM) = dPOC_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QC(:,k,n,i,j) = OYSTER(ng)%QC(:,k,n,i,j) + Gc*rPhyC(:,m)
+      OYSTER(ng)%QC(:,k,n,i,j) = OYSTER(ng)%QC(:,k,n,i,j) + Gc*rPhyC(:,m) *dt
 
       dPhyN_dt(:,m)    = dPhyN_dt(:,m)    - Gn*rPhyN(:,m)
       dPON_dt(:,iLPOM) = dPON_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPON_dt(:,iRPOM) = dPON_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QN(:,k,n,i,j) = OYSTER(ng)%QN(:,k,n,i,j) + Gn*rPhyN(:,m)
+      OYSTER(ng)%QN(:,k,n,i,j) = OYSTER(ng)%QN(:,k,n,i,j) + Gn*rPhyN(:,m) *dt
 
       dPhyP_dt(:,m)    = dPhyP_dt(:,m)    - Gp*rPhyP(:,m)
       dPOP_dt(:,iLPOM) = dPOP_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPOP_dt(:,iRPOM) = dPOP_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QP(:,k,n,i,j) = OYSTER(ng)%QP(:,k,n,i,j) + Gp*rPhyP(:,m)
+      OYSTER(ng)%QP(:,k,n,i,j) = OYSTER(ng)%QP(:,k,n,i,j) + Gp*rPhyP(:,m) *dt
      
     END DO
 
 ! === Oyster's oxygen demand (mmol O2 ind.-1) =========================
 
-! === Respiration rate (mmol O2 ind.-1) =========================
-
 ! === Calcification rate (mmol C ind.-1) =========================
 
-! === Assimilation rate (mmol C ind.-1) =========================
 
 ! === Mortality rate (ind. s-1) =========================
 

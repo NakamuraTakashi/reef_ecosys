@@ -13,6 +13,23 @@
 !                5: Incubation chamber simulation of Nakamura & Nakamori (2009) experiments
 !                6: Flume simulation of Comeau et al. (2016) experiments   
   nSetting = 4
+
+  Im = 2
+  Jm = 1
+  N  = 1
+
+  dt = 1.5d0 ! Time step (sec)
+
+  depth = 3.0d0 ! Set depth (m)
+
+  isplitc  = 20
+
+!** For stabilize sediment model ****
+! isplitsed > 1.0d3 * sgd_flux_in * dt
+!    because  Courant Number: C = v*dt/dz < 1 
+!      -> sgd_flux_in*dt/isplitsed/dz_min < 1 (dz_min = 0.001 m)
+  isplitsed = 2
+!  isplitsed = 20  
 /
 
 &refdate
