@@ -123,9 +123,10 @@ MODULE mod_reef_ecosys_param
 
   integer, parameter :: Nag = 1    !! Number of algal groups
 
-! ==== OYSTER MODEL PARAMETER SETTINGS ===========================================================
+! ==== BIVALVE MODEL PARAMETER SETTINGS ===========================================================
 
-  integer, parameter :: Noy = 1    !! Number of oyster groups
+  integer, parameter :: Nbv = 1    !! Number of bivalve groups
+  integer, parameter ::  iOys  =  1 ! 1: Oyster
 
 
 END MODULE mod_reef_ecosys_param

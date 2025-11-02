@@ -4,73 +4,83 @@
 #include "cppdefs.h"
 
 
-!!!*************** OYSTER MODEL *****************************************
+!!!*************** BIVALVE MODEL *****************************************
 
 
-MODULE mod_oyster
-#ifdef OYSTER
+MODULE mod_bivalve
+#ifdef BIVALVE
   implicit none
 
-  TYPE T_OYSTER
+  TYPE T_BIVALVE
     real(8), pointer :: dens(:,:,:,:) 
-    real(8), pointer :: QC(:,:,:,:,:)
-    real(8), pointer :: QN(:,:,:,:,:)
-    real(8), pointer :: QP(:,:,:,:,:)
+    real(8), pointer :: QCs(:,:,:,:,:)
+    real(8), pointer :: QCv(:,:,:,:,:)
+    real(8), pointer :: QCr(:,:,:,:,:)
+    real(8), pointer :: QCg(:,:,:,:,:)
+    real(8), pointer :: QNs(:,:,:,:,:)
+    real(8), pointer :: QNv(:,:,:,:,:)
+    real(8), pointer :: QNr(:,:,:,:,:)
+    real(8), pointer :: QNg(:,:,:,:,:)
+    real(8), pointer :: QPs(:,:,:,:,:)
+    real(8), pointer :: QPv(:,:,:,:,:)
+    real(8), pointer :: QPr(:,:,:,:,:)
+    real(8), pointer :: QPg(:,:,:,:,:)
     real(8), pointer :: CaCO3(:,:,:,:,:)
     real(8), pointer :: Dead_CaCO3(:,:,:,:,:)
     real(8), pointer :: R   (:,:,:,:) 
-  END TYPE T_OYSTER
-  TYPE (T_OYSTER), allocatable :: OYSTER(:)
+  END TYPE T_BIVALVE
+  TYPE (T_BIVALVE), allocatable :: BIVALVE(:)
 CONTAINS
 
 
 !!! **********************************************************************
-!!!  set initial conditions for the oyster model
+!!!  set initial conditions for the bivalve model
 !!! **********************************************************************
 
-  SUBROUTINE allocate_oyster(ng, Ngrids, Nz, LBi, UBi, LBj, UBj)
+  SUBROUTINE allocate_bivalve(ng, Ngrids, Nz, LBi, UBi, LBj, UBj)
     USE mod_reef_ecosys_param
     
     implicit none
     integer, intent(in) :: ng, Ngrids, Nz, LBi, UBi, LBj, UBj
 
-    IF (ng.eq.1) allocate ( OYSTER(Ngrids) )
-    allocate( OYSTER(ng)%dens    (Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QCs(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QCv(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QCr(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QCg(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QNs(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QNv(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QNr(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QNg(N_Nsp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QPs(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QPv(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QPr(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%QPg(N_Psp,Noy,Nz,LBi:UBi,LBj:UBj) )
-     allocate( OYSTER(ng)%CaCO3(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%Dead_CaCO3(N_Csp,Noy,Nz,LBi:UBi,LBj:UBj) )
+    IF (ng.eq.1) allocate ( BIVALVE(Ngrids) )
+    allocate( BIVALVE(ng)%dens    (Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QCs(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QCv(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QCr(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QCg(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QNs(N_Nsp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QNv(N_Nsp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QNr(N_Nsp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QNg(N_Nsp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QPs(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QPv(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QPr(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%QPg(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+     allocate( BIVALVE(ng)%CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%Dead_CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
 
-    allocate( OYSTER(ng)%R       (Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%V       (Noy,Nz,LBi:UBi,LBj:UBj) )
-    allocate( OYSTER(ng)%L       (Noy,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%R       (Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%V       (Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%L       (Nbv,Nz,LBi:UBi,LBj:UBj) )
 
     RETURN
 
-  END SUBROUTINE allocate_oyster
+  END SUBROUTINE allocate_bivalve
 
 
 !!! **********************************************************************
-!!!  set initial conditions for the oyster model
+!!!  set initial conditions for the bivalve model
 !!! **********************************************************************
 
-  SUBROUTINE initialize_oyster(ng, Nz, dz, LBi, UBi, LBj, UBj)
+  SUBROUTINE initialize_bivalve(ng, Nz, LBi, UBi, LBj, UBj, start_of_new_run)
     USE mod_reef_ecosys_param
     
     implicit none
 ! input parameters
     integer, intent(in) :: ng, Nz, LBi, UBi, LBj, UBj
-    real(8), intent(in) :: dz(Nz)
+    logical, intent(in) :: start_of_new_run               ! TRUE = initialize; FALSE = continue from previous run
+    real(8) :: dz(Nz)
     real(8) :: R13C
     integer :: i,j,n
 
@@ -79,36 +89,43 @@ CONTAINS
     do j=LBj,UBj
       do i=LBi,UBi
         do k=1,Nz
-          do n=1,Noy
-            OYSTER(ng)%dens(n,k,i,j) = 0.0d0
-            OYSTER(ng)%R   (n,k,i,j) = 0.0d0
+          do n=1,Nbv
+            BIVALVE(ng)%dens(n,k,i,j) = 0.0d0
+            BIVALVE(ng)%R   (n,k,i,j) = 0.0d0
+            BIVALVE(ng)%V   (n,k,i,j) = 0.0d0
+            BIVALVE(ng)%L   (n,k,i,j) = 0.0d0
 
-            OYSTER(ng)%QCs(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QCv(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QCr(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QCg(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QNs(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QNv(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QNr(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QNg(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QPs(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QPv(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QPr(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%QPg(:,n,k,i,j) = 0.0d0
-            OYSTER(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living oyster (mmol ind.-1)
-            OYSTER(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead oyster (mmol m-3)
-            OYSTER(ng)%QCs(iCt,n,i,j) = 15.0d0
-            OYSTER(ng)%QCv(iCt,n,i,j) = 15.0d0
-            OYSTER(ng)%QCr(iCt,n,i,j) = 15.0d0
-            OYSTER(ng)%QCg(iCt,n,i,j) = 15.0d0
-            OYSTER(ng)%QNs(iNt,n,i,j) = 1.5d0
-            OYSTER(ng)%QNv(iNt,n,i,j) = 1.5d0
-            OYSTER(ng)%QNr(iNt,n,i,j) = 1.5d0
-            OYSTER(ng)%QNg(iNt,n,i,j) = 1.5d0
-            OYSTER(ng)%QPs(iPt,n,i,j) = 0.1d0
-            OYSTER(ng)%QPv(iPt,n,i,j) = 0.1d0
-            OYSTER(ng)%QPr(iPt,n,i,j) = 0.1d0
-            OYSTER(ng)%QPg(iPt,n,i,j) = 0.1d0
+            BIVALVE(ng)%QCs(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QCv(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QCr(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QCg(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QNs(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QNv(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QNr(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QNg(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QPs(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QPv(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QPr(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%QPg(:,n,k,i,j) = 0.0d0
+            BIVALVE(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living bivalve (mmol ind.-1)
+            BIVALVE(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead bivalve (mmol m-3)
+            ! initialize for each bivalve group
+            if (n.eq.iOys) then ! 1: Oyster
+              BIVALVE(ng)%dens(n,k,i,j) = 0.1d0   ! Initial bivalve density (ind. m-3)
+              BIVALVE(ng)%QCs(iCt,n,k,i,j) = 15.0d0
+              BIVALVE(ng)%QCv(iCt,n,k,i,j) = 15.0d0
+              BIVALVE(ng)%QCr(iCt,n,k,i,j) = 15.0d0
+              BIVALVE(ng)%QCg(iCt,n,k,i,j) = 15.0d0
+              BIVALVE(ng)%QNs(iNt,n,k,i,j) = 1.5d0
+              BIVALVE(ng)%QNv(iNt,n,k,i,j) = 1.5d0
+              BIVALVE(ng)%QNr(iNt,n,k,i,j) = 1.5d0
+              BIVALVE(ng)%QNg(iNt,n,k,i,j) = 1.5d0
+              BIVALVE(ng)%QPs(iPt,n,k,i,j) = 0.1d0
+              BIVALVE(ng)%QPv(iPt,n,k,i,j) = 0.1d0
+              BIVALVE(ng)%QPr(iPt,n,k,i,j) = 0.1d0
+              BIVALVE(ng)%QPg(iPt,n,k,i,j) = 0.1d0
+            end if
+
           enddo
         enddo
       enddo
@@ -116,15 +133,15 @@ CONTAINS
     
     RETURN
       
-  END SUBROUTINE initialize_oyster
+  END SUBROUTINE initialize_bivalve
 
 !!! **********************************************************************
-!!!  Main program of the oyster model
+!!!  Main program of the bivalve model
 !!! **********************************************************************
 
-  SUBROUTINE oyster  &
+  SUBROUTINE bivalve  &
 !   input parameters
-    ( ng, n, i, j, k &   ! ng: nested grid number; n: oyster compartment; i,j,k: position
+    ( ng, n, i, j, k &   ! ng: nested grid number; n: bivalve compartment; i,j,k: position
     , date           &   ! Date (days since x or elapsed days)
     , dt             &   ! Time step (sec)
     , rho_sw         &   ! Density of seawater (g cm-3)
@@ -161,7 +178,7 @@ CONTAINS
     implicit none
 
 ! input parameters
-    integer, intent(in) :: ng, n, i, j, k   ! ng: nested grid number; n: oyster compartment; i,j,k: position
+    integer, intent(in) :: ng, n, i, j, k   ! ng: nested grid number; n: bivalve compartment; i,j,k: position
     real(8), intent(in) :: date                 ! Date (days since x or elapsed days)
     real(8), intent(in) :: dt                   ! Time step (sec)
     real(8), intent(in) :: rho_sw               ! Density of seawater (g cm-3)
@@ -189,7 +206,7 @@ CONTAINS
     real(8), intent(out) :: dPhyP_dt(N_Psp,Nphy) ! dPhyP/dt  (umolP L-1 s-1)  
 !    real(8), intent(out) :: dPIC_dt (N_Csp,Npim) ! dPIC/dt  (umol L-1 s-1) 
 
-! --- C:N:P:CaCO3 ratio of oysters ---
+! --- C:N:P:CaCO3 ratio of bivalves ---
     real(8), parameter :: rNC(1)  = [ 16d0/106d0 ] ! (no dim.) Oyster N:C ratio
     real(8), parameter :: rPC(1)  = [  1d0/106d0 ] ! (no dim.) Oyster P:C ratio
     real(8), parameter :: rCaC(1) = [      0.0d0 ]  ! ***** (no dim.) CaCO3:OrgC ratio !!! Need Ref!!!!!!!!!!
@@ -265,30 +282,30 @@ CONTAINS
 
 !--- Carbon isotope or tracer ratio (R13C = 13C/Ct) -----------------
     DO isp=1,N_Csp
-      rQCs(isp) = Iso_ratio( OYSTER(ng)%QCs(isp,k,n,i,j), OYSTER(ng)%QCs(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
-      rQCv(isp) = Iso_ratio( OYSTER(ng)%QCv(isp,k,n,i,j), OYSTER(ng)%QCv(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
-      rQCr(isp) = Iso_ratio( OYSTER(ng)%QCr(isp,k,n,i,j), OYSTER(ng)%QCr(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
-      rQCg(isp) = Iso_ratio( OYSTER(ng)%QCg(isp,k,n,i,j), OYSTER(ng)%QCg(iCt,k,n,i,j) ) ! OYSTER(ng)%QC
+      rQCs(isp) = Iso_ratio( BIVALVE(ng)%QCs(isp,k,n,i,j), BIVALVE(ng)%QCs(iCt,k,n,i,j) ) ! BIVALVE(ng)%QC
+      rQCv(isp) = Iso_ratio( BIVALVE(ng)%QCv(isp,k,n,i,j), BIVALVE(ng)%QCv(iCt,k,n,i,j) ) ! BIVALVE(ng)%QC
+      rQCr(isp) = Iso_ratio( BIVALVE(ng)%QCr(isp,k,n,i,j), BIVALVE(ng)%QCr(iCt,k,n,i,j) ) ! BIVALVE(ng)%QC
+      rQCg(isp) = Iso_ratio( BIVALVE(ng)%QCg(isp,k,n,i,j), BIVALVE(ng)%QCg(iCt,k,n,i,j) ) ! BIVALVE(ng)%QC
       DO m=1,Nphy
         rPhyC(isp,m) = Iso_ratio( PhyC(isp,m), PhyC(iCt,m) ) ! PhyC
       END DO
     END DO
 !--- Nitrogen isotope or tracer ratio (R15N = 15N/Nt) -----------------
     DO isp=1,N_Nsp
-      rQNs(isp) = Iso_ratio( OYSTER(ng)%QNs(isp,k,n,i,j), OYSTER(ng)%QNs(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
-      rQNv(isp) = Iso_ratio( OYSTER(ng)%QNv(isp,k,n,i,j), OYSTER(ng)%QNv(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
-      rQNr(isp) = Iso_ratio( OYSTER(ng)%QNr(isp,k,n,i,j), OYSTER(ng)%QNr(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
-      rQNg(isp) = Iso_ratio( OYSTER(ng)%QNg(isp,k,n,i,j), OYSTER(ng)%QNg(iNt,k,n,i,j) ) ! OYSTER(ng)%QN
+      rQNs(isp) = Iso_ratio( BIVALVE(ng)%QNs(isp,k,n,i,j), BIVALVE(ng)%QNs(iNt,k,n,i,j) ) ! BIVALVE(ng)%QN
+      rQNv(isp) = Iso_ratio( BIVALVE(ng)%QNv(isp,k,n,i,j), BIVALVE(ng)%QNv(iNt,k,n,i,j) ) ! BIVALVE(ng)%QN
+      rQNr(isp) = Iso_ratio( BIVALVE(ng)%QNr(isp,k,n,i,j), BIVALVE(ng)%QNr(iNt,k,n,i,j) ) ! BIVALVE(ng)%QN
+      rQNg(isp) = Iso_ratio( BIVALVE(ng)%QNg(isp,k,n,i,j), BIVALVE(ng)%QNg(iNt,k,n,i,j) ) ! BIVALVE(ng)%QN
       DO m=1,Nphy
         rPhyN(isp,m) = Iso_ratio( PhyN(isp,m), PhyN(iCt,m) ) ! PhyN
       END DO
     END DO
 !--- Phosphrous tracer ratio (RP = P1/Pt) -----------------
     DO isp=1,N_Psp
-      rQPs(isp) = Iso_ratio( OYSTER(ng)%QPs(isp,k,n,i,j), OYSTER(ng)%QPs(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
-      rQPv(isp) = Iso_ratio( OYSTER(ng)%QPv(isp,k,n,i,j), OYSTER(ng)%QPv(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
-      rQPr(isp) = Iso_ratio( OYSTER(ng)%QPr(isp,k,n,i,j), OYSTER(ng)%QPr(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
-      rQPg(isp) = Iso_ratio( OYSTER(ng)%QPg(isp,k,n,i,j), OYSTER(ng)%QPg(iPt,k,n,i,j) ) ! OYSTER(ng)%QP
+      rQPs(isp) = Iso_ratio( BIVALVE(ng)%QPs(isp,k,n,i,j), BIVALVE(ng)%QPs(iPt,k,n,i,j) ) ! BIVALVE(ng)%QP
+      rQPv(isp) = Iso_ratio( BIVALVE(ng)%QPv(isp,k,n,i,j), BIVALVE(ng)%QPv(iPt,k,n,i,j) ) ! BIVALVE(ng)%QP
+      rQPr(isp) = Iso_ratio( BIVALVE(ng)%QPr(isp,k,n,i,j), BIVALVE(ng)%QPr(iPt,k,n,i,j) ) ! BIVALVE(ng)%QP
+      rQPg(isp) = Iso_ratio( BIVALVE(ng)%QPg(isp,k,n,i,j), BIVALVE(ng)%QPg(iPt,k,n,i,j) ) ! BIVALVE(ng)%QP
       DO m=1,Nphy
         rPhyP(isp,m) = Iso_ratio( PhyP(isp,m), PhyP(iPt,m) ) ! PhyP
       END DO
@@ -302,7 +319,7 @@ CONTAINS
       cPhyP(m) = MAX(PhyP(iPt,m),0.0d0) !!! Error handling
     END DO
 !--- Body  Volume (cm3) -----------------
-    V = OYSTER(ng)%QC(iCt,k,n,i,j) *????? ! Volume (cm3) ??? Need Ref !!!!!!
+    V = BIVALVE(ng)%QC(iCt,k,n,i,j) *????? ! Volume (cm3) ??? Need Ref !!!!!!
 
 ! === Maximum respiration rate (mmol O2 ind.-1) =========================
     ! Temperature correction factor for respiration (no dimension)
@@ -332,17 +349,17 @@ CONTAINS
       dPhyC_dt(:,m)    = dPhyC_dt(:,m)    - Gc*rPhyC(:,m)
       dPOC_dt(:,iLPOM) = dPOC_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPOC_dt(:,iRPOM) = dPOC_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QC(:,k,n,i,j) = OYSTER(ng)%QC(:,k,n,i,j) + Gc*rPhyC(:,m) *dt
+      BIVALVE(ng)%QC(:,k,n,i,j) = BIVALVE(ng)%QC(:,k,n,i,j) + Gc*rPhyC(:,m) *dt
 
       dPhyN_dt(:,m)    = dPhyN_dt(:,m)    - Gn*rPhyN(:,m)
       dPON_dt(:,iLPOM) = dPON_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPON_dt(:,iRPOM) = dPON_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QN(:,k,n,i,j) = OYSTER(ng)%QN(:,k,n,i,j) + Gn*rPhyN(:,m) *dt
+      BIVALVE(ng)%QN(:,k,n,i,j) = BIVALVE(ng)%QN(:,k,n,i,j) + Gn*rPhyN(:,m) *dt
 
       dPhyP_dt(:,m)    = dPhyP_dt(:,m)    - Gp*rPhyP(:,m)
       dPOP_dt(:,iLPOM) = dPOP_dt(:,iLPOM) + Mp* rLPOMphy              *rPhyC(:,k)
       dPOP_dt(:,iRPOM) = dPOP_dt(:,iRPOM) + Mp*(1d0-rLPOMphy)         *rPhyC(:,k)
-      OYSTER(ng)%QP(:,k,n,i,j) = OYSTER(ng)%QP(:,k,n,i,j) + Gp*rPhyP(:,m) *dt
+      BIVALVE(ng)%QP(:,k,n,i,j) = BIVALVE(ng)%QP(:,k,n,i,j) + Gp*rPhyP(:,m) *dt
      
     END DO
 
@@ -355,7 +372,7 @@ CONTAINS
 
     RETURN
   
-  END SUBROUTINE oyster
+  END SUBROUTINE bivalve
 #endif
-END MODULE mod_oyster
+END MODULE mod_bivalve
 
