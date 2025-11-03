@@ -28,6 +28,9 @@ MODULE mod_bivalve
     real(8), pointer :: CaCO3(:,:,:,:,:)
     real(8), pointer :: Dead_CaCO3(:,:,:,:,:)
     real(8), pointer :: R   (:,:,:,:) 
+    real(8), pointer :: V   (:,:,:,:) 
+    real(8), pointer :: L   (:,:,:,:) 
+    real(8), pointer :: DW  (:,:,:,:) 
   END TYPE T_BIVALVE
   TYPE (T_BIVALVE), allocatable :: BIVALVE(:)
 CONTAINS
@@ -57,12 +60,13 @@ CONTAINS
     allocate( BIVALVE(ng)%QPv(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BIVALVE(ng)%QPr(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BIVALVE(ng)%QPg(N_Psp,Nbv,Nz,LBi:UBi,LBj:UBj) )
-     allocate( BIVALVE(ng)%CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BIVALVE(ng)%Dead_CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
 
     allocate( BIVALVE(ng)%R       (Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BIVALVE(ng)%V       (Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BIVALVE(ng)%L       (Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BIVALVE(ng)%DW      (Nbv,Nz,LBi:UBi,LBj:UBj) )
 
     RETURN
 
@@ -73,63 +77,80 @@ CONTAINS
 !!!  set initial conditions for the bivalve model
 !!! **********************************************************************
 
-  SUBROUTINE initialize_bivalve(ng, Nz, LBi, UBi, LBj, UBj, start_of_new_run)
+  SUBROUTINE initialize_bivalve(ng, Nz, z_w, LBi, UBi, LBj, UBj, dens_aqua, start_of_new_run)
     USE mod_reef_ecosys_param
+    USE mod_aquaculture
+    USE mod_deb_model
     
     implicit none
 ! input parameters
     integer, intent(in) :: ng, Nz, LBi, UBi, LBj, UBj
+    real(8), intent(in) :: z_w(0:Nz)
+    real(8), intent(in) :: dens_aqua(LBi:UBi,LBj:UBj)     ! Density of oyster aquaculture (rope m-3)
     logical, intent(in) :: start_of_new_run               ! TRUE = initialize; FALSE = continue from previous run
-    real(8) :: dz(Nz)
     real(8) :: R13C
-    integer :: i,j,n
+    integer :: i,j,m
 
 !------------------------------------------
 !  Set initial conditions
-    do j=LBj,UBj
-      do i=LBi,UBi
-        do k=1,Nz
-          do n=1,Nbv
-            BIVALVE(ng)%dens(n,k,i,j) = 0.0d0
-            BIVALVE(ng)%R   (n,k,i,j) = 0.0d0
-            BIVALVE(ng)%V   (n,k,i,j) = 0.0d0
-            BIVALVE(ng)%L   (n,k,i,j) = 0.0d0
+!   analytical start
+    if( start_of_new_run ) then
+     do j=LBj,UBj
+       do i=LBi,UBi
+         do k=1,Nz
+           do n=1,Nbv
+             BIVALVE(ng)%dens(n,k,i,j) = 0.0d0
+             BIVALVE(ng)%R   (n,k,i,j) = 0.0d0
+             BIVALVE(ng)%V   (n,k,i,j) = 0.0d0
+             BIVALVE(ng)%L   (n,k,i,j) = 0.0d0
+             BIVALVE(ng)%DW  (n,k,i,j) = 0.0d0
+ 
+             BIVALVE(ng)%QCs(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QCv(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QCr(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QCg(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QNs(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QNv(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QNr(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QNg(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QPs(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QPv(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QPr(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%QPg(:,n,k,i,j) = 0.0d0
+             BIVALVE(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living bivalve (mmol ind.-1)
+             BIVALVE(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead bivalve (mmol m-3)
+             
+             ! initialize for each bivalve group
+             if (n.eq.iOys) then ! 01: Oyster
+               BIVALVE(ng)%dens(n,k,i,j) =           &
+                 dens_oyster_Shizugawa(dens_aqua(i,j), Nz, k, z_w)   ! Initial bivalve density (ind. m-3)
+               !--- Total dry weight (g) (mmolC -> g(dw)) -----------------
+               BIVALVE(ng)%DW(k,n,i,j)      = 1.0d3  ! g(dw) individual-1
 
-            BIVALVE(ng)%QCs(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QCv(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QCr(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QCg(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QNs(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QNv(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QNr(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QNg(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QPs(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QPv(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QPr(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%QPg(:,n,k,i,j) = 0.0d0
-            BIVALVE(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living bivalve (mmol ind.-1)
-            BIVALVE(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead bivalve (mmol m-3)
-            ! initialize for each bivalve group
-            if (n.eq.iOys) then ! 1: Oyster
-              BIVALVE(ng)%dens(n,k,i,j) = 0.1d0   ! Initial bivalve density (ind. m-3)
-              BIVALVE(ng)%QCs(iCt,n,k,i,j) = 15.0d0
-              BIVALVE(ng)%QCv(iCt,n,k,i,j) = 15.0d0
-              BIVALVE(ng)%QCr(iCt,n,k,i,j) = 15.0d0
-              BIVALVE(ng)%QCg(iCt,n,k,i,j) = 15.0d0
-              BIVALVE(ng)%QNs(iNt,n,k,i,j) = 1.5d0
-              BIVALVE(ng)%QNv(iNt,n,k,i,j) = 1.5d0
-              BIVALVE(ng)%QNr(iNt,n,k,i,j) = 1.5d0
-              BIVALVE(ng)%QNg(iNt,n,k,i,j) = 1.5d0
-              BIVALVE(ng)%QPs(iPt,n,k,i,j) = 0.1d0
-              BIVALVE(ng)%QPv(iPt,n,k,i,j) = 0.1d0
-              BIVALVE(ng)%QPr(iPt,n,k,i,j) = 0.1d0
-              BIVALVE(ng)%QPg(iPt,n,k,i,j) = 0.1d0
-            end if
+               BIVALVE(ng)%QCv(iCt,n,k,i,j) = BIVALVE(ng)%DW(k,n,i,j)/25.22d0 * 1.0d-3 *0.8d0! mmolC individual-1
+               BIVALVE(ng)%QCs(iCt,n,k,i,j) = BIVALVE(ng)%QCv(iCt,n,k,i,j) *0.2d0  ! mmolC individual-1
+               BIVALVE(ng)%QCr(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
+               BIVALVE(ng)%QCg(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
+               BIVALVE(ng)%QNv(iNt,n,k,i,j) = BIVALVE(ng)%QCv(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+               BIVALVE(ng)%QNs(iNt,n,k,i,j) = BIVALVE(ng)%QCs(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+               BIVALVE(ng)%QNr(iNt,n,k,i,j) = BIVALVE(ng)%QCr(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+               BIVALVE(ng)%QNg(iNt,n,k,i,j) = BIVALVE(ng)%QCg(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+               BIVALVE(ng)%QPv(iPt,n,k,i,j) = BIVALVE(ng)%QCv(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+               BIVALVE(ng)%QPs(iPt,n,k,i,j) = BIVALVE(ng)%QCs(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+               BIVALVE(ng)%QPr(iPt,n,k,i,j) = BIVALVE(ng)%QCr(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+               BIVALVE(ng)%QPg(iPt,n,k,i,j) = BIVALVE(ng)%QCg(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+               !--- Body Volume (cm3) (g(dw) -> cm3)-----------------
+               BIVALVE(ng)%V(k,n,i,j) = BIVALVE(ng)%DW(k,n,i,j) / 0.2d0 !d_v(n)=0.2  ! g(dw) -> cm3
+               !--- Length (cm) (cm3 -> cm)-----------------
+               BIVALVE(ng)%L(k,n,i,j) = V2L( BIVALVE(ng)%V(k,n,i,j), delta_M(m) ) 
 
-          enddo
-        enddo
-      enddo
-    enddo
+             end if
+ 
+           enddo
+         enddo
+       enddo
+     enddo
+    end if
     
     RETURN
       
@@ -222,28 +243,31 @@ CONTAINS
     real(8), parameter :: b_M(1) = [ 0.0693d0  ]  ! (degC-1)         Temperature coefficient for ZooC mortality (Kawamiya et al., 1995)
 
 ! --- Dynamic Energy Budget (DEB) model parameters ---
-    real(8), parameter :: Tref(1)    = [  293.15d0] ! Refernce temperature (K)
-    real(8), parameter :: T_A(1)     = [ 5800.0d0 ] ! Arrhenius temperature (K), Van der Veer et al. (2006)
-!    real(8), parameter :: T_H(1)     = [  305.0d0 ] ! Upper boundary tolerance range (K), Van der Veer et al. (2006)
-    real(8), parameter :: T_Hing(1)  = [  298.0d0 ] ! Upper boundary tolerance range for ingestion (K), Bourles et al. (2009)
-    real(8), parameter :: T_Hresp(1) = [  305.0d0 ] ! Upper boundary tolerance range for respiration (K), Bourles et al. (2009)
-    real(8), parameter :: T_AH(1)    = [30000.0d0 ] ! Arrhenius temp. for upper boundary (K), Van der Veer et al. (2006)
-!    real(8), parameter :: T_L(1)     = [  281.0d0 ] ! Lower boundary tolerance range (K), Van der Veer et al. (2006)
-    real(8), parameter :: T_L(1)     = [  276.0d0 ] ! Lower boundary tolerance range (K), Bourles et al. (2009)
-    real(8), parameter :: T_AL(1)    = [75000.0d0 ] ! Arrhenius temp. for lower boundary (K), Van der Veer et al. (2006)
+    real(8), parameter :: delta_M(1) = [   0.175d0] ! (no dim.)      Shape parameter (Van der Veer et al., 2006)
+    real(8), parameter :: w2M(1)     = [   25.22d0] ! (g(dw) molC−1) Bivalve reserves/structure relative molecular mass (Saraiva et al., 2012)
+    real(8), parameter :: d_v(1)     = [    0.2d0 ] ! (g(dw) cm−3)   Bivalve structure and reserve specific density (Rosland et al., 2009; Brey, 2001)
+    real(8), parameter :: Tref(1)    = [  293.15d0] ! (K) Refernce temperature
+    real(8), parameter :: T_A(1)     = [ 5800.0d0 ] ! (K) Arrhenius temperature (Van der Veer et al., 2006)
+!    real(8), parameter :: T_H(1)     = [  305.0d0 ] ! (K) Upper boundary tolerance range (Van der Veer et al., 2006)
+    real(8), parameter :: T_Hing(1)  = [  298.0d0 ] ! (K) Upper boundary tolerance range for ingestion (Bourles et al., 2009)
+    real(8), parameter :: T_Hresp(1) = [  305.0d0 ] ! (K) Upper boundary tolerance range for respiration (Bourles et al., 2009)
+    real(8), parameter :: T_AH(1)    = [30000.0d0 ] ! (K) Arrhenius temp. for upper boundary (Van der Veer et al., 2006)
+!    real(8), parameter :: T_L(1)     = [  281.0d0 ] ! (K) Lower boundary tolerance range (Van der Veer et al., 2006)
+    real(8), parameter :: T_L(1)     = [  276.0d0 ] ! (K) Lower boundary tolerance range (Bourles et al., 2009)
+    real(8), parameter :: T_AL(1)    = [75000.0d0 ] ! (K) Arrhenius temp. for lower boundary (Van der Veer et al., 2006)
   ! --- Photoplankton ingestion parameters ---
     ! Maximum surface area specific clearance rate (L s-1 cm-2)
     !  0.096 (m3 d−1 cm−2), Saraiva et al. (2011b)
-    real(8), parameter :: C_Rmax  (4,1) = reshape( [ 1.0d-6,    1.0d-6,    1.0d-8 ,    1.0d-8    ], [4,1] ) ! to Oyster1 
+    real(8), parameter :: C_Rmax  (4,1) = reshape( [ 1.0d-6,    1.0d-6,    1.0d-8 ,    1.0d-8    ], [4,1] ) ! to Oyster
     ! Maximum surface area specific filtration rate (umol s−1 cm−2)
     !  4.8d-4 (molC d−1 cm−2), Rosland et al. (2009)
-    real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster1
+    real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster
     ! Algal binding probability (no dim.)
     !  0.4 (no dim.),  Saraiva et al. (2011a)
-    real(8), parameter :: rho_XiI (4,1) = reshape( [ 0.4d0, 0.4d0, 0.4d0, 0.4d0 ], [4,1] ) ! to Oyster1
+    real(8), parameter :: rho_XiI (4,1) = reshape( [ 0.4d0, 0.4d0, 0.4d0, 0.4d0 ], [4,1] ) ! to Oyster
     ! Algal maximum ingestion rate (umol s−1)
     !  1.3d4 (molC d-1), Saraiva et al. (2011a)
-    real(8), parameter :: J_XiImax(4,1) = reshape( [ 0.15d0,    0.15d0,    0.15d0,     0.15d0    ], [4,1] ) ! to Oyster1
+    real(8), parameter :: J_XiImax(4,1) = reshape( [ 0.15d0,    0.15d0,    0.15d0,     0.15d0    ], [4,1] ) ! to Oyster
 
     real(8) :: kT  ! Temperature correction factor (no dimension)
     real(8) :: C_R ! Clearance rate (m3 d−1)
@@ -318,14 +342,21 @@ CONTAINS
       cPhyN(m) = MAX(PhyN(iNt,m),0.0d0) !!! Error handling
       cPhyP(m) = MAX(PhyP(iPt,m),0.0d0) !!! Error handling
     END DO
-!--- Body  Volume (cm3) -----------------
-    V = BIVALVE(ng)%QC(iCt,k,n,i,j) *????? ! Volume (cm3) ??? Need Ref !!!!!!
+
+!--- Total dry weight (g) (mmolC -> g(dw)) -----------------
+    BIVALVE(ng)%DW(k,n,i,j) = (  BIVALVE(ng)%QCs(iCt,k,n,i,j) + BIVALVE(ng)%QCv(iCt,k,n,i,j)    &
+                               + BIVALVE(ng)%QCr(iCt,k,n,i,j) + BIVALVE(ng)%QCg(iCt,k,n,i,j) )  &
+                              * w2M(n) * 1.0d3  ! mmolC -> g(dw)  !!!!! Check the conversion factor !!!!!!
+!--- Body Volume (cm3) (g(dw) -> cm3)-----------------
+    BIVALVE(ng)%V(k,n,i,j) = BIVALVE(ng)%DW(k,n,i,j) / d_v(n)  ! g(dw) -> cm3
+!--- Length (cm) (cm3 -> cm)-----------------
+    BIVALVE(ng)%L(k,n,i,j) = V2L( BIVALVE(ng)%V(k,n,i,j), delta_M(m) ) 
 
 ! === Maximum respiration rate (mmol O2 ind.-1) =========================
     ! Temperature correction factor for respiration (no dimension)
     kT = tempcorr(Tmp+273.15d0, Tref(n), T_A(n), T_Hresp(n), T_AH(n), T_L(n), T_AL(n))
     ! Clearance rate (L s-1)
-    CALL clearance_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n), J_XiF)
+    CALL clearance_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n) c2e, C_R, J_Rc)
 
 
 
@@ -334,9 +365,9 @@ CONTAINS
     ! Temperature correction factor for ingestion (no dimension)
     kT = tempcorr(Tmp+273.15d0, Tref(n), T_A(n), T_Hing(n), T_AH(n), T_L(n), T_AL(n))
     ! Filtration rate (umol s−1)
-    CALL filtration_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n), J_XiF)
+!    CALL filtration_rate(Nphy, cPhyC, V, kT, C_Rmax(1:Nphy,n), J_XiFmax(1:Nphy,n), J_XiF)
     ! Ingestion rate (umol s−1)
-    CALL ingestion_rate(Nphy, J_XiF, rho_XiI(1:Nphy,n), J_XiImax(1:Nphy,n), J_XiI)
+    CALL ingestion_rate(Nphy, cPhyC, J_XiF, rho_XiI(1:Nphy,n), J_XiImax(1:Nphy,n), J_XiI)
 
 ! === Assimilation rate (umolC s−1 ind.-1) =========================
 

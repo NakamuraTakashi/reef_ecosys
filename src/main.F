@@ -230,6 +230,11 @@ PROGRAM main
   CALL initialize_params(1, Im, 1, Jm, N, Nid)
 
   dz(:,:,:)=depth/dble(N) !(m)
+  z_w(:,:,0)= -depth ! (m, negative)
+  do k=1,N
+    z_w(:,:,k)= z_w(:,:,k-1) + dz(:,:,k) ! (m, negative)
+    z_r(:,:,k)= 0.5d0 * ( z_w(:,:,k-1) + z_w(:,:,k) ) ! (m, negative)
+  end do
 
 !----- Import data -----------------------------------
 
@@ -252,7 +257,7 @@ PROGRAM main
 #if defined REEF_FLOW
   CALL initialize_reef_flow(1, Ngrids, 1, Im, 1, Jm)
 #endif
-  CALL allocate_reef_ecosys(1, Ngrids, 1, Im, 1, Jm)
+  CALL allocate_reef_ecosys(1, Ngrids, N, 1, Im, 1, Jm)
 
 #ifdef SEAGRASS
   allocate( XI_size (1:Im,1:Jm) ) ! grid size XI-direction (meters)
@@ -260,7 +265,7 @@ PROGRAM main
   XI_size (:,:) = XI_size_in
   ETA_size(:,:) = ETA_size_in
 #endif
-  CALL initialize_reef_ecosys(1, 1, Im, 1, Jm      &
+  CALL initialize_reef_ecosys(1, N, 1, Im, 1, Jm      &
       , start_of_new_run    &   ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
 #ifdef SEAGRASS
       , XI_size, ETA_size   &   ! grid size XI-direction (meters); grid size ETA-direction (meters)

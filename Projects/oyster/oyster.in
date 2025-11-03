@@ -28,7 +28,7 @@
 
   dt = 1.5d0 ! Time step (sec)
 
-  depth = 10.0d0 ! Set depth (m)
+  depth = 20.0d0 ! Set depth (m)
 
   isplitc  = 20
 

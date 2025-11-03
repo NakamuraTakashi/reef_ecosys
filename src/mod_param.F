@@ -187,6 +187,8 @@ MODULE mod_param
 #endif
 
   real(8), allocatable :: dz(:,:,:)    
+  real(8), allocatable :: z_w(:,:,:)      ! Depth at w-point ((meters, negative); z_w(0)=-h, z_w(N)=0.0 
+  real(8), allocatable :: z_r(:,:,:)      ! Depth at r-point ((meters, negative)
   real(8), allocatable :: t(:,:,:,:,:)
   real(8), allocatable :: dtrc_dt(:,:)
   real(8), allocatable :: pH(:,:,:)
@@ -396,7 +398,9 @@ contains
 !---------------------------------------------------------------------
 
 
-   allocate( dz(LBi:UBi,LBj:UBj,N) )
+   allocate( dz (LBi:UBi,LBj:UBj,N) )
+   allocate( z_w(LBi:UBi,LBj:UBj,0:N) )
+   allocate( z_r(LBi:UBi,LBj:UBj,1:N) )
 
    allocate( t(LBi:UBi, LBj:UBj, N, 1, Nid) , &
              dtrc_dt(N, Nid)   )

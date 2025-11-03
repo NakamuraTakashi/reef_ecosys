@@ -38,6 +38,7 @@
 /*# define CORAL_POLYP*/  /* USE coral module */
 /*# define SEAGRASS*/     /* USE seagrass module */
 /*# define MACROALGAE*/   /* USE algae module  */
+# define BIVALVE   /* USE bivalve module  */
 # define FOODWEB      /* USE foodweb module */
 # define SEDIMENT_ECOSYS        /* USE sedecosys module  */
 
@@ -73,6 +74,10 @@
 #  endif
 # endif
 
+/*** Bivalve model options. ***/
+# if defined BIVALVE
+#  define AQUACULTURE   /* USE aquaculture module  */
+# endif
 
 /*** Sediment model options. ***/
 /*#  define SEDIMENT_EMPIRICAL*/     /* USE empirical sediment module  */
@@ -98,6 +103,7 @@
 #define CORAL_AVERAGE_INTERVAL  1.0d0  /* Averaging interval (day) */
 #define FLOW_OUTPUT_INTERVAL    5.0d0  /* Output interval (min) */
 #define SEAGRASS_OUTPUT_INTERVAL 60.0d0  /* Output interval (min) */
+#define BIVALVE_OUTPUT_INTERVAL 60.0d0  /* Output interval (min) */
 
 /*#define USE_HEAT*/
 /*#define LONGWAVE_IN*/
@@ -119,11 +125,14 @@
 #if defined SEAGRASS 
 # define SEAGRASS_TESTMODE
 #endif
+#if defined BIVALVE 
+# define BIVALVE_TESTMODE
+#endif
 
 /*** Chamber experiments option ***/
 /*#define CHAMBER_SITE4*/
 
-#define TRACER_TEST
+/*#define TRACER_TEST*/
 #if defined TRACER_TEST
 # define CARBON_TRACE
 # define NITROGEN_TRACE

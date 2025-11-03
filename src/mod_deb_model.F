@@ -8,8 +8,22 @@ MODULE mod_deb_model
 
 CONTAINS
 
+!======================================================================================
+!  Conversion from V to L (cm3 to cm)
+!   V = (delta_M * L)^3. 
+!======================================================================================
+  real(8) function V2L(V, delta_M)
+    real(8), intent(in) :: V        ! Body Volume (cm3)
+    real(8), intent(in) :: delta_M  ! Shape parameter (no dim.)
+
+    V2L = V**(1.0d0/3.0d0) / delta_M  ! Structural length (cm)
+
+  end function V2L
+
+!======================================================================================
 !  Temperature correction factor (no dimension)
 !    Arrhenius equation
+!======================================================================================
   real(8) function tempcorr1(T, Tref, T_A)
     real(8), intent(in) :: T     ! Temperature (K)
     real(8), intent(in) :: Tref  ! Refernce temperature (K)
@@ -19,8 +33,10 @@ CONTAINS
 
   end function tempcorr1
 
+!======================================================================================
 !  Temperature correction factor (no dimension)
 !    Arrhenius equation x enzyme denaturation at high and low temperatures
+!======================================================================================
   real(8) function tempcorr2(T, Tref, T_A, T_H, T_AH, T_L, T_AL)
     real(8), intent(in) :: T     ! Temperature (K)
     real(8), intent(in) :: Tref  ! Refernce temperature (K)
@@ -38,7 +54,9 @@ CONTAINS
 
   end function tempcorr2
 
+!======================================================================================
 ! Somatic maintenance rate (J s-1)
+!======================================================================================
   real(8) function somatic_maintenance(V, k_M)
     ! input parameters
     real(8), intent(in ) :: V     ! Body Volume (cm3)
@@ -47,8 +65,10 @@ CONTAINS
     somatic_maintenance = k_M * V  ! Somatic maintenance rate (J s-1)
 
   end function somatic_maintenance
-  
+
+!====================================================================================== 
 !  Clearance rate (L s-1)
+!======================================================================================
   subroutine clearance_rate(N, X, V, kT, C_Rmax, J_XiFmax, c2e, C_R, J_Rc)
     ! input parameters
     real(8), intent(in ) :: N           ! Number of food types
@@ -76,30 +96,35 @@ CONTAINS
 
   end subroutine clearance_rate
 
-!  Filtration rate (umol s−1)
-  subroutine filtration_rate(N, X, C_R, J_XiF)
+!!======================================================================================
+!!  Filtration rate (umol s−1)
+!!======================================================================================
+!  subroutine filtration_rate(N, X, C_R, J_XiF)
+!    ! input parameters
+!    real(8), intent(in ) :: N           ! Number of food types
+!    real(8), intent(in ) :: X(N)        ! Food concentration (umol L-1)
+!    real(8), intent(in ) :: C_R         ! Clearance rate (L s-1)
+!    ! output parameters
+!    real(8), intent(out) :: J_XiF(N)    ! Filtration rate (umol s−1)
+!
+!    real(8) :: C_R   ! Clearance rate (L s-1)
+!    real(8) :: cff
+!    integer :: i
+!
+!    do i=1,N
+!      J_XiF(i) = C_R*X(i) ! Filtration rate (umol s−1)
+!    end do
+!
+!  end subroutine filtration_rate
+
+!======================================================================================
+!  Ingestion rate (umol s−1)
+!======================================================================================
+  subroutine ingestion_rate(N, X, C_R, rho_XiI, J_XiImax, J_XiI)
     ! input parameters
     real(8), intent(in ) :: N           ! Number of food types
     real(8), intent(in ) :: X(N)        ! Food concentration (umol L-1)
     real(8), intent(in ) :: C_R         ! Clearance rate (L s-1)
-    ! output parameters
-    real(8), intent(out) :: J_XiF(N)    ! Filtration rate (umol s−1)
-
-    real(8) :: C_R   ! Clearance rate (L s-1)
-    real(8) :: cff
-    integer :: i
-
-    do i=1,N
-      J_XiF(i) = C_R*X(i) ! Filtration rate (umol s−1)
-    end do
-
-  end subroutine filtration_rate
-
-!  Ingestion rate (umol s−1)
-  subroutine ingestion_rate(N, J_XiF, rho_XiI, J_XiImax, J_XiI)
-    ! input parameters
-    real(8), intent(in ) :: N           ! Number of food types
-    real(8), intent(in ) :: J_XiF(N)    ! Filtration rate (umol s−1)
     real(8), intent(in ) :: rho_XiI(N)  ! Algal binding probability (no dim.)
     real(8), intent(in ) :: J_XiImax(N) ! Algal maximum ingestion rate (umol s−1)
     ! output parameters
@@ -110,7 +135,7 @@ CONTAINS
 
     cff = 0.0d0
     do i=1,N
-      cff = cff + rho_XiI(i)*J_XiF(i) / J_XiImax(i)
+      cff = cff + rho_XiI(i)*C_R*X(i) / J_XiImax(i)
     end do
 
     do i=1,N
@@ -119,7 +144,9 @@ CONTAINS
 
   end subroutine ingestion_rate
 
+!======================================================================================
 !  Assimilation rate (umol s−1)
+!======================================================================================
   subroutine assimilation_rate(N, J_XiI)
     ! input parameters
     real(8), intent(in ) :: N           ! Number of food types

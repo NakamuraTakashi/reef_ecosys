@@ -11,12 +11,15 @@ gfortran ${FFLAGS} \
   ${SRC_DIR}/mod_calendar.f90 \
   ${SRC_DIR}/mod_geochem.F  \
   ${SRC_DIR}/mod_reef_ecosys_param.F \
+  ${SRC_DIR}/mod_aquaculture.F \
   ${SRC_DIR}/mod_param.F \
   ${SRC_DIR}/mod_reef_flow.F \
   ${SRC_DIR}/mod_heat.F \
   ${SRC_DIR}/mod_decomposition.F \
   ${SRC_DIR}/mod_foodweb.F \
   ${SRC_DIR}/mod_sedecosys.F \
+  ${SRC_DIR}/mod_deb_model.F \
+  ${SRC_DIR}/mod_bivalve.F \
   ${SRC_DIR}/mod_coral.F \
   ${SRC_DIR}/mod_macroalgae.F \
   ${SRC_DIR}/mod_seagrass.F \
@@ -31,5 +34,5 @@ rm *.mod
 #
 mkdir -p output
 #
-./ecosys_test.exe < oyster.in
+#./ecosys_test.exe < oyster.in
 #
