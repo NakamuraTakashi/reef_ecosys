@@ -297,6 +297,9 @@ END SUBROUTINE allocate_reef_ecosys
 # ifdef FOODWEB
     USE mod_foodweb
 # endif
+# ifdef BIVALVE
+    USE mod_bivalve
+# endif
       
     implicit none
 
@@ -617,8 +620,37 @@ END SUBROUTINE allocate_reef_ecosys
     DO k=N,1,-1
     
 # if defined LIGHT_MODEL
+!!! mons light model >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>KM:Add
       PFDk(k) = PFD
-# endif
+
+! constants that should be computed
+      sza = 1.5d1 !typical PH SZA                   ! 
+      tPOC = POC(k,1) + POC(k,2)
+
+! actual calculations
+      Aw490 = 1.5d-2
+      Aop440 = 1.48776909221838d-2*MAX(tPOC,0.0d0)**5.75341428428829d-1
+      Aop490 = MAX((5.83174d-1+7.66d-12*LOG(MAX(Aop440,1.0d-30)))*Aop440,0.0d0)
+      Aip440 = 4.05699607236094d-3*MAX(tPOC,0.0d0)**9.99999435689510d-1
+      Aip490 = MAX(Aip440*EXP(-5.6303965d-1),0.0d0)
+      Ag440 = -4.27996832826524d-2*MAX(Sal(k),0.0d0)+1.61458559175428d0 
+      Ag490 = MAX(Ag440*EXP(-4.2204005d-1),0.0d0) 
+      Bbw490 = 1.622d-3
+      Bbp560 = 4.28633036350060d-3*MAX(tPOC,0.0d0)**9.99862455045082d-1
+      Bbp490 = MAX(Bbp560*1.138105699d0,0.0d0)
+      At490 = Aw490+Aip490+Aop490+Ag490
+      Bbt490 = Bbw490+Bbp490
+      Kd490 = (1.0d0+5.0d-3*sza)*At490+4.18d0*(1.0d0-5.2d-1*EXP(-1.08d1*At490))*Bbt490
+
+      IF (Kd490.GT.1.15d-1) THEN
+          Kdpar = 8.1d-1*Kd490**8.256d-1
+      ELSE
+          Kdpar = 4.6051d0*Kd490/(6.07d0*Kd490+3.2d0)
+      END IF
+
+      Att= Kdpar*dz(k)            
+# else
+!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<KM:Add
 
 !!  Compute average light attenuation for each grid cell. To include
 !!  other attenuation contributions like suspended sediment or CDOM
@@ -640,6 +672,8 @@ END SUBROUTINE allocate_reef_ecosys
 !
 
       Att= AttSW*dz(k)
+# endif
+
       ExpAtt=EXP(-Att)
       Itop=PFD
       PFD=Itop*(1.0d0-ExpAtt)/Att    ! average at cell center
@@ -745,52 +779,74 @@ END SUBROUTINE allocate_reef_ecosys
       dCOTl_dt(k) = dCOTl_dt(k) + dCOTl(k)
 #  endif
 # endif
-                             
+
+# if defined BIVALVE
+!-----------------------------------------------------------------------
+! Compute Bivalve model.
+!-----------------------------------------------------------------------
+
+      DO icl=1,Nbv
+        IF(BVLV(ng)%dens(icl,k,i,j) .gt. 0.0d0) THEN
+
+          CALL bivalve  &
+        !   input parameters
+            ( ng, icl, i, j, k &   ! ng: nested grid number; n: bivalve compartment; i,j,k: position
+            , date           &   ! Date (days since x or elapsed days)
+            , dt             &   ! Time step (sec)
+            , rho_sw(k)      &   ! Density of seawater (g cm-3)
+            , Tmp(k)         &   ! Temperature (oC)
+            , Sal(k)         &   ! Salinity (PSU)
+            , DOx(k)         &   ! DOx             : Dissolved oxygen (umol O2 L-1)
+            , DIC(:,k)       &   ! DIC(N_Csp): Total dissolved inorganic carbon (umol C kg-1)
+            , Wcal(k)        &   ! Calcite saturation state
+            , PhyC(:,:,k)    &   ! Phytoplankton C bomass (umol C L-1)
+            , PhyN(:,:,k)    &   ! Phytoplankton N bomass (umol N L-1)
+            , PhyP(:,:,k)    &   ! Phytoplankton P bomass (umol P L-1)
+            , PIC (:,:,k)    &   ! Particulate inorganic carbon (PIC: umolC L-1), coccolith (CaCO3)
+        !   output parameters
+            , dDOx(k)        &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
+            , dTA (k)        &   ! dTA_dt              : dTA/dt   (umol kg-1 s-1) 
+            , dDIC(:,k)      &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+            , dNH4(:,k)      &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
+            , dPO4(:,k)      &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
+            , dDOC(:,:,k)    &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
+            , dPOC(:,:,k)    &   ! dPOC_dt(N_Csp,Npom) : dPOC/dt  (umol C L-1 s-1) 
+            , dDON(:,:,k)    &   ! dDON_dt(N_Nsp,Ndom) : dDON/dt  (umol N L-1 s-1)
+            , dPON(:,:,k)    &   ! dPON_dt(N_Nsp,Npom) : dPON/dt  (umol N L-1 s-1)
+            , dDOP(:,:,k)    &   ! dDOP_dt(N_Psp,Ndom) : dDOP/dt  (umol P L-1 s-1)
+            , dPOP(:,:,k)    &   ! dPOP_dt(N_Psp,Npom) : dPOP/dt  (umol P L-1 s-1)
+            , dPhyC(:,:,k)   &   ! dPhyC_dt(N_Csp,Nphy): dPhyC/dt (umol C L-1 s-1)  
+            , dPhyN(:,:,k)   &   ! dPhyN_dt(N_Nsp,Nphy): dPhyN/dt (umol N L-1 s-1)  
+            , dPhyP(:,:,k)   &   ! dPhyP_dt(N_Psp,Nphy): dPhyP/dt (umol P L-1 s-1)  
+            , dPIC (:,:,k)   &   ! dPIC_dt (N_Csp,Npim): dPIC/dt  (umol C L-1 s-1)
+            )
+        END IF
+      END DO
+# endif
+       
+!----- Mass balance equation -----------------------------------------------------------
+
+      dDOx_dt(k) = dDOx_dt(k) + dDOx(k)
+      dTA_dt (k) = dTA_dt (k) + dTA(k)
+      dDIC_dt(:,k) = dDIC_dt(:,k) + dDIC(:,k)
+      dNH4_dt(:,k) = dNH4_dt(:,k) + dNH4(:,k)
+      dPO4_dt(:,k) = dPO4_dt(:,k) + dPO4(:,k)
+      dDOC_dt(:,:,k) = dDOC_dt(:,:,k) + dDOC(:,:,k)
+      dPOC_dt(:,:,k) = dPOC_dt(:,:,k) + dPOC(:,:,k)
+      dDON_dt(:,:,k) = dDON_dt(:,:,k) + dDON(:,:,k)
+      dPON_dt(:,:,k) = dPON_dt(:,:,k) + dPON(:,:,k)
+      dDOP_dt(:,:,k) = dDOP_dt(:,:,k) + dDOP(:,:,k)
+      dPOP_dt(:,:,k) = dPOP_dt(:,:,k) + dPOP(:,:,k)
+      dPhyC_dt(:,:,k) = dPhyC_dt(:,:,k) + dPhyC(:,:,k)
+      dPhyN_dt(:,:,k) = dPhyN_dt(:,:,k) + dPhyN(:,:,k)
+      dPhyP_dt(:,:,k) = dPhyP_dt(:,:,k) + dPhyP(:,:,k)
+      dPIC_dt(:,:,k) = dPIC_dt(:,:,k) + dPIC(:,:,k)
+
+!-----------------------------------------------------------------------
 !  Light attenuation at the bottom of the grid cell. It is the starting
 !  PFD value for the next (deeper) vertical grid cell.
 !
       PFD=Itop*ExpAtt
-
-!!! mons light model >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>KM:Add
-# if defined LIGHT_MODEL
-
-! constants that should be computed
-      sza = 1.5d1 !typical PH SZA                   ! 
-      tPOC = POC(k,1) + POC(k,2)
-
-! actual calculations
-      Aw490 = 1.5d-2
-      Aop440 = 1.48776909221838d-2*MAX(tPOC,0.0d0)**5.75341428428829d-1
-      Aop490 = MAX((5.83174d-1+7.66d-12*LOG(MAX(Aop440,1.0d-30)))*Aop440,0.0d0)
-      Aip440 = 4.05699607236094d-3*MAX(tPOC,0.0d0)**9.99999435689510d-1
-      Aip490 = MAX(Aip440*EXP(-5.6303965d-1),0.0d0)
-      Ag440 = -4.27996832826524d-2*MAX(Sal(k),0.0d0)+1.61458559175428d0 
-      Ag490 = MAX(Ag440*EXP(-4.2204005d-1),0.0d0) 
-      Bbw490 = 1.622d-3
-      Bbp560 = 4.28633036350060d-3*MAX(tPOC,0.0d0)**9.99862455045082d-1
-      Bbp490 = MAX(Bbp560*1.138105699d0,0.0d0)
-      At490 = Aw490+Aip490+Aop490+Ag490
-      Bbt490 = Bbw490+Bbp490
-      Kd490 = (1.0d0+5.0d-3*sza)*At490+4.18d0*(1.0d0-5.2d-1*EXP(-1.08d1*At490))*Bbt490
-
-      IF (Kd490.GT.1.15d-1) THEN
-          Kdpar = 8.1d-1*Kd490**8.256d-1
-      ELSE
-          Kdpar = 4.6051d0*Kd490/(6.07d0*Kd490+3.2d0)
-      END IF
-
-      Att= Kdpar*dz(k)            
-      ExpAtt=EXP(-Att)
-      Itop=PFD
-      PFD = Itop*ExpAtt
-# else
-!!original script
-!      Att= AttSW*dz(k)
-!      ExpAtt=EXP(-Att)
-!      Itop=PFD
-!      PFD = Itop*ExpAtt    
-# endif
-!!!<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<KM:Add
 
     END DO
 

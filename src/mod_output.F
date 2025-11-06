@@ -62,6 +62,13 @@ contains
     open(72,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy3.csv',status='replace')!!!!!!!!!for debug
     open(73,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy4.csv',status='replace')!!!!!!!!!for debug
 #endif
+#if defined BIVALVE_TESTMODE
+    open(80,file=trim(OUTFILE_prefix)//'-oyster.csv',status='replace')!!!!!!!!!for debug
+!    open(81,file=trim(OUTFILE_prefix)//'-oyster_V.csv',status='replace')!!!!!!!!!for debug
+!    open(82,file=trim(OUTFILE_prefix)//'-oyster_Ww.csv',status='replace')!!!!!!!!!for debug
+!    open(83,file=trim(OUTFILE_prefix)//'-oyster_Wd.csv',status='replace')!!!!!!!!!for debug
+!    open(84,file=trim(OUTFILE_prefix)//'-oyster_Wt.csv',status='replace')!!!!!!!!!for debug
+#endif
 
     RETURN
 
@@ -109,6 +116,13 @@ END SUBROUTINE files_open
     close(71)
     close(72)
     close(73)
+#endif
+#if defined BIVALVE_TESTMODE
+    close(80)
+!    close(81)
+!    close(82)
+!    close(83)
+!    close(84)
 #endif
 
     RETURN
@@ -482,6 +496,85 @@ END SUBROUTINE files_close
     RETURN
 
   END SUBROUTINE write_env_vprof
+! **********************************************************************
+!  Write vertical profile of bivalve data
+! **********************************************************************
+
+  SUBROUTINE write_bivalve_vprof(OUT_FILE, date, N)
+  
+    USE mod_param
+    Use mod_bivalve
+    
+    implicit none
+    
+    character(len=*), intent( in) :: OUT_FILE
+    real(8), intent( in) :: date
+    integer, intent(in) :: N
+
+    integer,parameter :: fid = 85
+
+    real(8) :: depth_r
+    integer :: i,j,k,nstp
+    integer :: ng
+
+    ng=1
+
+    i=1
+    j=1
+!    k=1
+    nstp=1
+    
+    open(fid,file=OUT_FILE)
+    write(fid,'(*(g0:,", "))') 'Time=', date
+
+    write(fid,'(*(g0:,", "))') 'Depth'  &
+        , 'dens','L','V','Ww','Wd','Wt' &
+        , 'QCe','QCv','QCr','QCh'       &
+        , 'QNe','QNv','QNr','QNh'       &
+        , 'QPe','QPv','QPr','QPh'       &
+        , 'CaCO3','Dead_CaCO3'
+
+!-----------------------------------------------------------------------
+
+!    depth = 0.0d0
+    Do k=N,1,-1
+
+      if (k==N) then
+        depth_r = dz(i,j,k)*0.5d0
+      else
+        depth_r = depth_r + dz(i,j,k)
+      endif
+
+      write(fid,'(*(g0:,", "))') depth_r           &
+       , BVLV(ng)%dens(1,k,i,j)    &
+       , BVLV(ng)%L (1,k,i,j)      &
+       , BVLV(ng)%V (1,k,i,j)      &
+       , BVLV(ng)%Ww(1,k,i,j)      &
+       , BVLV(ng)%Wd(1,k,i,j)      &
+       , BVLV(ng)%Wt(1,k,i,j)      &
+       , BVLV(ng)%QCe(:,1,k,i,j)   &
+       , BVLV(ng)%QCv(:,1,k,i,j)   &
+       , BVLV(ng)%QCr(:,1,k,i,j)   &
+       , BVLV(ng)%QCh(:,1,k,i,j)   &
+       , BVLV(ng)%QNe(:,1,k,i,j)   &
+       , BVLV(ng)%QNv(:,1,k,i,j)   &
+       , BVLV(ng)%QNr(:,1,k,i,j)   &
+       , BVLV(ng)%QNh(:,1,k,i,j)   &
+       , BVLV(ng)%QPe(:,1,k,i,j)   &
+       , BVLV(ng)%QPv(:,1,k,i,j)   &
+       , BVLV(ng)%QPr(:,1,k,i,j)   &
+       , BVLV(ng)%QPh(:,1,k,i,j)   &
+       , BVLV(ng)%CaCO3(:,1,k,i,j) &
+       , BVLV(ng)%Dead_CaCO3(:,1,k,i,j)
+
+      END DO
+
+      close(fid)
+
+    RETURN
+
+  END SUBROUTINE write_bivalve_vprof
+
 
 ! **********************************************************************
 !  Write lavel of reef_flow data

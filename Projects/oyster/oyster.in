@@ -5,8 +5,8 @@
 
 &ecosys_config
 ! Simulation period     
-!  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-  Tmax = 1.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+!  Tmax = 10.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
 !  ymax = 1.0d0 !years
 ! Start time
   time0 = 0.0d0 ! day
@@ -20,7 +20,8 @@
 !                5: Incubation chamber simulation of Nakamura & Nakamori (2009) experiments
 !                6: Flume simulation of Comeau et al. (2016) experiments   
 !                7: Vertical profile simulation   
-  nSetting = 7
+!  nSetting = 7
+  nSetting = 1
 
   Im = 1
   Jm = 1
@@ -129,6 +130,18 @@
   ETA_size_in = 50.0d0 ! (m)
 /
 
+&aquaculture_config
+          !  01 Oyster        
+          !  02 Wakame Seaweed
+          !  03 Sea squirt  
+          !  04 Scallop
+          !  05 Salmon (not used) 
+          !
+          !      01      02        03      04      05
+  dens_aqua0  = 0.01d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
+          !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
+/
+
 !--- Initial Condition -----------------------------------------------------
 &initial
 
@@ -151,7 +164,7 @@
 !  PON_0 = 1.0d0,  0.1d0, 0.1d0  ! PON (umol N L-1); Labile, Refractory, Coarse 
 !  DOP_0 = 5.0d0, 50.0d0         ! DOP (umol P L-1); Labile, Refractory
 !  POP_0 = 1.0d0,  0.1d0, 0.1d0  ! POP (umol P L-1); Labile, Refractory, Coarse 
- PhyC_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+ PhyC_0 = 2.0d0,  10.0d0, 1.0d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
  ZooC_0 = 0.3d0 !0.1d0       ! ZooC (umol L-1)
 ! PhyN_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
 ! ZooN_0 = 0.1d0       ! ZooC (umol L-1)

@@ -47,8 +47,8 @@ contains
                  , Wind_FILE, Rain_FILE, Rh_FILE, Cloud_FILE                 &
                  , PPFD_FILE, WTEMP_FILE, WLEVEL_FILE, WAVE_FILE
   
-    read (5, nml=refdate)
     rewind(5)
+    read (5, nml=refdate)
 
     if ( in_file(iswrad) == 0 ) then
       allocate( SWRad_FILE(1) )
@@ -111,8 +111,8 @@ contains
       allocate( WAVE_FILE(in_file(iwv)) )
     endif
 
-    read (5, nml=input)
     rewind(5)
+    read (5, nml=input)
 
 ! ==== READ swrad data =============================================
     if ( in_file(iswrad) > 0 ) then

@@ -1,5 +1,7 @@
 !!!=== Copyright (c) 2025 Takashi NAKAMURA  =====
 
+#include "cppdefs.h"
+
 !!!**** MODULE OF DYNAMIC ENRTGY BUDGET (DEB) MODEL **************************
 
 MODULE mod_deb_model
@@ -54,24 +56,17 @@ CONTAINS
 
   end function tempcorr2
 
-!======================================================================================
-! Somatic maintenance rate (J s-1)
-!======================================================================================
-  real(8) function somatic_maintenance(V, k_M)
-    ! input parameters
-    real(8), intent(in ) :: V     ! Body Volume (cm3)
-    real(8), intent(in ) :: k_M   ! Somatic maintenance rate coefficient (J s-1 cm-3)
-
-    somatic_maintenance = k_M * V  ! Somatic maintenance rate (J s-1)
-
-  end function somatic_maintenance
-
 !====================================================================================== 
-!  Clearance rate (L s-1)
+!  Clearance rate (L s-1) (Saraiva et al., 2012)
 !======================================================================================
-  subroutine clearance_rate(N, X, V, kT, C_Rmax, J_XiFmax, c2e, C_R, J_Rc)
+  subroutine clearance_rate(              &
     ! input parameters
-    real(8), intent(in ) :: N           ! Number of food types
+      N, X, V, kT, C_Rmax, J_XiFmax, c2e  &
+    ! output parameters
+    , C_R, J_Rc)
+
+    ! input parameters
+    integer, intent(in ) :: N           ! Number of food types
     real(8), intent(in ) :: X(N)        ! Food concentration (umol L-1)
     real(8), intent(in ) :: V           ! Body Volume (cm3)
     real(8), intent(in ) :: kT          ! Temperature correction factor (no dimension)
@@ -82,7 +77,6 @@ CONTAINS
     real(8), intent(out) :: C_R         ! Clearance rate (L s-1)
     real(8), intent(out) :: J_Rc        ! Required energy for water exchange (J s-1)
 
-    real(8) :: C_R   ! Clearance rate (L s-1)
     real(8) :: cff
     integer :: i
 
@@ -96,81 +90,204 @@ CONTAINS
 
   end subroutine clearance_rate
 
-!!======================================================================================
-!!  Filtration rate (umol s−1)
-!!======================================================================================
-!  subroutine filtration_rate(N, X, C_R, J_XiF)
-!    ! input parameters
-!    real(8), intent(in ) :: N           ! Number of food types
-!    real(8), intent(in ) :: X(N)        ! Food concentration (umol L-1)
-!    real(8), intent(in ) :: C_R         ! Clearance rate (L s-1)
-!    ! output parameters
-!    real(8), intent(out) :: J_XiF(N)    ! Filtration rate (umol s−1)
-!
-!    real(8) :: C_R   ! Clearance rate (L s-1)
-!    real(8) :: cff
-!    integer :: i
-!
-!    do i=1,N
-!      J_XiF(i) = C_R*X(i) ! Filtration rate (umol s−1)
-!    end do
-!
-!  end subroutine filtration_rate
-
 !======================================================================================
-!  Ingestion rate (umol s−1)
+!  Ingestion rate (umol s−1) (Saraiva et al., 2012)
 !======================================================================================
-  subroutine ingestion_rate(N, X, C_R, rho_XiI, J_XiImax, J_XiI)
+  subroutine ingestion(             &
+    ! input parameters 
+      N, X, C_R, rho_XiI, J_XiImax  &
+    ! output parameters
+    , J_XiF, J_XiI, J_PiF)
+  
     ! input parameters
-    real(8), intent(in ) :: N           ! Number of food types
+    integer, intent(in ) :: N           ! Number of food types
     real(8), intent(in ) :: X(N)        ! Food concentration (umol L-1)
     real(8), intent(in ) :: C_R         ! Clearance rate (L s-1)
     real(8), intent(in ) :: rho_XiI(N)  ! Algal binding probability (no dim.)
     real(8), intent(in ) :: J_XiImax(N) ! Algal maximum ingestion rate (umol s−1)
     ! output parameters
+    real(8), intent(out) :: J_XiF(N)    ! Filteration rate (umol s−1)
     real(8), intent(out) :: J_XiI(N)    ! Ingestion rate (umol s−1)
+    real(8), intent(out) :: J_PiF(N)    ! Pseudofaeces production rate (umol s−1)
 
     real(8) :: cff
     integer :: i
 
     cff = 0.0d0
     do i=1,N
-      cff = cff + rho_XiI(i)*C_R*X(i) / J_XiImax(i)
-    end do
-
-    do i=1,N
-      J_XiI(i) = rho_XiI(i)*J_XiF(i) / (1.0d0 + cff) ! Filtration rate (umol s−1)
-    end do
-
-  end subroutine ingestion_rate
-
-!======================================================================================
-!  Assimilation rate (umol s−1)
-!======================================================================================
-  subroutine assimilation_rate(N, J_XiI)
-    ! input parameters
-    real(8), intent(in ) :: N           ! Number of food types
-    real(8), intent(in ) :: J_XiI(N)    ! Ingestion rate (umol s−1)
-    real(8), intent(in ) :: J_XiF(N)    ! Filtration rate (umol s−1)
-    real(8), intent(in ) :: rho_XiI(N)  ! Algal binding probability (no dim.)
-    real(8), intent(in ) :: J_XiImax(N) ! Algal maximum ingestion rate (umol s−1)
-    ! output parameters
-
-    real(8) :: cff
-    integer :: i
-
-    cff = 0.0d0
-    do i=1,N
+      J_XiF(i) = C_R*X(i)  ! Filtration rate (umol s−1)
       cff = cff + rho_XiI(i)*J_XiF(i) / J_XiImax(i)
     end do
 
     do i=1,N
-      J_XiI(i) = rho_XiI(i)*J_XiF(i) / (1.0d0 + cff) ! Filtration rate (umol s−1)
+      J_XiI(i) = rho_XiI(i)*J_XiF(i) / (1.0d0 + cff) ! Ingestion rate (umol s−1)
+      J_PiF(i) = J_XiF(i) - J_XiI(i)        ! Pseudofaeces production rate (umol s−1)
     end do
 
-  end subroutine assimilation_rate
+  end subroutine ingestion
+
+!======================================================================================
+!  Assimilation rate (umolC s−1, umolN s−1, umolP s−1)
+!======================================================================================
+!  subroutine assimilation( &
+!    ! input parameters 
+!      N, J_XiI, AE         &
+!    ! output parameters 
+!    , Jc_EA, Jn_EA, Jp_EA  &
+!    , Jc_RA, Jn_RA, Jp_RA)
+!
+!    ! input parameters
+!    integer, intent(in ) :: N           ! Number of food types
+!    real(8), intent(in ) :: J_XiI(N)    ! Ingestion rate (umol s−1)
+!    real(8), intent(in ) :: AE(N)       ! assimilation efficiency (no dim.)
+!    ! output parameters
+!    real(8), intent(out) :: Jc_EA, Jn_EA, Jp_EA   ! Assimilation rate (umolC s−1, umolN s−1, umolP s−1)
+!    real(8), intent(out) :: Jc_RA, Jn_RA, Jp_RA   ! Overhead related to assimilation (umolC s−1, umolN s−1, umolP s−1)
+!
+!
+!  end subroutine assimilation
+
+!======================================================================================
+! Mobilization flux (umolC s-1) (Saraiva et al., 2012)
+!======================================================================================
+  subroutine mobilization_flux(       &
+    ! input parameters
+      V, M_E, J_ES, cond, kappa, k_m  &
+    ! output parameters
+    , J_EC)
+
+    ! input parameters
+    real(8), intent(in ) :: V       ! Body Volume (cm3)
+    real(8), intent(in ) :: M_E     ! Reserve biomass (umolC)
+    real(8), intent(in ) :: J_ES    ! Somatic maintenance rate (umolC s-1)
+    real(8), intent(in ) :: cond    ! Energy conductance (cm s-1)
+    real(8), intent(in ) :: kappa   ! Allocation fraction to growth and somatic maintenance
+    real(8), intent(in ) :: k_m     ! Volume-specific Somatic maintenance rate (umol s-1 cm-3)
+                                    ! [E_G] (J cm-3)  Specific cost for structure
+                                    ! mu_E  (J mol−1)  (Bivalve reserve chemical potential)
+                                    ! k_m = [E_G]/mu_E = umolC cm-3
+    ! output parameters
+    real(8), intent(out) :: J_EC  ! Mobilization flux (umolC s-1)
+
+    real(8) :: E_m   !Reserve density (umolC cm-3)
+
+    E_m = M_E / V  ! Reserve density (umolC cm-3)
+
+!    J_EC = E_m/(k_m+kappa*E_m)*(k_m*cond*V**(2.0d0/3.0d0) + J_ES)  ! Mobilization flux (umolC s-1)
+    J_EC = E_m/(k_m+kappa*E_m)*(k_m*cond*V**(2.0d0/3.0d0) + J_ES)  ! Mobilization flux (umolC s-1)
+
+  end subroutine mobilization_flux
+
+!======================================================================================
+! Somatic maintenance rate (umolC s-1) (Saraiva et al., 2012)
+!======================================================================================
+  subroutine somatic_maintenance( &
+    ! input parameters
+      V, k_s                      &
+    ! output parameters
+    , J_ES)
+
+    ! input parameters
+    real(8), intent(in ) :: V     ! Body Volume (cm3)
+    real(8), intent(in ) :: k_s   ! Volume-specific Somatic maintenance rate (umol s-1 cm-3)
+                                  ! [p_M] (J s-1 cm-3)  (volume specific somatic maintenance rate)
+                                  ! mu_E  (J mol−1)  (Bivalve reserve chemical potential)
+                                  ! k_s = [p_M]/mu_E = umol s-1 cm-3
+    ! output parameters
+    real(8), intent(out) :: J_ES  ! Somatic maintenance rate (umolC s-1)
+
+    J_ES = k_s * V  ! Somatic maintenance rate (umolC s-1)
+
+  end subroutine somatic_maintenance
+
+!======================================================================================
+! Maturity maintenance rate (umolC s-1) (Saraiva et al., 2012)
+!======================================================================================
+  subroutine maturity_maintenance( &
+    ! input parameters
+      M_H, k_J                     &
+    ! output parameters
+    , J_EJ)
+
+    ! input parameters
+    real(8), intent(in ) :: M_H   ! Bivalve reproduction buffer (umolC)
+    real(8), intent(in ) :: k_J   ! Volume-specific maturity maintenance rate coefficient (s-1)
+    ! output parameters
+    real(8), intent(out) :: J_EJ  ! Maturity maintenance rate (umolC s-1)
+
+    J_EJ = k_J * M_H  ! Maturity maintenance rate (umolC s-1)
+
+  end subroutine maturity_maintenance
+
+!======================================================================================
+! Growth (umolC s-1) (Saraiva et al., 2012)
+!======================================================================================
+  subroutine growth(    &
+    ! input parameters
+      J_EC, J_EJ, kappa &
+    ! output parameters
+    , J_EG)
+
+    ! input parameters
+    real(8), intent(out) :: J_EC  ! Mobilization flux (umolC s-1)
+    real(8), intent(in ) :: J_EJ  ! Maturity maintenance rate (umolC s-1)
+    real(8), intent(in ) :: kappa ! Allocation fraction to growth and somatic maintenance
+    ! output parameters
+    real(8), intent(out) :: J_EG  ! Growth rate (umolC s-1)
+
+    J_EG = kappa*J_EC - J_EJ  ! Growth rate (umolC s-1)
+
+  end subroutine growth
+
+!======================================================================================
+! Maturity and reproduction (umolC s-1) (Saraiva et al., 2012)
+!======================================================================================
+  subroutine maturity_reproduction(                   &
+    ! input parameters
+      M_H, J_EC, J_EJ, kappa, Mp_H                    &
+    , M_R, kappa_R, Rspawn, GSR, GSRsmawn, T, Tspawn  &
+    ! output parameters
+    , J_ER, JM_ER, JR_ER, Jspawn_ER)
+
+    ! input parameters
+    real(8), intent(in ) :: M_H   ! Bivalve maturity investment (umolC)
+    real(8), intent(in ) :: J_EC  ! Mobilization flux (umolC s-1)
+    real(8), intent(in ) :: J_EJ  ! Maturity maintenance rate (umolC s-1)
+    real(8), intent(in ) :: kappa ! Allocation fraction to growth and somatic maintenance
+    real(8), intent(in ) :: Mp_H  ! Cumulative maturity at puberty (umolC)
+                                  ! E_Hp (J)  Maturity at puberty
+                                  ! mu_E (J molC−1),  Energy content of reserves
+                                  ! Mp_H = E_Hp/mu_E = umolC
+    real(8), intent(in ) :: M_R      ! Bivalve reproduction buffer (umolC)
+    real(8), intent(in ) :: kappa_R  ! (no dim.) Reproduction efficiency
+    real(8), intent(in ) :: Rspawn   ! (s) Spawning period
+    real(8), intent(in ) :: GSR      ! (molC molC−1) Gonado-somatic ratio
+    real(8), intent(in ) :: GSRsmawn ! (molC molC−1) Gonado-somatic ratio to spawn
+    real(8), intent(in ) :: T        ! (oC) Temperature
+    real(8), intent(in ) :: Tspawn   ! (oC) Minimum temperature for spawning
+    ! output parameters
+    real(8), intent(out) :: J_ER  ! Flux allocated to reproduction/maturity (umolC s-1)
+    real(8), intent(out) :: JM_ER ! Flux to maturity (umolC s-1)
+    real(8), intent(out) :: JR_ER ! Flux to reproduction buffer (umolC s-1)
+    real(8), intent(out) :: Jspawn_ER ! Spawning (umolC s-1)
+
+    J_ER = (1.0d0 - kappa)*J_EC - J_EJ ! Flux allocated to reproduction/maturity (umolC s-1)
+
+    if (M_H < Mp_H) then
+      JM_ER = J_ER  ! Flux to maturity (umolC s-1)
+      JR_ER = 0.0d0 ! Flux to reproduction buffer (umolC s-1)
+    else
+      JM_ER = 0.0d0 ! Flux to maturity (umolC s-1)
+      JR_ER = J_ER  ! Flux to reproduction buffer (umolC s-1)
+    end if
+
+    if(GSR>=GSRsmawn .and. T>=Tspawn) then
+      Jspawn_ER = kappa_R * M_R / Rspawn
+    else
+      Jspawn_ER = 0.0d0
+    end if
+
+  end subroutine maturity_reproduction
+
 
 END MODULE mod_deb_model
-
-
-

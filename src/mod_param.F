@@ -202,6 +202,9 @@ MODULE mod_param
   real(8), allocatable :: p_sgrass(:,:,:)
   real(8), allocatable :: p_algae(:,:,:)
   real(8), allocatable :: p_sand(:,:)
+#if defined AQUACULTURE
+  real(8), allocatable :: dens_aqua(:,:,:)
+#endif
 
 #if defined SEDECO_SGD && defined SGD_ON
   real(8) :: sgd_flux        ! sumbarine groundwater discharge rate of grid (cm s-1)  
@@ -231,6 +234,7 @@ contains
 
     USE mod_reef_ecosys_param
     use mod_geochem
+    Use mod_aquaculture
    
     implicit none
 ! input parameters
@@ -253,7 +257,9 @@ contains
     real(8) :: d15N_NO3_0, d15N_NH4_0, d15N_DON_0(Ndom), d15N_PON_0(Npom)
     real(8) :: d15N_PhyN_0(Nphy), d15N_ZooN_0(Nzoo)
     real(8) :: p_coral_0(Ncl), p_algae_0(Nag), p_sgrass_0(Nsg), p_sand_0
-
+#ifdef AQUACULTURE
+    real(8) :: dens_aqua0(5)
+#endif
     namelist/initial/T0, S0, Sed1_0
     namelist/initial/TAlk0, TIC_0, Oxyg0
     namelist/initial/NO3_0, NH4_0, PO4_0
@@ -265,9 +271,16 @@ contains
     namelist/initial/d15N_NO3_0, d15N_NH4_0, d15N_DON_0, d15N_PON_0
     namelist/initial/d15N_PhyN_0, d15N_ZooN_0
     namelist/initial/p_coral_0, p_algae_0, p_sgrass_0, p_sand_0
- 
-    read (5, nml=initial)
+#ifdef AQUACULTURE
+    namelist/aquaculture_config/dens_aqua0
+#endif
+
     rewind(5)
+    read (5, nml=initial)
+#ifdef AQUACULTURE
+    rewind(5)
+    read (5, nml=aquaculture_config)
+#endif 
 !
 !-----------------------------------------------------------------------
 !  Initialize tracer identification indices.
@@ -416,6 +429,9 @@ contains
              p_sand  (LBi:UBi, LBj:UBj) ,   &
              p_algae (1,LBi:UBi, LBj:UBj)   )  !!! To be updated... !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
+#if defined AQUACULTURE
+   allocate( dens_aqua(Naq,LBi:UBi, LBj:UBj) )
+#endif
 
 !-----------------------------------------------------------------------
 !  Set initial conditions
@@ -554,7 +570,14 @@ contains
 #endif
         p_algae(1,i,j) = p_algae_0(1)
         p_sgrass(1,i,j)= p_sgrass_0(1)
-        
+
+#if defined AQUACULTURE
+        dens_aqua(1,i,j)= dens_aqua0(1)
+        dens_aqua(2,i,j)= dens_aqua0(2)
+        dens_aqua(3,i,j)= dens_aqua0(3)
+        dens_aqua(4,i,j)= dens_aqua0(4)
+#endif
+
         
       enddo
     enddo

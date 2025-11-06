@@ -265,12 +265,15 @@ PROGRAM main
   XI_size (:,:) = XI_size_in
   ETA_size(:,:) = ETA_size_in
 #endif
-  CALL initialize_reef_ecosys(1, N, 1, Im, 1, Jm      &
+  CALL initialize_reef_ecosys(1, N, z_w, 1, Im, 1, Jm      &
       , start_of_new_run    &   ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
 #ifdef SEAGRASS
       , XI_size, ETA_size   &   ! grid size XI-direction (meters); grid size ETA-direction (meters)
       , p_sgrass            &   ! seagrass coverage (habitat area in grid / grid area)
 #endif
+# ifdef BIVALVE
+      , dens_aqua           &   ! Aquaculture density
+# endif
 )
 !  call Coral_iniSizeDis
 !  call Coral_Size2Cover
@@ -910,6 +913,8 @@ PROGRAM main
       if (nSetting .eq. 7) then
         OUTFILE=trim(OUTFILE_prefix)//'-env_vprof_'//sFNUM//'.csv'
         CALL write_env_vprof(OUTFILE, time, N)
+        OUTFILE=trim(OUTFILE_prefix)//'-bivalve_vprof_'//sFNUM//'.csv'
+        CALL write_bivalve_vprof(OUTFILE, time, N)
       endif
 
       ifnum = ifnum + 1
