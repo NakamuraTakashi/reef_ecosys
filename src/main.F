@@ -114,7 +114,7 @@ PROGRAM main
 
   real(8) :: Fdep_sed_in
   real(8) :: MnO2_sed_in, FeOOH_sed_in, FeS2_sed_in
-  real(8) :: rCaCO3_sed_in, OrgC_sed_in
+  real(8) :: rCaCO3_sed_in, LPOC_sed_in, RPOC_sed_in
   real(8) :: sgd_flux_in, sgd_Tmp_in, sgd_Sal_in, sgd_DOx_in 
   real(8) :: sgd_TA_in, sgd_DIC_in, sgd_NO3_in, sgd_NH4_in 
   real(8) :: sgd_PO4_in
@@ -134,7 +134,7 @@ PROGRAM main
 
   namelist/sedeco_config/Fdep_sed_in
   namelist/sedeco_config/MnO2_sed_in, FeOOH_sed_in, FeS2_sed_in
-  namelist/sedeco_config/rCaCO3_sed_in, OrgC_sed_in
+  namelist/sedeco_config/rCaCO3_sed_in, LPOC_sed_in, RPOC_sed_in
   namelist/sedeco_config/sgd_flux_in, sgd_Tmp_in, sgd_Sal_in, sgd_DOx_in
   namelist/sedeco_config/sgd_TA_in, sgd_DIC_in, sgd_NO3_in, sgd_NH4_in
   namelist/sedeco_config/sgd_PO4_in
@@ -248,7 +248,8 @@ PROGRAM main
   MnO2_sed  = MnO2_sed_in   !! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
   FeOOH_sed = FeOOH_sed_in  !! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
   FeS2_sed  = FeS2_sed_in   !! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
-  OrgC_sed  = OrgC_sed_in   ! Organic carbon in sediments [nmol/g(DW)]
+  LPOC_sed  = LPOC_sed_in   !! Labile Organic carbon in sediments [nmol/g(DW)]
+  RPOC_sed  = RPOC_sed_in   !! Refractory Organic carbon in sediments [nmol/g(DW)]
   rCaCO3_sed = rCaCO3_sed_in ! Fraction of Calcium carbonate (CaCO3) in sediments [g/g(DW)]
 
 #if defined USE_HEAT
@@ -913,8 +914,10 @@ PROGRAM main
       if (nSetting .eq. 7) then
         OUTFILE=trim(OUTFILE_prefix)//'-env_vprof_'//sFNUM//'.csv'
         CALL write_env_vprof(OUTFILE, time, N)
+#if defined BIVALVE_TESTMODE
         OUTFILE=trim(OUTFILE_prefix)//'-bivalve_vprof_'//sFNUM//'.csv'
         CALL write_bivalve_vprof(OUTFILE, time, N)
+#endif
       endif
 
       ifnum = ifnum + 1

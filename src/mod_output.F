@@ -499,7 +499,7 @@ END SUBROUTINE files_close
 ! **********************************************************************
 !  Write vertical profile of bivalve data
 ! **********************************************************************
-
+#if defined BIVALVE_TESTMODE
   SUBROUTINE write_bivalve_vprof(OUT_FILE, date, N)
   
     USE mod_param
@@ -574,6 +574,7 @@ END SUBROUTINE files_close
     RETURN
 
   END SUBROUTINE write_bivalve_vprof
+#endif
 
 
 ! **********************************************************************

@@ -116,6 +116,7 @@ MODULE mod_sedecosys
 
   END TYPE T_SEDECO
   TYPE (T_SEDECO), allocatable :: SEDECO(:)
+!$acc declare create(SEDECO)
 
 CONTAINS
 
@@ -377,7 +378,7 @@ CONTAINS
           DO k=0,Nsed
             SEDECO(ng)%Tmp(k,i,j)  = 25.0d0     
             SEDECO(ng)%Sal(k,i,j)  = 34.0d0
-            SEDECO(ng)%O2 (k,i,j)  = 50.0d0        !DO  (umol L-1)
+            SEDECO(ng)%O2 (k,i,j)  =  0.0d0        !DO  (umol L-1)
             SEDECO(ng)%TA(k,i,j)  = 2232.0d0 ! TA (umol kg-1)
             cSO4 = 0.02824d0*34.0d0/35.0d0 *1.0d6  ! SO4 (umol L-1)
       
@@ -404,8 +405,8 @@ CONTAINS
             SEDECO(ng)%DIC(iCt,k,i,j)        = 1915.0d0 !DIC  (umol L-1)
             SEDECO(ng)%DOC(iCt,iLDOM,k,i,j)  = 10.0d0   !LDOC (umol L-1) 
             SEDECO(ng)%DOC(iCt,iRDOM,k,i,j)  = 50.0d0   !RDOC (umol L-1) 
-            SEDECO(ng)%POC(iCt,iLPOM,k,i,j)  = OrgC_sed*1.0d-6!LPOC (nmol g-1)
-            SEDECO(ng)%POC(iCt,iRPOM,k,i,j)  = OrgC_sed   !RPOC (nmol g-1)
+            SEDECO(ng)%POC(iCt,iLPOM,k,i,j)  = LPOC_sed !LPOC (nmol g-1) 
+            SEDECO(ng)%POC(iCt,iRPOM,k,i,j)  = RPOC_sed !RPOC (nmol g-1) 
             SEDECO(ng)%POC(iCt,iCPOM,k,i,j)  = 0.0d0 !CPOC (nmol g-1)
             SEDECO(ng)%PIC(iCt,k,i,j) = SEDECO(ng)%poro(k,i,j)*rCaCO3_sed  & ! poro[no dim.]*rCaCO3[no dim.]
                                          *2.7d0/100.0d0*1.0d9              & ! *2.7[g/cm3]/ 100[g/mol]*nano(1.0d9)
@@ -574,6 +575,8 @@ CONTAINS
 !    , Flux_SO4       &  ! SO4 flux   (nmol cm-2 s-1) * direction of water column to sediment is positive
 # endif
     )
+
+   !$acc routine seq
 
     USE mod_reef_ecosys_param
     USE mod_geochem
@@ -778,7 +781,6 @@ CONTAINS
     real(8) :: pHamb 
     ! real(8) :: redoxlevel(Nsed)    ! for debug / 1:O2, 2:NO3, 3:MnO2, 4:FeOOH, 5:SO4
 # endif
-
 ! ***********************************************************************************
 !!! executable statement
 

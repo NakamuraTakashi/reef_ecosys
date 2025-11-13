@@ -100,8 +100,9 @@
   FeS2_sed_in  = 1.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
 !  FeOOH_sed_in = 5.0d5   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
 !  FeS2_sed_in  = 5.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
-  OrgC_sed_in =  2.0d6   ! Organic carbon in sediments [nmol/g(DW)]
-                         !  (~2000 umolC g-1; Miyazima et al., 2015)
+  LPOC_sed_in = 2.0d3   ! Labile Organic carbon in sediments [nmol/g(DW)]
+  RPOC_sed_in = 2.0d6   ! Refractory Organic carbon in sediments [nmol/g(DW)]
+                         !  (~2000 umolC g-1; Miyajima et al., 2015)
   rCaCO3_sed_in = 0.8d0 ! Fraction of Calcium carbonate (CaCO3) in sediments [% DW]
 
 ! parameters of sumbarine groundwater discharge (set: SGD_ON)
