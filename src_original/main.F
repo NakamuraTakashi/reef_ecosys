@@ -103,7 +103,7 @@ PROGRAM main
   real(8) :: fvol_rc, fvol_ch
   real(8) :: dtrc_dt_sgd
 
-  integer :: in_file(20)
+  integer :: in_file(12)
   real(8) :: Tmax, time0
   integer :: nSetting
   integer :: Im, Jm, N
@@ -299,7 +299,7 @@ PROGRAM main
 
 !------ Set environmental parameters ----------------------------
 
-    CALL setdata(nSetting, in_file, dt, nstp)
+    CALL setdata(nSetting, in_file)
         
 #if defined REEF_FLOW
     if (nSetting .eq. 4) then
@@ -442,8 +442,7 @@ PROGRAM main
 #endif
 
 #if defined SEDECO_SGD && defined SGD_ON
-    ! sgd_flux  = sgd_flux_in
-    sgd_flux  = sgd
+    sgd_flux  = sgd_flux_in
     sgd_Tmp   = sgd_Tmp_in 
     sgd_Sal   = sgd_Sal_in 
     sgd_DOx   = sgd_DOx_in
@@ -866,26 +865,6 @@ PROGRAM main
           t(i,j,k,nstp,id)=t(i,j,k,nstp,id) + dtrc_dt_sgd*dt
 #endif
         end do
-
-!------------------------------------------------------------------------------
-
-      else if (nSetting .eq. 8) then
-        
-        !        t(i,j,k,nstp,iTemp)=t(i,j,k,nstp,iTemp)+0.
-        !        t(i,j,k,nstp,iSalt)=t(i,j,k,nstp,iSalt)+0.
-        !        t(i,j,k,nstp,iSedi)=t(i,j,k,nstp,iSedi)+0.
-                
-        do id=1,Nid
-
-          t(i,j,k,nstp,id)=t(i,j,k,nstp,id) + dtrc_dt(k,id)*dt
-#if defined SEDECO_SGD && defined SGD_ON
-          ! Overflowing of the SGD volume flux is assumed 
-          dtrc_dt_sgd = -0.01d0*sgd_flux *t(i,j,k,nstp,id)/dz(i,j,1)/dble(N)
-          t(i,j,k,nstp,id)=t(i,j,k,nstp,id) + dtrc_dt_sgd*dt
-#endif
-        end do
-
-
       end if
           
 !------------------------------------------------------------------------------
@@ -915,8 +894,6 @@ PROGRAM main
       endif
       
       write(*,*) 'Time (day): ', time  ! Output for standard out
-      ! write(*,*) 'pH', pH  ! Output for standard out
-      ! write(*,*) 'DOx', t(i,j,:,nstp,iOxyg)  ! Output for standard out
       write(sFNUM,'(I4.4)') ifnum
       CALL write_env_data(10)
 #if defined SEDIMENT_TESTMODE

@@ -71,10 +71,6 @@ CONTAINS
     , R_H2S          &   ! d[H2S]/dt (umol L-1 s-1)
     , R_S0           &   ! d[S]/dt (nmol g(DW)-1 s-1) *solid
     , R_SO4          &   ! d[SO42-]/dt (umol L-1 s-1)
-    ! output parameters
-    , pH             &   ! pH (total scale)
-    , Wcal           &   ! Calcite saturation state
-    , Warg           &   ! Aragonite saturation state
     )
 
 !-----------------------------------------------------------------------
@@ -112,7 +108,7 @@ CONTAINS
     real(8), intent(in) :: H2S(N_Ssp)
     real(8), intent(in) :: S0 (N_Ssp)
     real(8), intent(in) :: SO4(N_Ssp)
-! input and output parameters
+! output parameters
 !    real(8), intent(inout) :: R_Tmp
 !    real(8), intent(inout) :: R_Sal
     real(8), intent(inout) :: R_O2 
@@ -138,10 +134,6 @@ CONTAINS
     real(8), intent(inout) :: R_H2S(N_Ssp)
     real(8), intent(inout) :: R_S0 (N_Ssp)
     real(8), intent(inout) :: R_SO4(N_Ssp)
-! output parameters
-    real(8), intent(out) :: pH
-    real(8), intent(out) :: Wcal
-    real(8), intent(out) :: Warg
 
 ! =======================================================================
 !! -- Reaction parameters -----------------------------------------
@@ -307,7 +299,7 @@ CONTAINS
     real(8) :: cS0       
     real(8) :: cSO4
 
-    real(8) :: CO3, TK
+    real(8) :: CO3, TK, pH, Wcal, Warg
     integer :: isp, m
 
 ! =======================================================================

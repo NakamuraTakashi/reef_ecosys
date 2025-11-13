@@ -77,47 +77,6 @@ MODULE mod_param
   real(8) :: Tp
   integer :: num_wv
 
-  real(8), allocatable :: sgd_data(:)
-  real(8), allocatable :: sgd_time(:)
-  real(8) :: sgd
-  integer :: num_sgd
-
-  real(8), allocatable :: inpH_time(:)
-  real(8), allocatable :: inpH_data(:)
-  real(8) :: inpH
-  integer :: num_inpH
-  integer :: inpH_index
-  real(8), allocatable :: inDO_time(:)
-  real(8), allocatable :: inDO_data(:)
-  real(8) :: inDO
-  integer :: num_inDO
-  integer :: inDO_index
-  real(8), allocatable :: inDIC_time(:)
-  real(8), allocatable :: inDIC_data(:)
-  real(8) :: inDIC
-  integer :: num_inDIC
-  integer :: inDIC_index
-  real(8), allocatable :: inTA_time(:)
-  real(8), allocatable :: inTA_data(:)
-  real(8) :: inTA
-  integer :: num_inTA
-  integer :: inTA_index
-  real(8), allocatable :: inNH4_time(:)
-  real(8), allocatable :: inNH4_data(:)
-  real(8) :: inNH4
-  integer :: num_inNH4
-  integer :: inNH4_index
-  real(8), allocatable :: inNOx_time(:)
-  real(8), allocatable :: inNOx_data(:)
-  real(8) :: inNOx
-  integer :: num_inNOx
-  integer :: inNOx_index
-  real(8), allocatable :: inPO4_time(:)
-  real(8), allocatable :: inPO4_data(:)
-  real(8) :: inPO4
-  integer :: num_inPO4
-  integer :: inPO4_index
-
   integer, parameter :: iswrad  = 1
   integer, parameter :: idlwrad = 2
   integer, parameter :: iTair   = 3
@@ -130,15 +89,7 @@ MODULE mod_param
   integer, parameter :: iwtemp  = 10
   integer, parameter :: itide   = 11
   integer, parameter :: iwv     = 12
-  integer, parameter :: isgd    = 13
-  integer, parameter :: iinpH   = 14
-  integer, parameter :: iinDO   = 15
-  integer, parameter :: iinDIC  = 16
-  integer, parameter :: iinTA   = 17
-  integer, parameter :: iinNH4  = 18
-  integer, parameter :: iinNOx  = 19
-  integer, parameter :: iinPO4  = 20
-  
+
   integer :: id_swrad  = 1
   integer :: id_dlwrad = 1
   integer :: id_Tair   = 1
@@ -151,14 +102,7 @@ MODULE mod_param
   integer :: id_wtemp  = 1
   integer :: id_tide   = 1
   integer :: id_wv     = 1
-  integer :: id_sgd    = 1
-  integer :: id_iinpH  = 1
-  integer :: id_iinDO  = 1
-  integer :: id_iinDIC = 1
-  integer :: id_iinTA  = 1
-  integer :: id_iinNH4 = 1
-  integer :: id_iinNOx = 1
-  integer :: id_iinPO4 = 1
+
 
   real(8), allocatable :: WQ_time(:)
   real(8), allocatable :: TA_data(:)
@@ -322,17 +266,6 @@ contains
  
     read (5, nml=initial)
     rewind(5)
-
-
-    inpH_index = 1
-    inDO_index = 1
-    inDIC_index = 1
-    inTA_index = 1
-    inNH4_index = 1
-    inNOx_index = 1
-    inPO4_index = 1
-  
-
 !
 !-----------------------------------------------------------------------
 !  Initialize tracer identification indices.

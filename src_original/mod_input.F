@@ -20,7 +20,7 @@ contains
     
     implicit none
     
-    integer, intent(IN ) :: in_file(20)
+    integer, intent(IN ) :: in_file(12)
 
     character(256), allocatable :: SWRad_FILE(:)
     character(256), allocatable :: LWRad_FILE(:)
@@ -34,15 +34,6 @@ contains
     character(256), allocatable :: WTEMP_FILE(:)
     character(256), allocatable :: WLEVEL_FILE(:)
     character(256), allocatable :: WAVE_FILE(:)
-    character(256), allocatable :: SGD_FILE(:)
-    character(256), allocatable :: pH_FILE(:)
-    character(256), allocatable :: DO_FILE(:)
-    character(256), allocatable :: DIC_FILE(:)
-    character(256), allocatable :: TA_FILE(:)
-    character(256), allocatable :: NH4_FILE(:)
-    character(256), allocatable :: NOx_FILE(:)
-    character(256), allocatable :: PO4_FILE(:)
-
     integer :: Ryear, Rmonth, Rday
 
     integer, allocatable :: num_data(:)
@@ -52,13 +43,10 @@ contains
     integer :: Num_header = 0
 
     namelist/refdate/Ryear, Rmonth, Rday
-    namelist/input/SWRad_FILE, LWRad_FILE, Tair_FILE, Pair_FILE   &
-                 , Wind_FILE, Rain_FILE, Rh_FILE, Cloud_FILE      &
-                 , PPFD_FILE, WTEMP_FILE, WLEVEL_FILE, WAVE_FILE  &
-                 , SGD_FILE                                       &
-                 , pH_FILE, DO_FILE, DIC_FILE, TA_FILE            &
-                 , NH4_FILE, NOx_FILE, PO4_FILE
-
+    namelist/input/SWRad_FILE, LWRad_FILE, Tair_FILE, Pair_FILE  &
+                 , Wind_FILE, Rain_FILE, Rh_FILE, Cloud_FILE                 &
+                 , PPFD_FILE, WTEMP_FILE, WLEVEL_FILE, WAVE_FILE
+  
     read (5, nml=refdate)
     rewind(5)
 
@@ -121,46 +109,6 @@ contains
       allocate( WAVE_FILE(1) )
     else
       allocate( WAVE_FILE(in_file(iwv)) )
-    endif
-    if ( in_file(isgd) == 0 ) then
-      allocate( SGD_FILE(1) )
-    else
-      allocate( SGD_FILE(in_file(isgd)) )
-    endif
-    if ( in_file(iinpH) == 0 ) then
-      allocate( pH_FILE(1) )
-    else
-      allocate( pH_FILE(in_file(iinpH)) )
-    endif
-    if ( in_file(iinDO) == 0 ) then
-      allocate( DO_FILE(1) )
-    else
-      allocate( DO_FILE(in_file(iinDO)) )
-    endif
-    if ( in_file(iinDIC) == 0 ) then
-      allocate( DIC_FILE(1) )
-    else
-      allocate( DIC_FILE(in_file(iinDIC)) )
-    endif
-    if ( in_file(iinTA) == 0 ) then
-      allocate( TA_FILE(1) )
-    else
-      allocate( TA_FILE(in_file(iinTA)) )
-    endif
-    if ( in_file(iinNH4) == 0 ) then
-      allocate( NH4_FILE(1) )
-    else
-      allocate( NH4_FILE(in_file(iinNH4)) )
-    endif
-    if ( in_file(iinNOx) == 0 ) then
-      allocate( NOx_FILE(1) )
-    else
-      allocate( NOx_FILE(in_file(iinNOx)) )
-    endif
-    if ( in_file(iinPO4) == 0 ) then
-      allocate( PO4_FILE(1) )
-    else
-      allocate( PO4_FILE(in_file(iinPO4)) )
     endif
 
     read (5, nml=input)
@@ -308,57 +256,6 @@ contains
              , Ryear, Rmonth, Rday                                &
              , num_wv, wv_time, Hs_data, Tp_data)
     endif
-
-! ==== READ SGD data =============================================
-    if ( in_file(isgd) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(isgd), SGD_FILE, Num_header    &
-             , num_sgd, sgd_time, sgd_data)
-    endif    
-
-! ==== READ pH data =============================================
-    if ( in_file(iinpH) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinpH), pH_FILE, Num_header    &
-             , num_inpH, inpH_time, inpH_data)
-    endif    
-! ==== READ DO data =============================================
-    if ( in_file(iinDO) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinDO), DO_FILE, Num_header    &
-             , num_inDO, inDO_time, inDO_data)
-    endif    
-! ==== READ DIC data =============================================
-    if ( in_file(iinDIC) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinDIC), DIC_FILE, Num_header    &
-             , num_inDIC, inDIC_time, inDIC_data)
-    endif    
-! ==== READ TA data =============================================
-    if ( in_file(iinTA) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinTA), TA_FILE, Num_header    &
-             , num_inTA, inTA_time, inTA_data)
-    endif    
-! ==== READ NH4 data =============================================
-    if ( in_file(iinNH4) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinNH4), NH4_FILE, Num_header    &
-             , num_inNH4, inNH4_time, inNH4_data)
-    endif    
-! ==== READ NOX data =============================================
-    if ( in_file(iinNOx) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinNOx), NOx_FILE, Num_header    &
-             , num_inNOx, inNOx_time, inNOx_data)
-    endif    
-! ==== READ PO4 data =============================================
-    if ( in_file(iinPO4) > 0 ) then
-      Num_header = 0
-      CALL read_infiles_ascii(in_file(iinPO4), PO4_FILE, Num_header    &
-             , num_inPO4, inPO4_time, inPO4_data)
-    endif    
-
   end subroutine read_data
 
 ! **********************************************************************
@@ -783,7 +680,7 @@ contains
 !  Set environmental condition
 ! **********************************************************************
 
-  subroutine setdata(nSetting, in_file, dt, nstp)
+  subroutine setdata(nSetting, in_file)
 !   Setting of condition (nSetting)
 !
 !   nSetting = 1: Stable condition
@@ -797,17 +694,9 @@ contains
     implicit none
     
     integer, intent(IN ) :: nSetting
-    integer, intent(IN ) :: in_file(20)
-
-    real(8) :: dt
-
-    real(8) :: sgd_flux_in
-
-    integer :: nstp
+    integer, intent(IN ) :: in_file(12)
 
     integer :: id_tmp
-
-    namelist/sedeco_config/sgd_flux_in
 
 ! -- Set solar radiation data -----------------------------------------------
     if(in_file(iswrad)>0) then
@@ -926,14 +815,6 @@ contains
       Tp = 8.0d0
     endif
 
-! -- Set SGD data -----------------------------------------------
-    if(in_file(isgd)>0) then
-      id_tmp = id_sgd
-      CALL lin_interpol(time, sgd_time, sgd_data, num_sgd, sgd, id_sgd)   !data from file
-    else
-      sgd = sgd_flux_in
-    endif
-
     PFDsurf = PFD
 !----- Flux calculation -----------------------------------------
 
@@ -953,63 +834,6 @@ contains
     U10 = SQRT( Uwind*Uwind + Vwind*Vwind )
     
     fvol_pre =0.0d0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-!----- Force set params at time points for seagrass chamber -----------------------------------------
-    if (nSetting .eq. 8) then
-      ! inpH_time
-      ! inpH_data
-      if (inpH_index .le. num_inpH) then
-        if (inpH_time(inpH_index) .lt. time+dt/86400.) then
-          ! write(*,*) 'yayayaya', time  ! Output for standard out
-          ! write(*,*) 'inpH_index', inpH_index  ! Output for standard out
-          ! write(*,*) 'inpH_time', inpH_time(inpH_index)  ! Output for standard out
-          ! write(*,*) 'inpH_data', inpH_data(inpH_index)  ! Output for standard out
-          pH(:,:,:) = inpH_data(inpH_index)
-          inpH_index = inpH_index + 1
-        endif
-      endif
-      if (inDO_index .le. num_inDO) then
-        if (inDO_time(inDO_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iOxyg) = inDO_data(inDO_index)
-          inDO_index = inDO_index + 1
-        endif
-      endif
-      if (inDIC_index .le. num_inDIC) then
-        if (inDIC_time(inDIC_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iTIC(iCt)) = inDIC_data(inDIC_index)
-          inDIC_index = inDIC_index + 1
-        endif
-      endif
-      if (inTA_index .le. num_inTA) then
-        if (inTA_time(inTA_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iTAlk) = inTA_data(inTA_index)
-          inTA_index = inTA_index + 1
-        endif
-      endif
-      if (inNH4_index .le. num_inNH4) then
-        if (inNH4_time(inNH4_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iNH4(iNt)) = inNH4_data(inNH4_index)
-          inNH4_index = inNH4_index + 1
-        endif
-      endif
-      if (inNOx_index .le. num_inNOx) then
-        if (inNOx_time(inNOx_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iNO3(iNt)) = inNOx_data(inNOx_index)
-          inNOx_index = inNOx_index + 1
-        endif
-      endif
-      if (inPO4_index .le. num_inPO4) then
-        if (inPO4_time(inPO4_index) .lt. time+dt/86400.) then
-          t(:,:,:,nstp,iPO4(iPt)) = inPO4_data(inPO4_index)
-          inPO4_index = inPO4_index + 1
-        endif
-      endif
-      ! write(*,*) 'time', time  ! Output for standard out
-      ! write(*,*) 'inpH_data', inpH_data(inpH_index)  ! Output for standard out
-    endif
-    ! yt_edit
-  
     
       
     return
