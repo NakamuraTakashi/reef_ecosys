@@ -557,7 +557,7 @@ CONTAINS
 
 ! === Maturity and reproduction (umolC s-1) (Saraiva et al., 2012) =====================
   
-    GSR = BVLV(ng)%QCr(iCt,n,k,i,j) /        & 
+    GSR = BVLV(ng)%QCr(iCt,n,k,i,j) /        &
                (  BVLV(ng)%QCv(iCt,n,k,i,j)  &
                 + BVLV(ng)%QCe(iCt,n,k,i,j)  &
                 + BVLV(ng)%QCr(iCt,n,k,i,j) )
