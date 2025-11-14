@@ -14,7 +14,7 @@ contains
 !!! **********************************************************************
 !!!  Allocate module variables of reef ecosystem model
 !!! **********************************************************************
-SUBROUTINE allocate_reef_ecosys(ng, Ngrids, N, LBi, UBi, LBj, UBj)
+SUBROUTINE allocate_reef_ecosys(ng, Ngrids, Nz, LBi, UBi, LBj, UBj)
   USE mod_reef_ecosys_param
 # ifdef CORAL_POLYP
   USE mod_coral
@@ -34,7 +34,7 @@ SUBROUTINE allocate_reef_ecosys(ng, Ngrids, N, LBi, UBi, LBj, UBj)
     
   implicit none
 
-  integer, intent(in) :: ng, Ngrids, N, LBi, UBi, LBj, UBj
+  integer, intent(in) :: ng, Ngrids, Nz, LBi, UBi, LBj, UBj
 
 # ifdef CORAL_POLYP
   CALL allocate_coral(ng, Ngrids, LBi, UBi, LBj, UBj)
@@ -53,7 +53,7 @@ SUBROUTINE allocate_reef_ecosys(ng, Ngrids, N, LBi, UBi, LBj, UBj)
   write(*,*) 'mod_reef_ecosys.F allocate_reef_ecosys() finished sediment aloc'
 # endif
 # ifdef BIVALVE
-  CALL allocate_bivalve(ng, Ngrids, N, LBi, UBi, LBj, UBj)
+  CALL allocate_bivalve(ng, Ngrids, Nz, LBi, UBi, LBj, UBj)
   write(*,*) 'mod_reef_ecosys.F allocate_reef_ecosys() finished bivalve aloc'
 # endif
     
@@ -64,9 +64,10 @@ END SUBROUTINE allocate_reef_ecosys
 !!! **********************************************************************
 !!!  Set initial conditions for reef ecosystem model
 !!! **********************************************************************
-  SUBROUTINE initialize_reef_ecosys(ng, N, z_w, LBi, UBi, LBj, UBj &
+  SUBROUTINE initialize_reef_ecosys(ng, Nz, dz, LBi, UBi, LBj, UBj &
       , start_of_new_run    &   ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
 # ifdef SEAGRASS
+      , IstrR, IendR, JstrR, JendR      &
       , XI_size, ETA_size   &   ! grid size XI-direction (meters); grid size ETA-direction (meters)
       , p_sgrass            &   ! seagrass coverage (habitat area in grid / grid area)
 # endif
@@ -89,22 +90,23 @@ END SUBROUTINE allocate_reef_ecosys
     USE mod_sedecosys
 # endif
 # ifdef AQUACULTURE
-    USE mod_aquaculture
+    USE mod_aquaculture, ONLY : Naq
 # endif
 # ifdef BIVALVE
     USE mod_bivalve
 # endif
 
-    integer, intent(in) :: ng, N, LBi, UBi, LBj, UBj
-    real(8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N)       ! Depth at w-point ((meters, negative); z_w(0)=-h, z_w(N)=0.0
+    integer, intent(in) :: ng, Nz, LBi, UBi, LBj, UBj
+    real(8), intent(in) :: dz(LBi:UBi,LBj:UBj,Nz)           ! Thicknesses (m) of vertical RHO-points.
     logical, intent(in) :: start_of_new_run
 # ifdef SEAGRASS
-    real(8), intent(in) :: XI_size (    LBi:UBi,LBj:UBj)   ! grid size XI-direction (meters)
-    real(8), intent(in) :: ETA_size(    LBi:UBi,LBj:UBj)   ! grid size ETA-direction (meters)
-    real(8), intent(in) :: p_sgrass(Nsg,LBi:UBi,LBj:UBj)   ! seagrass coverage (habitat area in grid / grid area)
+    integer, intent(in) :: IstrR, IendR, JstrR, JendR
+    real(8), intent(in) :: XI_size (    IstrR:IendR,JstrR:JendR)   ! grid size XI-direction (meters)
+    real(8), intent(in) :: ETA_size(    IstrR:IendR,JstrR:JendR)   ! grid size ETA-direction (meters)
+    real(8), intent(in) :: p_sgrass(Nsg,IstrR:IendR,JstrR:JendR)   ! seagrass coverage (habitat area in grid / grid area)
 # endif
 # ifdef BIVALVE
-    real(8), intent(in) :: dens_aqua(Naq,LBi:UBi,LBj:UBj)   ! seagrass coverage (habitat area in grid / grid area)
+    real(8), intent(in) :: dens_aqua(Naq,LBi:UBi,LBj:UBj)   ! Aquaculture density
 # endif
 
     write(*,*) 'mod_reef_ecosys.F initialize_reef_ecosys() start_of_new_run =', start_of_new_run
@@ -118,7 +120,7 @@ END SUBROUTINE allocate_reef_ecosys
     write(*,*) 'mod_reef_ecosys.F initialize_reef_ecosys() finished sediment init'
 # endif
 # ifdef SEAGRASS
-    CALL initialize_seagrass( ng, LBi, UBi, LBj, UBj    &
+    CALL initialize_seagrass( ng, IstrR, IendR, JstrR, JendR    &
                             , start_of_new_run          & ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
                             , XI_size, ETA_size         & ! grid size XI-direction (meters); grid size ETA-direction (meters)
                             , p_sgrass                  & ! seagrass coverage (habitat area/grid area)
@@ -130,7 +132,7 @@ END SUBROUTINE allocate_reef_ecosys
     write(*,*) 'mod_reef_ecosys.F initialize_reef_ecosys() finished macroalgae init'
 # endif
 # ifdef BIVALVE
-    CALL initialize_bivalve(ng, N, z_w, LBi, UBi, LBj, UBj, dens_aqua(1,:,:), start_of_new_run)
+    CALL initialize_bivalve(ng, Nz, dz, LBi, UBi, LBj, UBj, dens_aqua, start_of_new_run)
     write(*,*) 'mod_reef_ecosys.F initialize_reef_ecosys() finished bivalv init'
 # endif
 

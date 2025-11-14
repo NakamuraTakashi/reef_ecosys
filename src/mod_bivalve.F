@@ -28,6 +28,7 @@ MODULE mod_bivalve
     real(8), pointer :: CaCO3(:,:,:,:,:)
     real(8), pointer :: Dead_CaCO3(:,:,:,:,:)
     real(8), pointer :: R   (:,:,:,:) 
+    real(8), pointer :: G   (:,:,:,:) 
     real(8), pointer :: V   (:,:,:,:) 
     real(8), pointer :: L   (:,:,:,:) 
     real(8), pointer :: Wd  (:,:,:,:) 
@@ -68,6 +69,7 @@ CONTAINS
     allocate( BVLV(ng)%Dead_CaCO3(N_Csp,Nbv,Nz,LBi:UBi,LBj:UBj) )
 
     allocate( BVLV(ng)%R        (Nbv,Nz,LBi:UBi,LBj:UBj) )
+    allocate( BVLV(ng)%G        (Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BVLV(ng)%V        (Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BVLV(ng)%L        (Nbv,Nz,LBi:UBi,LBj:UBj) )
     allocate( BVLV(ng)%Wd       (Nbv,Nz,LBi:UBi,LBj:UBj) )
@@ -83,7 +85,7 @@ CONTAINS
 !!!  set initial conditions for the bivalve model
 !!! **********************************************************************
 
-  SUBROUTINE initialize_bivalve(ng, Nz, z_w, LBi, UBi, LBj, UBj, dens_aqua, start_of_new_run)
+  SUBROUTINE initialize_bivalve(ng, Nz, dz, LBi, UBi, LBj, UBj, dens_aqua, start_of_new_run)
     USE mod_reef_ecosys_param
     USE mod_aquaculture
     USE mod_deb_model
@@ -91,8 +93,8 @@ CONTAINS
     implicit none
 ! input parameters
     integer, intent(in) :: ng, Nz, LBi, UBi, LBj, UBj
-    real(8), intent(in) :: z_w(0:Nz)
-    real(8), intent(in) :: dens_aqua(LBi:UBi,LBj:UBj)     ! Density of oyster aquaculture (rope m-3)
+    real(8), intent(in) :: dz(LBi:UBi,LBj:UBj,Nz)
+    real(8), intent(in) :: dens_aqua(Naq,LBi:UBi,LBj:UBj)     ! Density of oyster aquaculture (rope m-3)
     logical, intent(in) :: start_of_new_run               ! TRUE = initialize; FALSE = continue from previous run
     real(8) :: R13C
     integer :: i,j,k,n
@@ -101,65 +103,78 @@ CONTAINS
 !  Set initial conditions
 !   analytical start
     if( start_of_new_run ) then
+    !Initialize bivalve variables
+     BVLV(ng)%dens(:,:,:,:) = 0.0d0
+     BVLV(ng)%R   (:,:,:,:) = 0.0d0
+     BVLV(ng)%G   (:,:,:,:) = 0.0d0
+     BVLV(ng)%V   (:,:,:,:) = 0.0d0
+     BVLV(ng)%L   (:,:,:,:) = 0.0d0
+     BVLV(ng)%Ww  (:,:,:,:) = 0.0d0
+     BVLV(ng)%Wd  (:,:,:,:) = 0.0d0
+     BVLV(ng)%Wt  (:,:,:,:) = 0.0d0
+ 
+     BVLV(ng)%QCe(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QCv(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QCr(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QCh(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QNe(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QNv(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QNr(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QNh(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QPe(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QPv(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QPr(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%QPh(:,:,:,:,:) = 0.0d0
+     BVLV(ng)%CaCO3(:,:,:,:,:) = 0.0d0  ! CaCO3 in living bivalve (mmolC ind.-1)
+     BVLV(ng)%Dead_CaCO3(:,:,:,:,:) = 0.0d0  ! CaCO3 in dead bivalve (mmolC m-3)
+
      do j=LBj,UBj
        do i=LBi,UBi
+
+         if (dens_aqua(1,i,j) > 0.0d0) then
+           CALL dens_oyster_Shizugawa(dens_aqua(1,i,j), Nz, dz(i,j,:), BVLV(ng)%dens(iOys,:,i,j))   ! Initial bivalve density (ind. m-3)
+           do k=1,Nz !!!>>>>>>>>>>>DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            if(BVLV(ng)%dens(iOys,k,i,j)*0.0d0/=0.0d0) then
+              write(*,*) 'Error', i,j,k, BVLV(ng)%dens(iOys,k,i,j)
+              BVLV(ng)%dens(iOys,k,i,j) = 0.0d0
+            end if
+           enddo     !!!<<<<<<<<<<<DEBUG !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         end if
+
          do k=1,Nz
            do n=1,Nbv
-             BVLV(ng)%dens(n,k,i,j) = 0.0d0
-             BVLV(ng)%R   (n,k,i,j) = 0.0d0
-             BVLV(ng)%V   (n,k,i,j) = 0.0d0
-             BVLV(ng)%L   (n,k,i,j) = 0.0d0
-             BVLV(ng)%Ww  (n,k,i,j) = 0.0d0
-             BVLV(ng)%Wd  (n,k,i,j) = 0.0d0
-             BVLV(ng)%Wt  (n,k,i,j) = 0.0d0
- 
-             BVLV(ng)%QCe(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QCv(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QCr(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QCh(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QNe(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QNv(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QNr(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QNh(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QPe(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QPv(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QPr(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%QPh(:,n,k,i,j) = 0.0d0
-             BVLV(ng)%CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in living bivalve (mmolC ind.-1)
-             BVLV(ng)%Dead_CaCO3(:,n,k,i,j) = 0.0d0  ! CaCO3 in dead bivalve (mmolC m-3)
              
              ! initialize for each bivalve group
              if (n.eq.iOys) then ! 01: Oyster
-               BVLV(ng)%dens(n,k,i,j) =           &
-                 dens_oyster_Shizugawa(dens_aqua(i,j), Nz, k, z_w)   ! Initial bivalve density (ind. m-3)
+               if (BVLV(ng)%dens(iOys,k,i,j) > 0.0d0) then
+                 !--- Shell length (cm) -----------------
+                 BVLV(ng)%L(n,k,i,j)  = 5.0d0  ! cm 
+                 !--- Total (shell + flesh) weight (g) (L (cm) -> Wt g(ww)) (Kobayashi et al., 1997)-----------------
+                 BVLV(ng)%Wt(n,k,i,j) = 0.105d0  * BVLV(ng)%L(n,k,i,j)**2.967d0 ! g(wet weight)
+                 !--- Wet flesh (meat) weight (g) (L (cm) -> Ww g(dw)) (Kobayashi et al., 1997)-----------------
+                 BVLV(ng)%Ww(n,k,i,j) = 0.0126d0 * BVLV(ng)%L(n,k,i,j)**2.941d0 ! g(wet weight)
+                 !--- Flesh (meat) volume (g) (Ww (g) -> V (cm3)) -----------------
+                 BVLV(ng)%V(n,k,i,j)  = BVLV(ng)%Ww(n,k,i,j) / 1.0d0 ! 1.0 g/cm3
+                 !--- Dry flesh (meat) weight (g) (Ww g(ww) -> Wd g(dw)) -----------------
+                 BVLV(ng)%Wd(n,k,i,j) = BVLV(ng)%Ww(n,k,i,j)*0.19d0   ! 0.19+-0.02 g(dw)/g(ww) (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
+                 !--- CaCO3 in living bivalve (mmolC ind.-1)
+                 BVLV(ng)%CaCO3(iCt,n,k,i,j) = (BVLV(ng)%Wt(n,k,i,j)-BVLV(ng)%Ww(n,k,i,j)) * 10.0d0 ! = 1000.0d0 / 100.09d0 ! g -> mmol CaCO3               BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)*0.51d0/12.0d0 * 1.0d3 *0.9d0! mmolC individual-1
+                                                                        ! [carbon mass]/[dry mass] = 0.51+-0.07 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
+                                                                        ! w_V   = 12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
+                 BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)/(12.0d0/0.51d0) * 1.0d3 *0.8d0! mmolC individual-1
+                 BVLV(ng)%QCe(iCt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j) *0.2d0  ! mmolC individual-1
+                 BVLV(ng)%QCr(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
+                 BVLV(ng)%QCh(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
+                 BVLV(ng)%QNv(iNt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+                 BVLV(ng)%QNe(iNt,n,k,i,j) = BVLV(ng)%QCe(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+                 BVLV(ng)%QNr(iNt,n,k,i,j) = BVLV(ng)%QCr(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+                 BVLV(ng)%QNh(iNt,n,k,i,j) = BVLV(ng)%QCh(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
+                 BVLV(ng)%QPv(iPt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+                 BVLV(ng)%QPe(iPt,n,k,i,j) = BVLV(ng)%QCe(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+                 BVLV(ng)%QPr(iPt,n,k,i,j) = BVLV(ng)%QCr(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
+                 BVLV(ng)%QPh(iPt,n,k,i,j) = BVLV(ng)%QCh(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
 
-               !--- Shell length (cm) -----------------
-               BVLV(ng)%L(n,k,i,j)  = 5.0d0  ! cm 
-               !--- Total (shell + flesh) weight (g) (L (cm) -> Wt g(ww)) (Kobayashi et al., 1997)-----------------
-               BVLV(ng)%Wt(n,k,i,j) = 0.105d0  * BVLV(ng)%L(n,k,i,j)**2.967d0 ! g(wet weight)
-               !--- Wet flesh (meat) weight (g) (L (cm) -> Ww g(dw)) (Kobayashi et al., 1997)-----------------
-               BVLV(ng)%Ww(n,k,i,j) = 0.0126d0 * BVLV(ng)%L(n,k,i,j)**2.941d0 ! g(wet weight)
-               !--- Flesh (meat) volume (g) (Ww (g) -> V (cm3)) -----------------
-               BVLV(ng)%V(n,k,i,j)  = BVLV(ng)%Ww(n,k,i,j) / 1.0d0 ! 1.0 g/cm3
-               !--- Dry flesh (meat) weight (g) (Ww g(ww) -> Wd g(dw)) -----------------
-               BVLV(ng)%Wd(n,k,i,j) = BVLV(ng)%Ww(n,k,i,j)*0.19d0   ! 0.19+-0.02 g(dw)/g(ww) (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-               !--- CaCO3 in living bivalve (mmolC ind.-1)
-               BVLV(ng)%CaCO3(iCt,n,k,i,j) = (BVLV(ng)%Wt(n,k,i,j)-BVLV(ng)%Ww(n,k,i,j)) * 10.0d0 ! = 1000.0d0 / 100.09d0 ! g -> mmol CaCO3               BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)*0.51d0/12.0d0 * 1.0d3 *0.9d0! mmolC individual-1
-                                                                      ! [carbon mass]/[dry mass] = 0.51+-0.07 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-                                                                      ! w_V   = 12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-               BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)/(12.0d0/0.51d0) * 1.0d3 *0.8d0! mmolC individual-1
-               BVLV(ng)%QCe(iCt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j) *0.2d0  ! mmolC individual-1
-               BVLV(ng)%QCr(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
-               BVLV(ng)%QCh(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
-               BVLV(ng)%QNv(iNt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
-               BVLV(ng)%QNe(iNt,n,k,i,j) = BVLV(ng)%QCe(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
-               BVLV(ng)%QNr(iNt,n,k,i,j) = BVLV(ng)%QCr(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
-               BVLV(ng)%QNh(iNt,n,k,i,j) = BVLV(ng)%QCh(iCt,n,k,i,j)*16.0d0/106.0d0  ! mmolN individual-1
-               BVLV(ng)%QPv(iPt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
-               BVLV(ng)%QPe(iPt,n,k,i,j) = BVLV(ng)%QCe(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
-               BVLV(ng)%QPr(iPt,n,k,i,j) = BVLV(ng)%QCr(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
-               BVLV(ng)%QPh(iPt,n,k,i,j) = BVLV(ng)%QCh(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
-
+               end if
              end if
  
            enddo
@@ -585,6 +600,7 @@ CONTAINS
 
 ! === Bivalve's respiration rate (ummolC s-1 ind.-1) =========================
     R = J_ES + J_EJ + JR_ER !+ (J_EG - J_VG)
+    BVLV(ng)%R(n,k,i,j) = R
 
 !     === Mass balance ===
     dDOx_dt    = dDOx_dt    - R
@@ -636,7 +652,8 @@ CONTAINS
     G = (  (BVLV(ng)%Wt(n,k,i,j)-BVLV(ng)%Ww(n,k,i,j)) * 10.0d0       &
           - BVLV(ng)%CaCO3(iCt,n,k,i,j)                         )/dt
     G = MAX( G, 0.0d0 )
- 
+    BVLV(ng)%G(n,k,i,j) = G
+
 !     === Mass balance ===
     dCaCO3_dt(:) = dCaCO3_dt(:) + G*aC_calc(1:N_Csp)*rDIC(:)
     dDIC_dt(:)   = dDIC_dt(:)   - G*aC_calc(1:N_Csp)*rDIC(:)  ! calcification
@@ -653,6 +670,7 @@ CONTAINS
     dNH4_dt(:)    = dNH4_dt(:)    * BVLV(ng)%dens(n,k,i,j)
     dPO4_dt(:)    = dPO4_dt(:)    * BVLV(ng)%dens(n,k,i,j)
     dDOC_dt(:,:)  = dDOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
+    dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
     dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
     dDON_dt(:,:)  = dDON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
     dPON_dt(:,:)  = dPON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)

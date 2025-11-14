@@ -266,9 +266,10 @@ PROGRAM main
   XI_size (:,:) = XI_size_in
   ETA_size(:,:) = ETA_size_in
 #endif
-  CALL initialize_reef_ecosys(1, N, z_w, 1, Im, 1, Jm      &
+  CALL initialize_reef_ecosys(1, N, dz, 1, Im, 1, Jm      &
       , start_of_new_run    &   ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
 #ifdef SEAGRASS
+      , 1, Im, 1, Jm        &   ! grid size info
       , XI_size, ETA_size   &   ! grid size XI-direction (meters); grid size ETA-direction (meters)
       , p_sgrass            &   ! seagrass coverage (habitat area in grid / grid area)
 #endif
