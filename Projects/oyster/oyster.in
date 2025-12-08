@@ -6,7 +6,7 @@
 &ecosys_config
 ! Simulation period     
   Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-!  Tmax = 10.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+!  Tmax = 30.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
 !  ymax = 1.0d0 !years
 ! Start time
   time0 = 0.0d0 ! day

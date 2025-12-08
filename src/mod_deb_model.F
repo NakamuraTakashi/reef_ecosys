@@ -158,7 +158,7 @@ CONTAINS
 
     ! input parameters
     real(8), intent(in ) :: V       ! Body Volume (cm3)
-    real(8), intent(in ) :: M_E     ! Reserve biomass (umolC)
+    real(8), intent(in ) :: M_E     ! Reserve biomass (mmolC)
     real(8), intent(in ) :: J_ES    ! Somatic maintenance rate (umolC s-1)
     real(8), intent(in ) :: cond    ! Energy conductance (cm s-1)
     real(8), intent(in ) :: kappa   ! Allocation fraction to growth and somatic maintenance
@@ -171,10 +171,10 @@ CONTAINS
 
     real(8) :: E_m   !Reserve density (umolC cm-3)
 
-    E_m = M_E / V  ! Reserve density (umolC cm-3)
+    E_m = M_E*1.0d3 / V   ! Reserve density (umolC cm-3)
 
-!    J_EC = E_m/(k_m+kappa*E_m)*(k_m*cond*V**(2.0d0/3.0d0) + J_ES)  ! Mobilization flux (umolC s-1)
     J_EC = E_m/(k_m+kappa*E_m)*(k_m*cond*V**(2.0d0/3.0d0) + J_ES)  ! Mobilization flux (umolC s-1)
+!    J_EC = E_m/(k_m+kappa*E_m)*(k_m*cond*V**(2.0d0/3.0d0)) + J_ES  ! Mobilization flux (umolC s-1)
 
   end subroutine mobilization_flux
 
@@ -210,12 +210,12 @@ CONTAINS
     , J_EJ)
 
     ! input parameters
-    real(8), intent(in ) :: M_H   ! Bivalve reproduction buffer (umolC)
+    real(8), intent(in ) :: M_H   ! Bivalve reproduction buffer (mmolC)
     real(8), intent(in ) :: k_J   ! Volume-specific maturity maintenance rate coefficient (s-1)
     ! output parameters
     real(8), intent(out) :: J_EJ  ! Maturity maintenance rate (umolC s-1)
 
-    J_EJ = k_J * M_H  ! Maturity maintenance rate (umolC s-1)
+    J_EJ = k_J * M_H*1.0d3 ! Maturity maintenance rate (umolC s-1)
 
   end subroutine maturity_maintenance
 
@@ -250,15 +250,15 @@ CONTAINS
     , J_ER, JM_ER, JR_ER, Jspawn_ER)
 
     ! input parameters
-    real(8), intent(in ) :: M_H   ! Bivalve maturity investment (umolC)
+    real(8), intent(in ) :: M_H   ! Bivalve maturity investment (mmolC)
     real(8), intent(in ) :: J_EC  ! Mobilization flux (umolC s-1)
     real(8), intent(in ) :: J_EJ  ! Maturity maintenance rate (umolC s-1)
     real(8), intent(in ) :: kappa ! Allocation fraction to growth and somatic maintenance
-    real(8), intent(in ) :: Mp_H  ! Cumulative maturity at puberty (umolC)
+    real(8), intent(in ) :: Mp_H  ! Cumulative maturity at puberty (mmolC)
                                   ! E_Hp (J)  Maturity at puberty
                                   ! mu_E (J molC−1),  Energy content of reserves
                                   ! Mp_H = E_Hp/mu_E = umolC
-    real(8), intent(in ) :: M_R      ! Bivalve reproduction buffer (umolC)
+    real(8), intent(in ) :: M_R      ! Bivalve reproduction buffer (mmolC)
     real(8), intent(in ) :: kappa_R  ! (no dim.) Reproduction efficiency
     real(8), intent(in ) :: Rspawn   ! (s) Spawning period
     real(8), intent(in ) :: GSR      ! (molC molC−1) Gonado-somatic ratio
@@ -282,7 +282,7 @@ CONTAINS
     end if
 
     if(GSR>=GSRsmawn .and. T>=Tspawn) then
-      Jspawn_ER = kappa_R * M_R / Rspawn
+      Jspawn_ER = kappa_R * M_R*1.0d3 / Rspawn
     else
       Jspawn_ER = 0.0d0
     end if
