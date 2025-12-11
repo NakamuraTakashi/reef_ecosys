@@ -5,7 +5,8 @@
 
 &ecosys_config
 ! Simulation period     
-  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+!  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+  Tmax = 730.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
 !  Tmax = 30.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
 !  ymax = 1.0d0 !years
 ! Start time
@@ -21,9 +22,9 @@
 !                6: Flume simulation of Comeau et al. (2016) experiments   
 !                7: Vertical profile simulation   
 !  nSetting = 7
-  nSetting = 1
+  nSetting = 3
 
-  Im = 1
+  Im = 2  ! Im = 2 for nSetting = 3
   Jm = 1
   N  = 20
 
@@ -87,7 +88,7 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/test01'
+  OUTFILE_prefix = 'output/oys_dens0.002'
 /
 
 &sedeco_config
@@ -139,7 +140,8 @@
           !  05 Salmon (not used) 
           !
           !      01      02        03      04      05
-  dens_aqua0  = 0.01d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
+!  dens_aqua0  = 0.01d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
+  dens_aqua0  = 0.002d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
           !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
 /
 

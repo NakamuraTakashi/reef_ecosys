@@ -292,8 +292,7 @@ CONTAINS
 !    real(8), parameter :: C_Rmax  (1) = [ 1.0d-6 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
     ! {P_Xm}      = 560 J cm-3 d-1　（Van der Veer et al., 2006)
     ! {P_Xm}/mu_E = 1.06d-3 molC cm-3 d-1 = 1.22d-2 umolC cm-3 s-1
-!    real(8), parameter :: C_Rmax  (1) = [ 1.22d-2 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
-    real(8), parameter :: C_Rmax  (1) = [ 1.0d-4 ] !!!! Tuning parameter !!! Maximum surface area specific clearance rate (L s-1 cm-2)
+    real(8), parameter :: C_Rmax  (1) = [ 1.22d-2 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
     ! Maximum surface area specific filtration rate (umol s−1 cm−2)
     !  4.8d-4 (molC d−1 cm−2), Rosland et al. (2009)
     real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster
@@ -308,35 +307,14 @@ CONTAINS
   ! --- Assimiration related parameters ---
     real(8), parameter :: y_EX(1) = [ 0.75d0 ] ! Yield coefficient of reserves in algal structure (Saraiva et al., 2012)
   ! --- Somatic maintenance related parameters ---
-    ! [p_M] = 18.5 (J d-1 cm-3),  volume specific somatic maintenance rate (Ren & Schiel, 2008)
+    real(8), parameter :: mu_E(1) = [ 5.29d5 ] ! (J molC-1), Energy content of reserves (Ren & Schiel, 2008)
     ! mu_E = 22.49 (J mg−1) = 5.29d5 (J molC-1),  Energy content of reserves (Ren & Schiel, 2008)
     !                        12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-    ! k_s = [p_M]/mu_E = 3.496d-5 molC d-1 cm-3 = 4.05d-4 umolC s-1 cm-3
-    real(8), parameter :: k_s(1) = [ 4.05d-4 ] ! (umolC s-1 cm-3), volume specific somatic maintenance rate
+    real(8), parameter :: p_M(1) = [ 2.14d-4 ] ! (J s-1 cm-3), volume specific somatic maintenance rate (18.5 (J d-1 cm-3): Ren & Schiel, 2008)
   ! --- Mobilization flux related parameters ---
-    ! [E_G] = 2900 (J cm-3)  Specific cost for structure (Ren & Schiel, 2008)
-    ! mu_E = 22.49 (J mg−1) = 5.29d5 (J molC-1),  Energy content of reserves (Ren & Schiel, 2008)
-    !                        12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-    ! k_m = [E_G]/mu_E = 5.480d-3 molC cm-3 = 5.48d3 umolC cm-3
-    real(8), parameter :: k_m(1)  = [ 5.48d3  ]  ! (umolC cm-3)
+    real(8), parameter :: E_G(1)  = [ 2.9d3 ]  !  Specific cost for structure ([E_G] = 2900 (J cm-3), Ren & Schiel, 2008)
     real(8), parameter :: cond(1) = [ 3.83d-6 ]  ! (cm s-1) Energy conductance; 0.01381 (cm h-1), (Monaco & McQuaid, 2018)
-    real(8), parameter :: kappa(1)= [ 0.45d0  ]  ! (no dim.) Allocation fraction to growth and somatic maintenance, (van der Veer et al. 2006)
-  ! --- Maturity maintenance related parameters ---
-    ! [p_M] = 18.5 (J d-1 cm-3),  volume specific somatic maintenance rate (Ren & Schiel, 2008)
-    ! [E_G] = 2900 (J cm-3)  Specific cost for structure (Ren & Schiel, 2008)
-    ! k_J = k_M = [p_M]/[E_G] = 6.38d-3 d-1 = 7.38d-8 s-1
-    real(8), parameter :: k_J(1) = [ 7.38d-8 ] ! (s-1)
-  ! --- Growth related parameters ---
-    ! y_VE = [M_V]*mu_E/[E_G]
-    !        [M_V] = d_V/w_V
-    ! mu_E = 22.49 (J mg−1) = 5.29d5 (J molC-1),  Energy content of reserves (Ren & Schiel, 2008)
-    ! [E_G] = 2900 (J cm-3)  Specific cost for structure (Ren & Schiel, 2008)
-    ! d_V   = 0.19 (g(dw)/cm3)  0.19+-0.02 g(dw)/g(ww) (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021).
-    !                           1.0 g(ww)/cm3 
-    ! w_V   = 12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-    ! [M_V] = d_V/w_V = 0.19d0 / (12.0d0/0.51d0) = 8.075d-3 molC cm-3
-    ! y_VE = [M_V]*mu_E/[E_G] = 8.075d-3 * 5.29d5 / 2900 = 1.472d0 (no dim.)
-!    real(8), parameter :: y_VE(1) = [ 1.472d0 ] ! (no dim.) ??????????????
+    real(8), parameter :: kappa(1)= [ 0.65d0  ]  ! (no dim.) Allocation fraction to growth and somatic maintenance, (Ren & Schiel, 2008)
   ! --- Maturity and reproduction related parameters --- 
     ! E_Hp (J) = 1.58d-2 (J)  Maturity at puberty (Saraiva et al., 2011)
     ! mu_E = 22.49 (J mg−1) = 5.29d5 (J molC-1),  Energy content of reserves (Ren & Schiel, 2008)
@@ -344,7 +322,7 @@ CONTAINS
     ! Mp_H = E_Hp/mu_E = 2.99d-4 molC = 2.99d-1 mmolC
     real(8), parameter :: Mp_H(1)     = [ 2.99d-1 ]  ! Cumulative maturity at puberty (mmolC) (Saraiva et al., 2011)
     real(8), parameter :: kappa_R(1)  = [ 0.7d0  ]  ! (no dim.) Reproduction efficiency (Pouvreau et al., 2006)
-    real(8), parameter :: Rspawn(1)   = [ 86400.0d0 ]  ! (s) Spawning period (1 day? assumed in Saraiva et al. (2012))
+    real(8), parameter :: Rspawn(1)   = [ 1.0d0 ]  ! (days) Spawning period (1 day? assumed in Saraiva et al. (2012))
     real(8), parameter :: GSRspawn(1) = [ 0.46d0 ]  ! (molC molC−1) Gonado-somatic ratio to spawn (Bernard et al., 2011)
     real(8), parameter :: Tspawn(1)   = [ 19.0d0 ]  ! (oC) Minimum temperature for spawning, (Bernard et al., 2011)
   ! --- Mortality (s-1) --- 
@@ -367,6 +345,7 @@ CONTAINS
     real(8) :: JM_ER ! Flux to maturity (umolC s-1)
     real(8) :: JR_ER ! Flux to reproduction buffer (umolC s-1)
     real(8) :: Jspawn_ER ! Spawning (umolC s-1)
+    real(8) :: k_J   ! Volume-specific maturity maintenance rate (s-1)
     real(8) :: GSR   ! Gonado-somatic ratio
     real(8) :: R     ! Respiration rate (umolC s-1)
     real(8) :: G, G0 ! Calcification rate (umolC s-1)
@@ -477,16 +456,18 @@ CONTAINS
 !======================================================================================
 
 ! === Somatic maintenance rate (umolC s-1) (Saraiva et al., 2012) =======
-  CALL somatic_maintenance(           &
+  CALL somatic_maintenance(                 &
     ! input parameters
-      BVLV(ng)%V(n,k,i,j), k_s(n)  &
+      BVLV(ng)%V(n,k,i,j), p_M(n), mu_E(n)  &
     ! output parameters
     , J_ES)
 
 ! === Maturity maintenance rate (umolC s-1) (Saraiva et al., 2012) ====== 
-  CALL maturity_maintenance(                &
+    k_J = p_M(n) / E_G(n)  ! Volume-specific maturity maintenance rate (s-1)
+                           ! s-1 = (J s-1 cm-3)/(J cm-3)
+    CALL maturity_maintenance(                &
     ! input parameters
-      BVLV(ng)%QCh(iCt,n,k,i,j), k_J(n)  &
+      BVLV(ng)%QCh(iCt,n,k,i,j), k_J          &
     ! output parameters
     , J_EJ)
 
@@ -550,7 +531,7 @@ CONTAINS
     CALL mobilization_flux(                          &
     ! input parameters
       BVLV(ng)%V(n,k,i,j), BVLV(ng)%QCe(iCt,n,k,i,j) &
-    , J_ES, cond(n), kappa(n), k_m(n)                &
+    , J_ES, cond(n), kappa(n), E_G(n), mu_E(n)       &
     ! output parameters
     , J_EC)
 
@@ -562,7 +543,7 @@ CONTAINS
 ! === Growth (umolC s-1) (Saraiva et al., 2012) =========================
     CALL growth(              &
     ! input parameters
-      J_EC, J_EJ, kappa(n)    &
+      J_EC, J_ES, kappa(n)    &
     ! output parameters
     , J_EG )
 
@@ -583,6 +564,7 @@ CONTAINS
       BVLV(ng)%QCh(iCt,n,k,i,j), J_EC, J_EJ, kappa(n), Mp_H(n)  &
     , BVLV(ng)%QCr(iCt,n,k,i,j), kappa_R(n), Rspawn(n)          &
     , GSR, GSRspawn(n), Tmp, Tspawn(n)                          &
+    , date                                                      &
     ! output parameters
     , J_ER, JM_ER, JR_ER, Jspawn_ER)
 

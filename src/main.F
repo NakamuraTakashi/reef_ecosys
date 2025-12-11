@@ -36,6 +36,12 @@ PROGRAM main
   integer :: inight = 1 ! Timer for setting 6
   integer :: iflag = 1 ! Timer for setting 6
   integer :: iclose = 0 ! Timer for setting 6
+#if defined SAKAMAKI_ET_AL_2025
+  real(8), parameter :: dx = 40.0d0  ! grid size in x-direction (m)
+  real(8), parameter :: vel = 0.01d0 ! constant flow velocity (m s-1)
+  real(8), parameter :: mgC2umolC = 1.0d3/12.0d0 ! conversion factor from mgC to umolC
+
+#endif
 
   real(8), allocatable :: Tmp(:)               ! Temperature (oC)
   real(8), allocatable :: Sal(:)               ! Salinity (PSU)
@@ -703,6 +709,27 @@ PROGRAM main
 
       else if (nSetting .eq. 3) then
 
+#if defined SAKAMAKI_ET_AL_2025
+        t(2,j,k,nstp,iTemp) = 15.0d0+7.0d0*cos(2.0d0*PI*(time-30.0d0)/365.0d0)
+        t(i,j,k,nstp,iTemp) = t(2,j,k,nstp,iTemp)
+
+        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*time/365.0d0) )
+        t(2,j,k,nstp,iPhyN(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rNCp(iDtm)
+        t(2,j,k,nstp,iPhyP(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rPCp(iDtm)
+#endif
+        do id=1,Nid
+
+          t(i,j,k,nstp,id)=t(i,j,k,nstp,id)           &
+                           + ( dtrc_dt(k,id)          &
+                              -vel*t(i,j,k,nstp,id)/dx  &
+                              +vel*t(2,j,k,nstp,id)/dx )*dt
+
+#if defined SEDECO_SGD && defined SGD_ON
+          ! Overflowing of the SGD volume flux is assumed 
+          dtrc_dt_sgd = -0.01d0*sgd_flux *t(i,j,k,nstp,id)/dz(i,j,1)/dble(N)
+          t(i,j,k,nstp,id)=t(i,j,k,nstp,id) + dtrc_dt_sgd*dt
+#endif
+        end do
 
 
 !---------- Reef condition ------------------------------------
