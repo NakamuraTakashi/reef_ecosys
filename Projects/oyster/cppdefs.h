@@ -1,11 +1,11 @@
 
 #define SAKAMAKI_ET_AL_2025
 
-#define SEDIMENT
+/*#define SEDIMENT*/
 
 /*** submarine groundwater discharge ***/
 
-#define SGD_ON    /*Original CPP flag */
+/*#define SGD_ON*/    /*Original CPP flag */
 
 /***  Biological model options. (Original CPP flags) ***/
 
@@ -42,7 +42,7 @@
 /*# define MACROALGAE*/   /* USE algae module  */
 # define BIVALVE   /* USE bivalve module  */
 # define FOODWEB      /* USE foodweb module */
-# define SEDIMENT_ECOSYS        /* USE sedecosys module  */
+/*# define SEDIMENT_ECOSYS*/        /* USE sedecosys module  */
 
 # define AIR_SEA_GAS_EXCHANGE
 

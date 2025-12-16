@@ -34,5 +34,5 @@ rm *.mod
 #
 mkdir -p output
 #
-./ecosys_test.exe < oyster0.001.in
+./ecosys_test.exe < oyster0.01.in
 #

@@ -635,6 +635,7 @@ END SUBROUTINE files_close
     i=1
     j=1
     k=1
+!    k=20
     nstp=1
 
 #if defined CARBON_ISOTOPE

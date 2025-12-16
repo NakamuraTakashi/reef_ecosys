@@ -26,11 +26,11 @@
 
   Im = 2  ! Im = 2 for nSetting = 3
   Jm = 1
-  N  = 20
+  N  = 1
 
-  dt = 1.5d0 ! Time step (sec)
+  dt = 60.0d0 ! Time step (sec)
 
-  depth = 20.0d0 ! Set depth (m)
+  depth = 9.0d0 ! Set depth (m)
 
   isplitc  = 20
 

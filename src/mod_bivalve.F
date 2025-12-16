@@ -96,6 +96,10 @@ CONTAINS
     real(8), intent(in) :: dz(LBi:UBi,LBj:UBj,Nz)
     real(8), intent(in) :: dens_aqua(Naq,LBi:UBi,LBj:UBj)     ! Density of oyster aquaculture (rope m-3)
     logical, intent(in) :: start_of_new_run               ! TRUE = initialize; FALSE = continue from previous run
+! --- Dynamic Energy Budget (DEB) model parameters ---
+    real(8), parameter :: delta_M(1) = [   0.245d0] ! (no dim.)      Shape parameter (0.175: Van der Veer et al., 2006; 0.245: Sakamaki et al., 2025)
+    real(8), parameter :: C2Wd(1) = [12.0d0/0.51d0] ! (g(dw) molC−1) [carbon mass]/[dry mass] = 0.51+-0.07 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
+    real(8), parameter :: Ww2Wd(1)   = [   0.19d0 ] ! (g(dw) cm−3)   ! 0.19+-0.02 g(dw)/g(ww), 1g(ww)/cm3 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
     real(8) :: R13C
     integer :: i,j,k,n
 
@@ -148,20 +152,11 @@ CONTAINS
              if (n.eq.iOys) then ! 01: Oyster
                if (BVLV(ng)%dens(iOys,k,i,j) > 0.0d0) then
                  !--- Shell length (cm) -----------------
-                 BVLV(ng)%L(n,k,i,j)  = 5.0d0  ! cm 
-                 !--- Total (shell + flesh) weight (g) (L (cm) -> Wt g(ww)) (Kobayashi et al., 1997)-----------------
-                 BVLV(ng)%Wt(n,k,i,j) = 0.105d0  * BVLV(ng)%L(n,k,i,j)**2.967d0 ! g(wet weight)
-                 !--- Wet flesh (meat) weight (g) (L (cm) -> Ww g(dw)) (Kobayashi et al., 1997)-----------------
-                 BVLV(ng)%Ww(n,k,i,j) = 0.0126d0 * BVLV(ng)%L(n,k,i,j)**2.941d0 ! g(wet weight)
-                 !--- Flesh (meat) volume (g) (Ww (g) -> V (cm3)) -----------------
-              !   BVLV(ng)%V(n,k,i,j)  = BVLV(ng)%Ww(n,k,i,j) / 1.0d0 ! 1.0 g/cm3
-                 !--- Dry flesh (meat) weight (g) (Ww g(ww) -> Wd g(dw)) -----------------
-                 BVLV(ng)%Wd(n,k,i,j) = BVLV(ng)%Ww(n,k,i,j)*0.19d0   ! 0.19+-0.02 g(dw)/g(ww) (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-                 !--- CaCO3 in living bivalve (mmolC ind.-1)
-                 BVLV(ng)%CaCO3(iCt,n,k,i,j) = (BVLV(ng)%Wt(n,k,i,j)-BVLV(ng)%Ww(n,k,i,j)) * 10.0d0 ! = 1000.0d0 / 100.09d0 ! g -> mmol CaCO3               BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)*0.51d0/12.0d0 * 1.0d3 *0.9d0! mmolC individual-1
-                                                                        ! [carbon mass]/[dry mass] = 0.51+-0.07 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
+                 BVLV(ng)%L(n,k,i,j)  = 5.0d0  ! cm
+                 !--- Body volume (cm3) ----------------- 
+                 BVLV(ng)%V(n,k,i,j)  = (delta_M(n)*BVLV(ng)%L(n,k,i,j))**3.0d0  ! mmolC -> cm3
                                                                         ! w_V   = 12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
-                 BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)/(12.0d0/0.51d0) * 1.0d3 *0.99d0! mmolC individual-1
+                 BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%V(n,k,i,j)*Ww2Wd(n)/C2Wd(n)*1.0d3 *0.99d0! mmolC individual-1
                  BVLV(ng)%QCe(iCt,n,k,i,j) = BVLV(ng)%QCv(iCt,n,k,i,j) *0.01d0  ! mmolC individual-1
                  BVLV(ng)%QCr(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
                  BVLV(ng)%QCh(iCt,n,k,i,j) = 0.0d0 ! mmolC individual-1
@@ -173,9 +168,17 @@ CONTAINS
                  BVLV(ng)%QPe(iPt,n,k,i,j) = BVLV(ng)%QCe(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
                  BVLV(ng)%QPr(iPt,n,k,i,j) = BVLV(ng)%QCr(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
                  BVLV(ng)%QPh(iPt,n,k,i,j) = BVLV(ng)%QCh(iCt,n,k,i,j)* 1.0d0/106.0d0  ! mmolP individual-1
-
-                 BVLV(ng)%V(n,k,i,j)  = BVLV(ng)%QCv(iCt,n,k,i,j) * 0.124d0  ! mmolC -> cm3
-
+                 !--- Total dry weight (g) (mmolC -> g(dw)) -----------------
+                 BVLV(ng)%Wd(n,k,i,j) = (  BVLV(ng)%QCe(iCt,n,k,i,j) + BVLV(ng)%QCv(iCt,n,k,i,j)    &
+                                         + BVLV(ng)%QCr(iCt,n,k,i,j) + BVLV(ng)%QCh(iCt,n,k,i,j) )  &
+                                         * C2Wd(n) * 1.0d-3  ! mmolC -> g(dw)  !!!!! Check the conversion factor !!!!!!
+                 !--- Wet flesh (meat) weight (g) (Wd g(dw)-> Ww g(ww)) -----------------
+                 BVLV(ng)%Ww(n,k,i,j) = BVLV(ng)%Wd(n,k,i,j) / Ww2Wd(n)
+                 !--- Total (shell + flesh) weight (g) (L (cm) -> Wt g(ww)) (Kobayashi et al., 1997)-----------------
+                 BVLV(ng)%Wt(n,k,i,j) = 0.105d0 * BVLV(ng)%L(n,k,i,j)**2.967d0 ! g(wet weight)
+                 !--- CaCO3 in living bivalve (mmolC ind.-1)
+                 BVLV(ng)%CaCO3(iCt,n,k,i,j) = (BVLV(ng)%Wt(n,k,i,j)-BVLV(ng)%Ww(n,k,i,j)) * 10.0d0 ! = 1000.0d0 / 100.09d0 ! g -> mmol CaCO3               BVLV(ng)%QCv(iCt,n,k,i,j) = BVLV(ng)%Wd(n,k,i,j)*0.51d0/12.0d0 * 1.0d3 *0.9d0! mmolC individual-1
+                                                                        ! [carbon mass]/[dry mass] = 0.51+-0.07 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
                end if
              end if
  
@@ -288,11 +291,9 @@ CONTAINS
     real(8), parameter :: T_AL(1)    = [75000.0d0 ] ! (K) Arrhenius temp. for lower boundary (Van der Veer et al., 2006)
   ! --- Photoplankton ingestion parameters ---
     ! Maximum surface area specific clearance rate (L s-1 cm-2)
-    !  0.096 (m3 d−1 cm−2), Saraiva et al. (2011b)
-!    real(8), parameter :: C_Rmax  (1) = [ 1.0d-6 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
-    ! {P_Xm}      = 560 J cm-3 d-1　（Van der Veer et al., 2006)
-    ! {P_Xm}/mu_E = 1.06d-3 molC cm-3 d-1 = 1.22d-2 umolC cm-3 s-1
-    real(8), parameter :: C_Rmax  (1) = [ 1.22d-2 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
+    !  0.096 (m3 d−1 cm−2) = 1.1d-3 (L s-1 cm-2) for mussels,  Saraiva et al. (2011b)
+    !  The clearance rate of oysters may be two times higher than that of mussels. (Check is needed!!)
+    real(8), parameter :: C_Rmax  (1) = [ 2.2d-3 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
     ! Maximum surface area specific filtration rate (umol s−1 cm−2)
     !  4.8d-4 (molC d−1 cm−2), Rosland et al. (2009)
     real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster
@@ -350,6 +351,7 @@ CONTAINS
     real(8) :: R     ! Respiration rate (umolC s-1)
     real(8) :: G, G0 ! Calcification rate (umolC s-1)
     real(8) :: Mort  ! Mortality rate (population dens. s-1)
+    real(8) :: Ltmp  ! Shell length (cm) (temporal variable)
 
     real(8) :: rQCe(N_Csp),rQCv(N_Csp),rQCr(N_Csp),rQCh(N_Csp)
     real(8) :: rQNe(N_Nsp),rQNv(N_Nsp),rQNr(N_Nsp),rQNh(N_Nsp)
@@ -626,7 +628,8 @@ CONTAINS
 !    BVLV(ng)%V(n,k,i,j)  = BVLV(ng)%Ww(n,k,i,j) / 1.0d0 ! 1.0 g/cm3
 !--- Shell length (cm) ( Ww g(dw) -> L (cm); Kobayashi et al., 1997) -----------------
 !    BVLV(ng)%L(n,k,i,j)  = 4.42d0 * BVLV(ng)%Ww(n,k,i,j)**0.340d0
-    BVLV(ng)%L(n,k,i,j)  = V2L( BVLV(ng)%V(n,k,i,j), delta_M(n) )
+    Ltmp = V2L( BVLV(ng)%V(n,k,i,j), delta_M(n) )
+    BVLV(ng)%L(n,k,i,j)  = max(Ltmp, BVLV(ng)%L(n,k,i,j)) ! Prevent decreasing shell length
 !--- Total (shell + flesh) weight (g) (L (cm) -> Wt g(ww)) (Kobayashi et al., 1997)-----------------
     BVLV(ng)%Wt(n,k,i,j) = 0.105d0 * BVLV(ng)%L(n,k,i,j)**2.967d0 ! g(wet weight)
 

@@ -86,7 +86,7 @@ CONTAINS
     end do
     C_R = kT * C_Rmax * V**(2.0d0/3.0d0) / (1.0d0 + cff) ! Clearance rate (L s-1)
 
-    J_Rc = C_R * c2e  ! Required enertgy for water exchange (J s-1)
+    J_Rc = C_R * c2e  ! Required energy for water exchange (J s-1)
 
   end subroutine clearance_rate
 
