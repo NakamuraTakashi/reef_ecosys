@@ -152,7 +152,7 @@ CONTAINS
              if (n.eq.iOys) then ! 01: Oyster
                if (BVLV(ng)%dens(iOys,k,i,j) > 0.0d0) then
                  !--- Shell length (cm) -----------------
-                 BVLV(ng)%L(n,k,i,j)  = 5.0d0  ! cm
+                 BVLV(ng)%L(n,k,i,j)  = 0.5d0  ! cm
                  !--- Body volume (cm3) ----------------- 
                  BVLV(ng)%V(n,k,i,j)  = (delta_M(n)*BVLV(ng)%L(n,k,i,j))**3.0d0  ! mmolC -> cm3
                                                                         ! w_V   = 12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
@@ -293,10 +293,13 @@ CONTAINS
     ! Maximum surface area specific clearance rate (L s-1 cm-2)
     !  0.096 (m3 d−1 cm−2) = 1.1d-3 (L s-1 cm-2) for mussels,  Saraiva et al. (2011b)
     !  The clearance rate of oysters may be two times higher than that of mussels. (Check is needed!!)
-    real(8), parameter :: C_Rmax  (1) = [ 2.2d-3 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
+!    real(8), parameter :: C_Rmax  (1) = [ 2.2d-3 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
+    real(8), parameter :: C_Rmax  (1) = [ 2.2d-2 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
+!    real(8), parameter :: C_Rmax  (1) = [ 1.5d-3 ] !Maximum surface area specific clearance rate (L s-1 cm-2)
     ! Maximum surface area specific filtration rate (umol s−1 cm−2)
     !  4.8d-4 (molC d−1 cm−2), Rosland et al. (2009)
     real(8), parameter :: J_XiFmax(4,1) = reshape( [ 0.0693d0,  0.0693d0,  0.0693d0,   0.0693d0  ], [4,1] ) ! to Oyster
+!    real(8), parameter :: J_XiFmax(4,1) = reshape( [ 5.56d-3, 5.56d-3,  5.56d-3,  5.56d-3  ], [4,1] ) ! to Oyster
     ! Algal binding probability (no dim.)
     !  0.4 (no dim.),  Saraiva et al. (2011a)
     real(8), parameter :: rho_XiI (4,1) = reshape( [ 0.4d0, 0.4d0, 0.4d0, 0.4d0 ], [4,1] ) ! to Oyster
@@ -315,16 +318,16 @@ CONTAINS
   ! --- Mobilization flux related parameters ---
     real(8), parameter :: E_G(1)  = [ 2.9d3 ]  !  Specific cost for structure ([E_G] = 2900 (J cm-3), Ren & Schiel, 2008)
     real(8), parameter :: cond(1) = [ 3.83d-6 ]  ! (cm s-1) Energy conductance; 0.01381 (cm h-1), (Monaco & McQuaid, 2018)
-    real(8), parameter :: kappa(1)= [ 0.65d0  ]  ! (no dim.) Allocation fraction to growth and somatic maintenance, (Ren & Schiel, 2008)
+    real(8), parameter :: kappa(1)= [ 0.55d0  ]  ! (no dim.) Allocation fraction to growth and somatic maintenance, (Ren & Schiel, 2008)
   ! --- Maturity and reproduction related parameters --- 
     ! E_Hp (J) = 1.58d-2 (J)  Maturity at puberty (Saraiva et al., 2011)
     ! mu_E = 22.49 (J mg−1) = 5.29d5 (J molC-1),  Energy content of reserves (Ren & Schiel, 2008)
     !                        12.0d0/0.51d0 (g(dw) molC−1) [carbon mass]/[dry mass]=0.51d0 (Sakamaki et al. 2022; Sakamaki et al. 2020; Fujibayashi et al. 2021). 
     ! Mp_H = E_Hp/mu_E = 2.99d-4 molC = 2.99d-1 mmolC
-    real(8), parameter :: Mp_H(1)     = [ 2.99d-1 ]  ! Cumulative maturity at puberty (mmolC) (Saraiva et al., 2011)
+    real(8), parameter :: Mp_H(1)     = [ 1.0d0 ]  ! Cumulative maturity at puberty (mmolC) (2.99d-1; Saraiva et al., 2011)
     real(8), parameter :: kappa_R(1)  = [ 0.7d0  ]  ! (no dim.) Reproduction efficiency (Pouvreau et al., 2006)
     real(8), parameter :: Rspawn(1)   = [ 1.0d0 ]  ! (days) Spawning period (1 day? assumed in Saraiva et al. (2012))
-    real(8), parameter :: GSRspawn(1) = [ 0.46d0 ]  ! (molC molC−1) Gonado-somatic ratio to spawn (Bernard et al., 2011)
+    real(8), parameter :: GSRspawn(1) = [ 0.46d0 ]  ! (molC molC−1) Gonado-somatic ratio to spawn (0.46d0; Bernard et al., 2011)
     real(8), parameter :: Tspawn(1)   = [ 19.0d0 ]  ! (oC) Minimum temperature for spawning, (Bernard et al., 2011)
   ! --- Mortality (s-1) --- 
     real(8), parameter :: BM(1)   = [ 0.0d0 ]  ! (s-1) Background mortality rate
@@ -653,23 +656,23 @@ CONTAINS
     BVLV(ng)%CaCO3(:,n,k,i,j) = BVLV(ng)%CaCO3(:,n,k,i,j) + dCaCO3_dt(:) * dt
 
 !===== Unit adjustment ===========================================
-
-    dDOx_dt       = dDOx_dt       * BVLV(ng)%dens(n,k,i,j)
-    dTA_dt        = dTA_dt        * BVLV(ng)%dens(n,k,i,j)
-    dDIC_dt(:)    = dDIC_dt(:)    * BVLV(ng)%dens(n,k,i,j)
-    dNH4_dt(:)    = dNH4_dt(:)    * BVLV(ng)%dens(n,k,i,j)
-    dPO4_dt(:)    = dPO4_dt(:)    * BVLV(ng)%dens(n,k,i,j)
-    dDOC_dt(:,:)  = dDOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dDON_dt(:,:)  = dDON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dPON_dt(:,:)  = dPON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dDOP_dt(:,:)  = dDOP_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dPOP_dt(:,:)  = dPOP_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)
-    dPhyC_dt(:,:) = dPhyC_dt(:,:) * BVLV(ng)%dens(n,k,i,j)
-    dPhyN_dt(:,:) = dPhyN_dt(:,:) * BVLV(ng)%dens(n,k,i,j)
-    dPhyP_dt(:,:) = dPhyP_dt(:,:) * BVLV(ng)%dens(n,k,i,j)
-    dPIC_dt (:,:) = dPIC_dt (:,:) * BVLV(ng)%dens(n,k,i,j)
+ ! [umol L-1 s-1] = [umol indiv.-1 s-1] * [indiv. m-3] * 1.0d-3 [m3 L-1]
+    dDOx_dt       = dDOx_dt       * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dTA_dt        = dTA_dt        * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dDIC_dt(:)    = dDIC_dt(:)    * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dNH4_dt(:)    = dNH4_dt(:)    * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPO4_dt(:)    = dPO4_dt(:)    * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dDOC_dt(:,:)  = dDOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPOC_dt(:,:)  = dPOC_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dDON_dt(:,:)  = dDON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPON_dt(:,:)  = dPON_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dDOP_dt(:,:)  = dDOP_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPOP_dt(:,:)  = dPOP_dt(:,:)  * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPhyC_dt(:,:) = dPhyC_dt(:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPhyN_dt(:,:) = dPhyN_dt(:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPhyP_dt(:,:) = dPhyP_dt(:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
+    dPIC_dt (:,:) = dPIC_dt (:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
 
     dDIC_dt(:) = dDIC_dt(:)/rho_sw !(umol L-1 s-1) -> (umol kg-1 s-1)
     dTA_dt     = dTA_dt/rho_sw     !(umol L-1 s-1) -> (umol kg-1 s-1)

@@ -27,12 +27,18 @@ gfortran ${FFLAGS} \
   ${SRC_DIR}/mod_input.F \
   ${SRC_DIR}/mod_output.F \
   ${SRC_DIR}/main.F \
-  ${INCLUDE} -I/usr/include -L/usr/lib -lnetcdff \
+  ${INCLUDE} -I/opt/homebrew/include -L/opt/homebrew/lib -lnetcdff \
   -o ecosys_test.exe
 
 rm *.mod
 #
 mkdir -p output
 #
-./ecosys_test.exe < oyster.in
+#./ecosys_test.exe < coral_01.in
+./ecosys_test.exe < coral_bl_T25.in
+./ecosys_test.exe < coral_bl_T33.in
+./ecosys_test.exe < coral_bl_T13.in
+./ecosys_test.exe < coral_bl_T17.in
+./ecosys_test.exe < coral_bl_T21.in
+./ecosys_test.exe < coral_bl_T29.in
 #

@@ -290,18 +290,6 @@ PROGRAM main
     
 !----- Write data labels -------------------------
   CALL write_env_lavel(10)        
-#if defined CORAL_TESTMODE
-  CALL write_crl_his_lavel(11)
-  CALL write_crl_his_lavel(12)
-  CALL write_crl_ave_lavel(21)
-  CALL write_crl_ave_lavel(22)
-# if defined CORAL_ZOOXANTHELLAE
-  CALL write_zox_his_lavel(31)
-  CALL write_zox_his_lavel(32)
-  CALL write_zphot_his_lavel(41)
-  CALL write_zphot_his_lavel(42)
-# endif
-#endif
 #if defined ECOSYS_TESTMODE
   CALL write_ecosys_his_lavel(40)
 #endif
@@ -713,17 +701,19 @@ PROGRAM main
         t(2,j,k,nstp,iTemp) = 15.0d0+7.0d0*cos(2.0d0*PI*(time-30.0d0)/365.0d0)
         t(i,j,k,nstp,iTemp) = t(2,j,k,nstp,iTemp)
 
-        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*time/365.0d0) )
+!        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*time/365.0d0) )
+        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*(time+30.0d0)/365.0d0) )*0.1d0 !10% of the POC assumed to be phytoplankton
         t(2,j,k,nstp,iPhyN(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rNCp(iDtm)
         t(2,j,k,nstp,iPhyP(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rPCp(iDtm)
 #endif
         do id=1,Nid
 
+#if defined SAKAMAKI_ET_AL_2025
           t(i,j,k,nstp,id)=t(i,j,k,nstp,id)           &
                            + ( dtrc_dt(k,id)          &
                               -vel*t(i,j,k,nstp,id)/dx  &
                               +vel*t(2,j,k,nstp,id)/dx )*dt
-
+#endif
 #if defined SEDECO_SGD && defined SGD_ON
           ! Overflowing of the SGD volume flux is assumed 
           dtrc_dt_sgd = -0.01d0*sgd_flux *t(i,j,k,nstp,id)/dz(i,j,1)/dble(N)
