@@ -48,7 +48,7 @@
 
 /*** Coral Polyp model options. ***/
 # if defined CORAL_POLYP
-/*#  define CORAL_ZOOXANTHELLAE*/
+#  define CORAL_ZOOXANTHELLAE
 /*#  define CORAL_MUCUS*/           /*Mucus release from coral */
 /*#  define CORAL_INGESTION*/
 /*#  define CORAL_NONE_CO2_EQ*/

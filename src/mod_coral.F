@@ -328,22 +328,22 @@ CONTAINS
                             ! QC0= 50.0d0
             ZOOX(ng)%Chl(n,i,j)  = 3.5 ! 2.0d0 ! (pg/cell) Suggett et al. 2008
 !            QAt = ZOOX(ng)%Chl(n,i,j)*1.2d-6 ! (pmolRCII/cell) 1.2d-6 ~1.7d-6 -> Suggett et al. 2008
-            QAt = 1.2d-6 ! (pmolRCII/cell) 1.2d-6 ~1.7d-6 -> Suggett et al. 2008
+            QAt = 1.2d-4 ! (pmolRCII/cell) 1.2d-6 ~1.7d-6 -> Suggett et al. 2008
             ZOOX(ng)%QAo(n,i,j) = QAt*0.6d0 ! (pmolRCII/cell) 1.2d-6 ~1.7d-6 -> Suggett et al. 2008
             ZOOX(ng)%QAr(n,i,j) = 0.0d0
             ZOOX(ng)%QAi(n,i,j) = QAt*0.4d0
             ZOOX(ng)%SOx(n,i,j) = 0.5 !0.0d0 ! Superoxide (O2-)
-            ZOOX(ng)%NADPHn(n,i,j) = 0.085 !0.0d0 ! normalized NADPH (no dim.) NADPH/(NADPH + NADP+) 
-            ZOOX(ng)%RuBPn(n,i,j) = 0.091 !0.0d0  ! normalized RuBP  (no dim.) RuBP/(0.5*PGA + RuBP) 
+            ZOOX(ng)%NADPHn(n,i,j) = 0.0d0 !0.0d0 ! normalized NADPH (no dim.) NADPH/(NADPH + NADP+) 
+            ZOOX(ng)%RuBPn(n,i,j) = 0.0d0 !0.0d0  ! normalized RuBP  (no dim.) RuBP/(0.5*PGA + RuBP) 
 
             ZOOX(ng)%QCe(  :,n,i,j) = 0.0d0
             ZOOX(ng)%QCv(  :,n,i,j) = 0.0d0
             ZOOX(ng)%QCr(  :,n,i,j) = 0.0d0
             ZOOX(ng)%QCh(  :,n,i,j) = 0.0d0
-            ZOOX(ng)%QCe(iCt,n,i,j) = 77.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
-            ZOOX(ng)%QCv(iCt,n,i,j) = 77.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
-            ZOOX(ng)%QCr(iCt,n,i,j) = 77.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
-            ZOOX(ng)%QCh(iCt,n,i,j) = 77.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
+            ZOOX(ng)%QCe(iCt,n,i,j) = 10.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
+            ZOOX(ng)%QCv(iCt,n,i,j) = 60.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
+            ZOOX(ng)%QCr(iCt,n,i,j) = 0.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
+            ZOOX(ng)%QCh(iCt,n,i,j) = 0.0d0  ! (pmolC/cell) 66 pmol/cell: Tanaka et al 2018;  600-1400 pgC cell-1: Muller-Parker et al., 1994)
 #  if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE
             ZOOX(ng)%QCe(iC13,n,i,j)  &
                   = Ci_from_Ct_delta( ZOOX(ng)%QCe(iCt,n,i,j), -20.d0, R13C_VPDB )  !!!??????????????????????????????
@@ -623,13 +623,6 @@ CONTAINS
     real(8), parameter :: a_cROS(2)  = [ 1.0d-2, 1.0d-2 ]   ! ROS production rate by coral (nmol cm-2 s-1): !!!!!!! Tuning
 # endif
 
-!----- Coral minimum quota ------------------------
-!    real(8), parameter :: QC0(2) = [ 2.0d0, 2.0d0 ]   ! Minimum quota (umol cm-2)  refereed minimum value of tissue C by Tanaka et al., (2009)
-    real(8), parameter :: QC0(2) = [250.0d0, 250.0d0 ] ! Minimum quota (umol cm-2)  refereed minimum value of tissue C by Tanaka et al., (2009)
-# if defined CORAL_NUTRIENTS
-    real(8), parameter :: QN0(2) = [ 0.20d0, 0.20d0 ]   ! Minimum quota (umol cm-2)  
-    real(8), parameter :: QP0(2) = [ 0.02d0, 0.02d0 ]   ! Minimum quota (umol cm-2) 
-# endif
 # if defined CORAL_SIZE_DYNAMICS
     real(8), parameter :: g_max(2) = [ 1.0d-2, 1.0d-2 ] ! Maximum growth rate (nmol cm-2 s-1)  !!!!!! Tuning parameter
     real(8), parameter :: aC_m   = 2.0d-1   ! ((umol cm-2)-1)!!!!!!! Tuning parameter
@@ -1868,9 +1861,9 @@ CONTAINS
     real(8), parameter :: V_zoox = 5.0d-10   ! Volume of zooxanthellae (cm3/cells) ~300 um3 (Fujise et al. 2018)
                              ! ~500 um3 =5.e-10 cm3 (e.g. Jone 1997; Jones and Yellowlees 1997)
 !----- Respitration constants ---------------------------
-    real(8), parameter :: Rzmax  = 5.0d-6  ! Maximum respiration rate (pmol cell-1 s-1)
+    real(8), parameter :: Rzmax  = 0.0d0!5.0d-6  ! Maximum respiration rate (pmol cell-1 s-1)
                                            ! ~0.1 (pmol cell-1 h-1) = 2.8d-5 (pmol cell-1 s-1) (Suggett et al., 2008)
-    real(8), parameter :: K_QCzr = 50.0d0   ! (pmolC cell-1) (Asssumed)
+    real(8), parameter :: K_zQCe = 50.0d0   ! (pmolC cell-1) (Asssumed)
     real(8), parameter :: K_DO   = 5.d0    ! ca. 10 (umolO2 kg-1) Shick et al. (1990) *Tuned value
 
     real(8), parameter :: p2r   = 0.5d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
@@ -1931,9 +1924,10 @@ CONTAINS
     real(8) :: rNC, rPC
 #  endif
     real(8) :: rCO2(N_Csp)
-    real(8) :: rQC(N_Csp),rQN(N_Nsp),rQP(N_Psp)
-
-    real(8) :: QCzr    ! Reserve OC pool (= QC - QC0 ) (pmolC/cell) 
+    real(8) :: rQCe(N_Csp),rQCv(N_Csp),rQCr(N_Csp),rQCh(N_Csp)
+    real(8) :: rQNe(N_Nsp),rQNv(N_Nsp),rQNr(N_Nsp),rQNh(N_Nsp)
+    real(8) :: rQPe(N_Psp),rQPv(N_Psp),rQPr(N_Psp),rQPh(N_Psp)
+!----- Zooxanthella physica condition ---------------------------
     real(8) :: Cg_bio  ! Gross biosyntesis rate (pmolC cell-1 s-1)
     real(8) :: Cn_bio  ! Net biosyntesis rate (pmolC cell-1 s-1)
     real(8) :: Rzm     ! Maximum respiration rate at the present condition (pmolC cell-1 s-1) 
@@ -2007,9 +2001,6 @@ CONTAINS
     END DO
 #  endif
 
-!----- Reserve C pool (pmol cell-1) ---------------------------
-    QCzr = max( ZOOX(ng)%QC(iCt,n,i,j) - QC0, 0.0d0)
-
 !----- Zooxanthellae metabolism  ----------------------------------
 
     CALL photosystem            &
@@ -2048,7 +2039,7 @@ CONTAINS
 
 
 !----- Respilation rate (pmol cell-1 s-1) ---------------------------
-    f_min = min( QCzr/(K_QCzr+QCzr), DOcoe/(K_DO+DOcoe) )
+    f_min = min( ZOOX(ng)%QCe(iCt,n,i,j)/(K_zQCe+ZOOX(ng)%QCe(iCt,n,i,j)), DOcoe/(K_DO+DOcoe) )
     Rzm = Rzmax * f_min
     Rzrq = C_dec * p2r ! Gross biosyntesis rate (pmolC cell-1 s-1)
 
@@ -2063,25 +2054,26 @@ CONTAINS
 
     ! Summing fluxes
     F_zDO     = F_zDO     - ZOOX(ng)%R(n,i,j)
-    F_zCO2(:) = F_zCO2(:) + ZOOX(ng)%R(n,i,j) *rQC(:)
+    F_zCO2(:) = F_zCO2(:) + ZOOX(ng)%R(n,i,j) *rQCe(:)
 #  if defined CORAL_NUTRIENTS
-    F_zNH4(:) = F_zNH4(:) + ZOOX(ng)%R(n,i,j)*rNC *rQN(:)
-    F_zPO4(:) = F_zPO4(:) + ZOOX(ng)%R(n,i,j)*rPC *rQP(:)
+    F_zNH4(:) = F_zNH4(:) + ZOOX(ng)%R(n,i,j)*rNC *rQNe(:)
+    F_zPO4(:) = F_zPO4(:) + ZOOX(ng)%R(n,i,j)*rPC *rQPe(:)
 #  endif
 
 !----- interaction between zooxanthellae and coral -----------------
 !    F_zQC(:) = F_zQC(:) + u_z2c*QCzr *rQC(:)      & !*(1.0d0-QC0/ZOOX(ng)%QC(n,i,j))    & !Simbiont secretion
 !                        - u_c2z*QCcr        ! receive from the host
-    F_zQCe(:) = F_zQCe(:) + u_z2c*ZOOX(ng)%QCe(iCt,n,i,j) *rQC(:) !Simbiont secretion
+    F_zQCe(:) = F_zQCe(:) + u_z2c*ZOOX(ng)%QCe(iCt,n,i,j) *rQCe(:) !Simbiont secretion
 #  if defined CORAL_NUTRIENTS
-    F_zQNe(:) = F_zQNe(:) + u_z2c*ZOOX(ng)%QNe(iNt,n,i,j) *rQN(:)
-    F_zQPe(:) = F_zQPe(:) + u_z2c*ZOOX(ng)%QPe(iPt,n,i,j) *rQP(:)
+    F_zQNe(:) = F_zQNe(:) + u_z2c*ZOOX(ng)%QNe(iNt,n,i,j) *rQNe(:)
+    F_zQPe(:) = F_zQPe(:) + u_z2c*ZOOX(ng)%QPe(iPt,n,i,j) *rQPe(:)
 #  endif
 
 !TODO 褐虫藻の増殖過程の再検討
 !----- Convert cell conditions to population dynamics parameters
 
-    Repro = max(Cn_bio, 0.0d0)/ZOOX(ng)%QC(iCt,n,i,j)  ! Cell specific growth rate (s-1)
+    Repro = max(Cn_bio, 0.0d0)      &
+            /(ZOOX(ng)%QCe(iCt,n,i,j)+ZOOX(ng)%QCv(iCt,n,i,j))  ! Cell specific growth rate (s-1)
 
 !  ----- Growth rate (cell cm-2 s-1) -----------------
     F_zdens = F_zdens + Repro * ZOOX(ng)%dens(n,i,j)
@@ -2098,10 +2090,13 @@ CONTAINS
 !  ----- Mortality rate (cell cm-2 s-1) -----------------
     F_zdens = F_zdens - Morta*ZOOX(ng)%dens(n,i,j)
 
-    F_POC(:,iLPOM) = F_POC(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*ZOOX(ng)%QC(iCt,n,i,j)*1.0d-3 *rQC(:)
+    F_POC(:,iLPOM) = F_POC(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*1.0d-3 &
+                     *(ZOOX(ng)%QCe(iCt,n,i,j)*rQCe(:) + ZOOX(ng)%QCv(iCt,n,i,j)*rQCv(:) )
 #  if defined CORAL_NUTRIENTS
-    F_PON(:,iLPOM) = F_PON(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*ZOOX(ng)%QN(iNt,n,i,j)*1.0d-3 *rQN(:)
-    F_POP(:,iLPOM) = F_POP(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*ZOOX(ng)%QP(iPt,n,i,j)*1.0d-3 *rQP(:)
+    F_PON(:,iLPOM) = F_PON(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*1.0d-3 &
+                     *(ZOOX(ng)%QNe(iNt,n,i,j)*rQNe(:) + ZOOX(ng)%QNv(iNt,n,i,j)*rQNv(:) )
+    F_POP(:,iLPOM) = F_POP(:,iLPOM) + Morta*ZOOX(ng)%dens(n,i,j)*1.0d-3 &
+                     *(ZOOX(ng)%QPe(iPt,n,i,j)*rQPe(:) + ZOOX(ng)%QPv(iPt,n,i,j)*rQPv(:) )
 #  endif
 
 
@@ -2201,9 +2196,10 @@ CONTAINS
          date, PFDsurf                                                   &
        , ZOOX(ng)%Pg(n,i,j), ZOOX(ng)%R(n,i,j)                           &
        , ZOOX(ng)%Pg(n,i,j)-ZOOX(ng)%R(n,i,j), ZOOX(ng)%dens(n,i,j)      &
-       , ZOOX(ng)%QCe(n,i,j), ZOOX(ng)%QCv(n,i,j), ZOOX(ng)%QCr(n,i,j)   &
-       , ZOOX(ng)%QCh(n,i,j), ZOOX(ng)%Chl(n,i,j)                        &
-       , Cg_bio, Cn_bio, Repro, Morta, F_zROS,F_zQC(iCt)                 &
+       , ZOOX(ng)%QCe(iCt,n,i,j), ZOOX(ng)%QCv(iCt,n,i,j)                &
+       , ZOOX(ng)%QCr(iCt,n,i,j), ZOOX(ng)%QCh(iCt,n,i,j)                &
+       , ZOOX(ng)%Chl(n,i,j)                                             &
+       , Cg_bio, Cn_bio, Repro, Morta, F_zROS,F_zQCe(iCt)                &
        , F_Zelm, Repro*ZOOX(ng)%dens(n,i,j), Morta*ZOOX(ng)%dens(n,i,j)  &
 #   if defined CORAL_NUTRIENTS
        , ZOOX(ng)%QN(iNt,n,i,j), ZOOX(ng)%QP(iPt,n,i,j)                  &
@@ -2289,7 +2285,7 @@ CONTAINS
     real(8), parameter :: e2c = e2o*o2c   ! (mol C (mol e-)-1)
 
     !   ---- RubisCO activity related parameters -----------------
-    real(8), parameter :: Vcmax = 0.5d-3   ! maximum carboxylation rate (pmol cell-1 s-1) !!! Tuning
+    real(8), parameter :: Vcmax = 0.5d-2   ! maximum carboxylation rate (pmol cell-1 s-1) !!! Tuning
     real(8), parameter :: Vomax = 0.2d0*Vcmax   ! maximum oxygenation rate (pmol cell-1 s-1) 
     real(8), parameter :: Kco2  = 20.0d0  ! Half saturation constant (uM) !!! Tuning (Ref. von Caemmerer, 2000)
     real(8), parameter :: Ko2   = 300.0d0 ! Half saturation constant (uM) !!! Tuning (Ref. von Caemmerer, 2000)
@@ -2313,13 +2309,13 @@ CONTAINS
     real(8), parameter :: kros = 0.2d0   ! 
     real(8), parameter :: kros2 = 1.0d0   !
 
-    real(8), parameter :: Vsoxmax = 1.0d-5   ! maximum superoxide detox rate (pmol cell-1 s-1)  !!! Tuning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    real(8), parameter :: Vsoxmax = 1.0d-2   ! maximum superoxide detox rate (pmol cell-1 s-1)  !!! Tuning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real(8), parameter :: Ksox = 1.0d0      ! Half saturation constant (pmo; cell-1) !!! Tuning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     real(8), parameter :: kqap = 1.0d-11    ! rate constant for QAa production
     real(8), parameter :: QCzrm = 50.0d0    ! Threashold reserv QC value for Chl production 
     real(8), parameter :: uchl_max = 1.0d-4 ! Maximum Chl production rate (pg cell-1 s-1)  (Asssumed)
-    real(8), parameter :: QAt = 1.2d-6      ! Total RCII (pmol RCII cell-1)
+    real(8), parameter :: QAt = 1.2d-4      ! Total RCII (pmol RCII cell-1)
 !---------------------------------------------------------------------
 !    real(8) :: QAt       ! Total RCII (pmol RCII cell-1)
     real(8) :: QAa       ! Active RCII (pmol RCII cell-1)
@@ -2405,7 +2401,7 @@ CONTAINS
 !---- Repair rate of QAi to QAo  (pmol RCII cell-1 s-1) --- !!!!!!!!!!!!!!!!! Need update
 !    Ji2a = ka * QAi * exp(-kros2*ROS)  !!! ROS concentration dependent repair
 !    Ji2a = ka * QAi * exp(-kros2*ROS) * (J_ep_in*1.0d4)  !!! ROS concentration dependent repair
-    Ji2a = ka * QAi * exp(-kros2*ROS) * tanh(PFDsurf/50.0d0)  !!! ROS concentration dependent repair
+    Ji2a = ka * QAi * exp(-kros2*ROS) * (tanh(PFDsurf/50.0d0)+0.05d0)  !!! ROS concentration dependent repair
 
 ! ----- QAa production rate (pmol RCII cell-1 s-1) -------
     F_QAp = kqap * (1.0d0-QCzr/QCzrm)
@@ -2421,9 +2417,9 @@ CONTAINS
 !---- electron absorption rate (s-1) 
 !   = reduction of active QA (s-1) ---
 !    s_ab = s_0*0.83d0*exp(-kros*ROS)  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!    s_ab = s_0*0.83d0
+    s_ab = s_0*0.83d0
 !    s_ab = s_0*0.65d0
-    s_ab = s_0 * 0.80d0*exp(-kros*QAi/QAt)
+!    s_ab = s_0 * 0.80d0*exp(-kros*QAi/QAt)
 
     kr = s_ab * Chl * phi_q * PFDsurf
 
@@ -2436,7 +2432,7 @@ CONTAINS
 !===== Chl dynamics calculation ==============================================
 !    dChl_dt = uchl_max * (1.0d0 - QCzr/QCzr_max)
 !    dChl_dt = - 3.0d-6*ROS + 3.0d-5
-    dChl_dt = 1.0d-6*(3.0d0-ROS)
+    dChl_dt = 1.0d-7*(3.0d0-ROS)
 !-----Chl concentration (pg cell-1) -----------------
     Chl = Chl + dChl_dt *dt
     Chl = max(Chl,0.0d0) !!!Error handring
