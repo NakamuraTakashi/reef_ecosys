@@ -787,15 +787,13 @@ CONTAINS
 
 # if defined CORAL_TESTMODE
 !  Output
-!    real(8), parameter :: CORAL_OUTPUT_INTERVAL  = 5.0d0    ! Output interval (min)
-!    real(8), parameter :: CORAL_AVERAGE_INTERVAL = 1.0d0    ! Average interval (day)
-    real(8), save :: dsec = 0.d0 !sec
-    real(8), save :: dday = 0.d0 !day
-    real(8), save :: S_PFD_dt(2)      = 0.0d0
-    real(8), save :: S_Gn_dt(N_Csp,2) = 0.0d0
-    real(8), save :: S_Pg_dt(2)       = 0.0d0
-    real(8), save :: S_R_dt(2)        = 0.0d0
-!    real(8), save :: S_QC_dt(N_Csp,2) = 0.0d0
+    real(8), save :: dsec(Ncl) = 0.d0 !sec
+    real(8), save :: dday(Ncl) = 0.d0 !day
+    real(8), save :: S_PFD_dt(Ncl)      = 0.0d0
+    real(8), save :: S_Gn_dt(N_Csp,Ncl) = 0.0d0
+    real(8), save :: S_Pg_dt(Ncl)       = 0.0d0
+    real(8), save :: S_R_dt(Ncl)        = 0.0d0
+!    real(8), save :: S_QC_dt(N_Csp,Ncl) = 0.0d0
 #  if defined CARBON_ISOTOPE
     real(8) :: d13C_DICamb, d13C_CO2amb, d13C_HCO3amb, d13C_CO3amb
     real(8) :: d13C_DICcoe, d13C_CO2coe, d13C_HCO3coe, d13C_CO3coe
@@ -804,7 +802,7 @@ CONTAINS
 #  endif
 #  if defined CORAL_BORON_ISOTOPE
     real(8) :: d11Barg
-    real(8), save :: S_d11BargxGn_dt(2) = 0.0d0
+    real(8), save :: S_d11BargxGn_dt(Ncl) = 0.0d0
 #  endif
 # endif
     real(8) :: k_CO2i_tmp(N_Csp), k_DIC_tmp(N_Csp), k_CO2_tmp(N_Csp)
@@ -1588,9 +1586,9 @@ CONTAINS
     d11Barg = d11B_BOH4_frompHd11BT(pHcal, 39.5d0, TKamb, Samb)
 #  endif
 
-    IF( date*86400.0d0 >= dsec ) THEN
-      if(dsec == 0.0d0) then
-        dsec=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
+    IF( date*86400.0d0 >= dsec(n) ) THEN
+      if(dsec(n) == 0.0d0) then
+        dsec(n)=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
         ! Write lavels at the first step
         write(10+n,'(*(g0:,", "))') 'time', 'PFD'               &
           ,'Pg', 'R', 'Pn', 'G','QCe','QCv','QCr','QCh'         &
@@ -1625,7 +1623,7 @@ CONTAINS
           ,'E_ca','F_Cgrowth','Si_DIC','Si_DO', 'F_H'
 
       else
-        dsec=dsec+CORAL_OUTPUT_INTERVAL*60.0d0
+        dsec(n)=dsec(n)+CORAL_OUTPUT_INTERVAL*60.0d0
       endif
        
       write(10+n,'(*(g0:,", "))') date, PFD                                      &
@@ -1678,9 +1676,9 @@ CONTAINS
 #  endif
 
 !    IF(mod(int(date*86400.0d0), int(CORAL_AVERAGE_INTERVAL*86400.0d0))==0) THEN
-    IF( date >= dday ) THEN   
-      if(dday == 0.0d0) then
-        dday=date+CORAL_AVERAGE_INTERVAL
+    IF( date >= dday(n) ) THEN   
+      if(dday(n) == 0.0d0) then
+        dday(n)=date+CORAL_AVERAGE_INTERVAL
         ! Write lavels at the first step
         write(20+n,'(*(g0:,", "))') 'day'     &
           ,'S_PFD_dt'                         &   ! Photon flux density (mol m-2 d-1)
@@ -1699,7 +1697,7 @@ CONTAINS
           ,'S_Pn_dt'                              ! Net photosynthesis rate (umol cm-2 d-1)
 
       else
-        dday=dday+CORAL_AVERAGE_INTERVAL
+        dday(n)=dday(n)+CORAL_AVERAGE_INTERVAL
       endif
 
       write(20+n,'(*(g0:,", "))') date    &
@@ -1946,7 +1944,7 @@ CONTAINS
 #  if defined CORAL_TESTMODE
 !  Output
 !    real(8), parameter :: CORAL_OUTPUT_INTERVAL  = 5.0d0    ! Output interval (min)
-    real(8), save :: dsec = 0.d0 !sec
+    real(8), save :: dsec(Ncl) = 0.d0 !sec
 #  endif
     integer :: isp
     real(8) :: cff
@@ -2166,9 +2164,9 @@ CONTAINS
 #  if defined CORAL_TESTMODE
 
 !    IF(mod(int(date*86400.0d0*100.0d0), int(CORAL_OUTPUT_INTERVAL*60.0d0*100.0d0))==0) THEN
-    IF( date*86400.0d0 >= dsec ) THEN
-      if(dsec == 0.0d0) then
-        dsec=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
+    IF( date*86400.0d0 >= dsec(n) ) THEN
+      if(dsec(n) == 0.0d0) then
+        dsec(n)=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
         ! Write lavels at the first step
         write(30+n,'(*(g0:,", "))')              &
           'time', 'PFD'                          &
@@ -2189,7 +2187,7 @@ CONTAINS
           ,'ROS','ROS_pmol_cell-1'               &
           ,'Chl_ug_cm-2'
       else
-        dsec=dsec+CORAL_OUTPUT_INTERVAL*60.0d0
+        dsec(n)=dsec(n)+CORAL_OUTPUT_INTERVAL*60.0d0
       endif
 
       write(30+n,'(*(g0:,", "))')                                        &
@@ -2344,7 +2342,7 @@ CONTAINS
 #  if defined CORAL_TESTMODE
 !  Output
 !    real(8), parameter :: CORAL_OUTPUT_INTERVAL  = 5.0d0    ! Output interval (min)
-    real(8), save :: dsec = 0.d0 !sec
+    real(8), save :: dsec(Ncl) = 0.d0 !sec
     real(8) :: FvFm       
     real(8) :: YII
     real(8) :: KF       
@@ -2466,9 +2464,9 @@ CONTAINS
 
 #  if defined CORAL_TESTMODE
 
-    IF( date*86400.0d0 >= dsec ) THEN
-      if(dsec == 0.0d0) then
-        dsec=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
+    IF( date*86400.0d0 >= dsec(n) ) THEN
+      if(dsec(n) == 0.0d0) then
+        dsec(n)=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
         ! Write lavels at the first step
         write(40+n,'(*(g0:,", "))')                                 &
            'time','PFD','Tamb'                                      &
@@ -2478,7 +2476,7 @@ CONTAINS
           ,'Pg','Pgcal','Vc','Vo','phi','F_zDO'                     &
           ,'Chl','CO2','DO','F_QAp','NADPH','RuBP','F_zROS','ROS'
       else
-        dsec=dsec+CORAL_OUTPUT_INTERVAL*60.0d0
+        dsec(n)=dsec(n)+CORAL_OUTPUT_INTERVAL*60.0d0
       endif
 
       KF = s_0/s_ab - 1.0d0

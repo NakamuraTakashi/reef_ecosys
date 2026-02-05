@@ -88,10 +88,7 @@
 /
 
 &output   
-!  OUTFILE_prefix = 'output/oys_dens0.0055' ! x0.1
-  OUTFILE_prefix = 'output/oys_dens0.055' ! x1
-!  OUTFILE_prefix = 'output/oys_dens0.165' ! x3
-!  OUTFILE_prefix = 'output/oys_dens0.495' ! x9
+  OUTFILE_prefix = 'output/Oys_dens_x1.0' ! x1
 /
 
 &sedeco_config
@@ -143,11 +140,10 @@
           !  05 Salmon (not used) 
           !
           !      01      02        03      04      05
-!  dens_aqua0  = 0.0055d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x0.1
   dens_aqua0  = 0.055d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x1
-!  dens_aqua0  = 0.165d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x3
-!  dens_aqua0  = 0.495d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x9
           !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
+
+  f_dens = 1.0d0 ! x1.0 Oyster density adjustment factor
 /
 
 !--- Initial Condition -----------------------------------------------------

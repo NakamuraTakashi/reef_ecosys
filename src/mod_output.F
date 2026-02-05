@@ -18,23 +18,25 @@ contains
 !  Open files
 ! **********************************************************************
   SUBROUTINE files_open(OUTFILE_prefix)
+    USE mod_reef_ecosys_param
   
     implicit none
 
+    integer :: i
     character(len=*), intent( in) :: OUTFILE_prefix
+    character(2) :: NUM
   
     open(10,file=trim(OUTFILE_prefix)//'-env_his.csv')
 #if defined CORAL_TESTMODE
-    open(11,file=trim(OUTFILE_prefix)//'-crl1_his.csv')
-    open(12,file=trim(OUTFILE_prefix)//'-crl2_his.csv')
-    open(21,file=trim(OUTFILE_prefix)//'-crl1_ave.csv')
-    open(22,file=trim(OUTFILE_prefix)//'-crl2_ave.csv')
+    do i=1,Ncl
+      write (NUM, "(I2.2)") i
+      open(10+i,file=trim(OUTFILE_prefix)//'-crl'//NUM//'_his.csv')
+      open(20+i,file=trim(OUTFILE_prefix)//'-crl'//NUM//'_ave.csv')
 # if defined CORAL_ZOOXANTHELLAE
-    open(31,file=trim(OUTFILE_prefix)//'-zoo1_his.csv')
-    open(32,file=trim(OUTFILE_prefix)//'-zoo2_his.csv')
-    open(41,file=trim(OUTFILE_prefix)//'-zphot1_his.csv')
-    open(42,file=trim(OUTFILE_prefix)//'-zphot2_his.csv')
+      open(30+i,file=trim(OUTFILE_prefix)//'-zoo'//NUM//'_his.csv')
+      open(40+i,file=trim(OUTFILE_prefix)//'-zphot'//NUM//'_his.csv')
 # endif
+    enddo
 #endif
 #if defined ECOSYS_TESTMODE
     open(40,file=trim(OUTFILE_prefix)//'-ecosys_his.csv')
@@ -63,11 +65,10 @@ contains
     open(73,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy4.csv',status='replace')!!!!!!!!!for debug
 #endif
 #if defined BIVALVE_TESTMODE
-    open(80,file=trim(OUTFILE_prefix)//'-oyster.csv',status='replace')!!!!!!!!!for debug
-!    open(81,file=trim(OUTFILE_prefix)//'-oyster_V.csv',status='replace')!!!!!!!!!for debug
-!    open(82,file=trim(OUTFILE_prefix)//'-oyster_Ww.csv',status='replace')!!!!!!!!!for debug
-!    open(83,file=trim(OUTFILE_prefix)//'-oyster_Wd.csv',status='replace')!!!!!!!!!for debug
-!    open(84,file=trim(OUTFILE_prefix)//'-oyster_Wt.csv',status='replace')!!!!!!!!!for debug
+    do i=1,Nbv
+      write (NUM, "(I2.2)") i
+      open(80+i,file=trim(OUTFILE_prefix)//'-bivalve'//NUM//'.csv',status='replace')!!!!!!!!!for debug
+    enddo
 #endif
 
     RETURN

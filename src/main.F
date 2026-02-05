@@ -281,6 +281,7 @@ PROGRAM main
 #endif
 # ifdef BIVALVE
       , dens_aqua           &   ! Aquaculture density
+      , f_dens              &   ! Factor to adjust oyster density (default = 1.0)
 # endif
 )
 !  call Coral_iniSizeDis

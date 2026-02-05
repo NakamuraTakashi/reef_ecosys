@@ -204,6 +204,7 @@ MODULE mod_param
   real(8), allocatable :: p_sand(:,:)
 #if defined AQUACULTURE
   real(8), allocatable :: dens_aqua(:,:,:)
+  real(8) :: f_dens
 #endif
 
 #if defined SEDECO_SGD && defined SGD_ON
@@ -273,6 +274,7 @@ contains
     namelist/initial/p_coral_0, p_algae_0, p_sgrass_0, p_sand_0
 #ifdef AQUACULTURE
     namelist/aquaculture_config/dens_aqua0
+    namelist/aquaculture_config/f_dens
 #endif
 
     rewind(5)
