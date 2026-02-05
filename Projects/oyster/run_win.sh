@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 rm *.exe
 #
@@ -36,3 +36,7 @@ mkdir -p output
 #
 ./ecosys_test.exe < oyster.in
 #
+# Plot time series CSV files
+python3 ../../postproc/python/plot_csv_timeseries.py
+
+mv output/ output_x3.0/

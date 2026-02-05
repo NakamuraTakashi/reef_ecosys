@@ -32,6 +32,7 @@
 *.csv
 *.txt
 *.xlsx
+*.png
 !.gitkeep
 
 # Input Files
