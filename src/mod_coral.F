@@ -233,12 +233,12 @@ CONTAINS
             CORAL(ng)%QCh   (:,n,i,j) = 0.0d0
 
 !      coral internal conditions
-            CORAL(ng)%TAcal (n,i,j)=2500.d0
-            CORAL(ng)%TAcoe (n,i,j)=2150.d0
+            CORAL(ng)%TAcal (n,i,j)=2500.d0 *1.024d0 !(umol/L)
+            CORAL(ng)%TAcoe (n,i,j)=2150.d0 *1.024d0 !(umol/L)
             CORAL(ng)%DOcoe (n,i,j)=120.d0 !(umol/L)
 
-            CORAL(ng)%DICcal(iCt,n,i,j)=2000.d0
-            CORAL(ng)%DICcoe(iCt,n,i,j)=1950.d0
+            CORAL(ng)%DICcal(iCt,n,i,j)=2000.d0 *1.024d0 !(umol/L)
+            CORAL(ng)%DICcoe(iCt,n,i,j)=1950.d0 *1.024d0 !(umol/L)
 !            CORAL(ng)%QC (n,i,j)=15.d0 !450 ug/cm2 = 15 umol cm-2 -> 5.e6 umol kg-1 
             CORAL(ng)%QCe   (iCt,n,i,j)=15.0d0 !290.d0 ! (umolC/cm2)
             CORAL(ng)%QCv   (iCt,n,i,j)=290.0d0 !290.d0 ! (umolC/cm2) Tanaka et al. 2018
@@ -425,8 +425,8 @@ CONTAINS
     , Tamb           &   ! Temperature (oC)
     , Samb           &   ! Salinity (PSU)
     , DOamb          &   ! Dissolved oxygen (umol L-1)
-    , TAamb          &   ! Total alkalinity (TA: umol kg-1)
-    , DICamb         &   ! Total dissolved inorganic carbon (DIC: umol kg-1)
+    , TAamb          &   ! Total alkalinity (TA: umol L-1)
+    , DICamb         &   ! Total dissolved inorganic carbon (DIC: umol L-1)
 # if defined CORAL_NUTRIENTS         
     , NO3amb         &   ! NO3 (umol L-1)
     , NH4amb         &   ! NH4 (umol L-1)
@@ -1469,21 +1469,21 @@ CONTAINS
     CORAL(ng)%QCr(:,n,i,j) = CORAL(ng)%QCr(:,n,i,j) + F_QCr(:)*1.d-3 *dt    !nmol cm-2 =1.e-3 umol cm-2
     CORAL(ng)%QCh(:,n,i,j) = CORAL(ng)%QCh(:,n,i,j) + F_QCh(:)*1.d-3 *dt    !nmol cm-2 =1.e-3 umol cm-2
 
-!    DIC & TA (umol kg-1) in calcified fulid
+!    DIC & TA (umol L-1) in calcified fulid
     CORAL(ng)%DICcal(:,n,i,j) = CORAL(ng)%DICcal(:,n,i,j)         &
-                               + F_DICcal(:)/hcal/rho_sw *dt    !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                               + F_DICcal(:)/hcal *dt    !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 
     CORAL(ng)%TAcal (n,i,j) = CORAL(ng)%TAcal (n,i,j)             &
-                               + F_TAcal/hcal/rho_sw *dt    !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                               + F_TAcal/hcal *dt    !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 
-!    DIC & TA (umol kg-1) in coelectron
+!    DIC & TA (umol L-1) in coelectron
     CORAL(ng)%DICcoe(:,n,i,j) = CORAL(ng)%DICcoe(:,n,i,j)         &
-                               + F_DICcoe(:)/hcoe/rho_sw *dt   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                               + F_DICcoe(:)/hcoe *dt   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 
     CORAL(ng)%TAcoe (n,i,j) = CORAL(ng)%TAcoe (n,i,j)             &
-                               + F_TAcoe/hcoe/rho_sw *dt   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                               + F_TAcoe/hcoe *dt   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 
-!    DO (umol kg-1) in coelectron
+!    DO (umol L-1) in coelectron
     CORAL(ng)%DOcoe (n,i,j) = CORAL(ng)%DOcoe (n,i,j)             &
                               + F_DOcoe/hcoe *dt   !nmol cm-3 s-1 = 1. umol L-1 s-1
     CORAL(ng)%DOcoe (n,i,j)=max( CORAL(ng)%DOcoe (n,i,j),0.d0) !Error handring
@@ -1513,26 +1513,26 @@ CONTAINS
     cHcal =10.d0**(-pHcal)
     cOHcal=Kw_Millero1995(TKamb, Samb)/cHcal
 
-!    [CO2*] (umol kg-1) in coelectron
+!    [CO2*] (umol L-1) in coelectron
     CORAL(ng)%CO2coe(:,n,i,j)=CORAL(ng)%CO2coe(:,n,i,j)              &
-                + F_CO2coe(:)/hcoe/rho_sw *dt                        &   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                + F_CO2coe(:)/hcoe *dt                        &   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 !     kinetics of CO2 system
-                +( (km1(:)*cHcoe+km4)*HCO3coe(:)                     & ! umol kg-1 s-1
-                  -(kp1(:)+kp4(:)*cOHcoe)*CORAL(ng)%CO2coe(:,n,i,j)  & ! umol kg-1 s-1
-                 ) *dt   ! umol kg-1
+                +( (km1(:)*cHcoe+km4)*HCO3coe(:)                     & ! umol L-1 s-1
+                  -(kp1(:)+kp4(:)*cOHcoe)*CORAL(ng)%CO2coe(:,n,i,j)  & ! umol L-1 s-1
+                 ) *dt   ! umol L-1
 
     if(CORAL(ng)%CO2coe(n,i,j)<0.0d0) then
       write(*,*) 'DEBUG1',CORAL(ng)%CO2coe(n,i,j)
       Stop
     endif
 
-!    [CO2*] (umol kg-1) in calcified fulid
+!    [CO2*] (umol L-1) in calcified fulid
     CORAL(ng)%CO2cal(n,i,j)=CORAL(ng)%CO2cal(n,i,j)                  &
-                + F_CO2cal(:)/hcal/rho_sw *dt                        &!nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
+                + F_CO2cal(:)/hcal *dt                        &!nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 !     kinetics of CO2 system
-                +( (km1(:)*cHcal+km4(:))*HCO3cal(:)                  &! umol kg-1 s-1
-                  -(kp1(:)+kp4(:)*cOHcal)*CORAL(ng)%CO2cal(:,n,i,j)  &! umol kg-1 s-1
-                 ) *dt   ! umol kg-1
+                +( (km1(:)*cHcal+km4(:))*HCO3cal(:)                  &! umol L-1 s-1
+                  -(kp1(:)+kp4(:)*cOHcal)*CORAL(ng)%CO2cal(:,n,i,j)  &! umol L-1 s-1
+                 ) *dt   ! umol L-1
     
     if(CORAL(ng)%CO2cal(n,i,j)<0.0d0) then
       write(*,*) 'DEBUG2',CORAL(ng)%CO2cal(n,i,j)
@@ -1862,7 +1862,7 @@ CONTAINS
     real(8), parameter :: Rzmax  = 0.0d0!5.0d-6  ! Maximum respiration rate (pmol cell-1 s-1)
                                            ! ~0.1 (pmol cell-1 h-1) = 2.8d-5 (pmol cell-1 s-1) (Suggett et al., 2008)
     real(8), parameter :: K_zQCe = 50.0d0   ! (pmolC cell-1) (Asssumed)
-    real(8), parameter :: K_DO   = 5.d0    ! ca. 10 (umolO2 kg-1) Shick et al. (1990) *Tuned value
+    real(8), parameter :: K_DO   = 5.d0    ! ca. 10 (umolO2 L-1) Shick et al. (1990) *Tuned value
 
     real(8), parameter :: p2r   = 0.5d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
     real(8), parameter :: C_dec = 1.0d-6   ! (pmol cell-1 s-1) Decay rate 

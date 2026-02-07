@@ -7,6 +7,7 @@ Each column is plotted separately
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import argparse
 from pathlib import Path
 
 def plot_csv_timeseries(output_dir=None, plot_output_dir=None):
@@ -97,4 +98,28 @@ def plot_csv_timeseries(output_dir=None, plot_output_dir=None):
         print(f"  Plotted: {plot_count} columns\n")
 
 if __name__ == '__main__':
-    plot_csv_timeseries()
+    parser = argparse.ArgumentParser(
+        description='Plot time series data from CSV files'
+    )
+    parser.add_argument(
+        '-o', '--output-dir',
+        default='output',
+        help='Directory containing CSV files (default: output)'
+    )
+    parser.add_argument(
+        '-p', '--plot-output-dir',
+        default=None,
+        help='Directory to save plots (default: output_dir/plots)'
+    )
+    
+    args = parser.parse_args()
+    
+    # If plot_output_dir is not specified, use output_dir/plots
+    plot_output_dir = args.plot_output_dir
+    if plot_output_dir is None:
+        plot_output_dir = os.path.join(args.output_dir, 'plots')
+    
+    plot_csv_timeseries(
+        output_dir=args.output_dir,
+        plot_output_dir=plot_output_dir
+    )

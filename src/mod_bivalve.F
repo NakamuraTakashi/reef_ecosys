@@ -244,7 +244,7 @@ CONTAINS
     , Tmp            &   ! Temperature (oC)
     , Sal            &   ! Salinity (PSU)
     , DOx            &   ! DOx             : Dissolved oxygen (umol O2 L-1)
-    , DIC            &   ! DIC(N_Csp)      : Total dissolved inorganic carbon (umol C kg-1)
+    , DIC            &   ! DIC(N_Csp)      : Total dissolved inorganic carbon (umol C L-1)
     , Wcal           &   ! Calcite saturation state
     , PhyC           &   ! Phytoplankton C bomass (umol C L-1)
     , PhyN           &   ! Phytoplankton N bomass (umol N L-1)
@@ -252,8 +252,8 @@ CONTAINS
     , PIC            &   ! Particulate inorganic carbon (PIC: umolC L-1), coccolith (CaCO3)
 !   output parameters
     , dDOx_dt        &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
-    , dTA_dt         &   ! dTA_dt              : dTA/dt   (umol kg-1 s-1) 
-    , dDIC_dt        &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+    , dTA_dt         &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
+    , dDIC_dt        &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
     , dNH4_dt        &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
     , dPO4_dt        &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
     , dDOC_dt        &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
@@ -291,8 +291,8 @@ CONTAINS
     real(8), intent(in) :: PIC (N_Csp,Npim)     ! Particulate inorganic carbon (PIC: umol L-1), coccolith (CaCO3)
 ! output parameters
     real(8), intent(out) :: dDOx_dt              ! dDOx/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dTA_dt               ! dTA/dt   (umol kg-1 s-1) 
-    real(8), intent(out) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+    real(8), intent(out) :: dTA_dt               ! dTA/dt   (umol L-1 s-1) 
+    real(8), intent(out) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1
     real(8), intent(out) :: dNH4_dt(N_Nsp)       ! dNH4/dt (umol L-1 s-1)
     real(8), intent(out) :: dPO4_dt(N_Psp)       ! dPO4/dt (umol L-1 s-1)
     real(8), intent(out) :: dDOC_dt(N_Csp,Ndom)  ! dDOC/dt  (umol L-1 s-1) 
@@ -713,9 +713,6 @@ CONTAINS
     dPhyN_dt(:,:) = dPhyN_dt(:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
     dPhyP_dt(:,:) = dPhyP_dt(:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
     dPIC_dt (:,:) = dPIC_dt (:,:) * BVLV(ng)%dens(n,k,i,j)*1.0d-3
-
-    dDIC_dt(:) = dDIC_dt(:)/rho_sw !(umol L-1 s-1) -> (umol kg-1 s-1)
-    dTA_dt     = dTA_dt/rho_sw     !(umol L-1 s-1) -> (umol kg-1 s-1)
 
 ! === Mortality rate (population dens. s-1) =========================
     Mort = BM(n) * BVLV(ng)%dens(n,k,i,j) ! Mortality rate (population dens. s-1)

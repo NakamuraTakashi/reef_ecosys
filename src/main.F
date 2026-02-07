@@ -46,7 +46,7 @@ PROGRAM main
   real(8), allocatable :: Tmp(:)               ! Temperature (oC)
   real(8), allocatable :: Sal(:)               ! Salinity (PSU)
   real(8), allocatable :: DOx(:)               ! Dissolved oxygen (umol L-1)
-  real(8), allocatable :: TA (:)               ! Total alkalinity (TA: umol kg-1)
+  real(8), allocatable :: TA (:)               ! Total alkalinity (TA: umol L-1)
   real(8), allocatable :: DIC(:,:)           ! Total dissolved inorganic carbon (DIC: umol kg-1)
   real(8), allocatable :: NO3(:,:)           ! NO3 (umol L-1)
   real(8), allocatable :: NH4(:,:)           ! NH4 (umol L-1)
@@ -72,8 +72,8 @@ PROGRAM main
   real(8), allocatable :: dTemp_dt(:)            ! Tmp(N): Temperature (oC)
   real(8), allocatable :: dSalt_dt(:)            ! Sal(N): Salinity (PSU)
   real(8), allocatable :: dDOx_dt(:)             ! dDOx/dt  (umol L-1 s-1) 
-  real(8), allocatable :: dTA_dt (:)             ! dTA/dt   (umol kg-1 s-1) 
-  real(8), allocatable :: dDIC_dt(:,:)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+  real(8), allocatable :: dTA_dt (:)             ! dTA/dt   (umol L-1 s-1) 
+  real(8), allocatable :: dDIC_dt(:,:)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
   real(8), allocatable :: dNO3_dt(:,:)       ! dNO3/dt (umol L-1 s-1)
   real(8), allocatable :: dNH4_dt(:,:)       ! dNH4/dt (umol L-1 s-1)
   real(8), allocatable :: dPO4_dt(:,:)       ! dPO4/dt (umol L-1 s-1)
@@ -501,8 +501,8 @@ PROGRAM main
       , Tmp            &   ! Tmp(N): Temperature (oC)
       , Sal            &   ! Sal(N): Salinity (PSU)
       , DOx            &   ! DOx(N): Dissolved oxygen (umol O2 L-1)
-      , TA             &   ! TA(N) : Total alkalinity (umol kg-1)
-      , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C kg-1)
+      , TA             &   ! TA(N) : Total alkalinity (umol L-1)
+      , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C L-1)
       , NO3            &   ! NO3(N_Nsp,N): (umol N L-1)
       , NH4            &   ! NH4(N_Nsp,N): (umol N L-1)
       , PO4            &   ! PO4(N_Psp,N): (umol P L-1)
@@ -544,8 +544,8 @@ PROGRAM main
       , dTemp_dt       &   ! dTemp_dt(N)           : Temperature (oC s-1)
       , dSalt_dt       &   ! dSalt_dt(N)           : Salinity (PSU s-1)
       , dDOx_dt        &   ! dDOx_dt(N)            : dDOx/dt  (umol O2 L-1 s-1) 
-      , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol kg-1 s-1) 
-      , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+      , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol L-1 s-1) 
+      , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
       , dNO3_dt        &   ! dNO3_dt(N_Nsp,N)      : dNO3/dt  (umol N L-1 s-1)
       , dNH4_dt        &   ! dNH4_dt(N_Nsp,N)      : dNH4/dt  (umol N L-1 s-1)
       , dPO4_dt        &   ! dPO4_dt(N_Psp,N)      : dPO4/dt  (umol P L-1 s-1)

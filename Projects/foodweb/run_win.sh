@@ -32,11 +32,16 @@ gfortran ${FFLAGS} \
 
 rm *.mod
 #
-mkdir -p output
+mkdir -p output_2023NP
 #
-./ecosys_test.exe < foodweb_C.in
-./ecosys_test.exe < foodweb_2NP.in
-./ecosys_test.exe < foodweb_N.in
-./ecosys_test.exe < foodweb_2N.in
-./ecosys_test.exe < foodweb_P.in
+./ecosys_test.exe < foodweb_2023NP.in
+#./ecosys_test.exe < foodweb_C.in
+#./ecosys_test.exe < foodweb_2NP.in
+#./ecosys_test.exe < foodweb_N.in
+#./ecosys_test.exe < foodweb_2N.in
+#./ecosys_test.exe < foodweb_P.in
 #
+# Plot time series CSV files
+python3 ../../postproc/python/plot_csv_timeseries.py -o output_2023NP -p output_2023NP/plots
+
+#mv output/ output_2023NP/

@@ -170,7 +170,7 @@ CONTAINS
 !  Phytoplankton photosynthesis Parameter         
 !                                       Dnfl      Dtm        Ccl      Cya
 !  Maximum photosynthetic rate ( s-1) (0.4d0 d-1; Kishi et al., 2007)0.3     (!!!Tuning parameters!!!) 
-    real(8), parameter :: Pp_max(4)= [ 5.0d-5,   1.0d-4,  1.0d-5,   3.5d-5 ]  ! (s-1)   JS_edit check reference values for all parameters
+    real(8), parameter :: Pp_max(4)= [ 5.0d-5,   5.0d-4,  1.0d-5,   3.5d-5 ]  ! (s-1)   JS_edit check reference values for all parameters
 !  Parameters for temperature dependency on photosynthetic rate
 !    fp_temp = A_Pp*exp(-Ea_Pp/Rg/TK)/(1.0d0+exp((TK*dS_Pp-dH_Pp)/Rg/TK))
     real(8), parameter :: A_Pp (4) = [3.0d11,   3.0d11,   3.0d11,   3.0d11 ]     ! !!! Tuning
@@ -187,11 +187,11 @@ CONTAINS
 !   Maximum N uptake rate normalized by maximum PO4 updatke rate.
 !    nVmax_NH4 = Vmax_NH4/Vmax_PO4;  nVmax_NO3 = Vmax_NO3/Vmax_PO4
     real(8), parameter :: nVmax_NH4(4) = [ 5.0d0, 20.0d0, 10.0d0,   5.0d0 ]     ! (no dim.) 
-    real(8), parameter :: nVmax_NO3(4) = [ 5.0d0, 15.0d0, 15.0d0, 10.0d0 ]      ! (no dim.)
+    real(8), parameter :: nVmax_NO3(4) = [ 5.0d0, 6.5d0, 15.0d0, 10.0d0 ]      ! (no dim.)
 !   Half-saturation constants.           
     real(8), parameter :: Kp_NH4(4)    = [ 0.1d0,    0.5d0 ,  0.5d0, 0.1d0 ]      ! (µmol L-1)  
-    real(8), parameter :: Kp_NO3(4)    = [ 1.0d0,    0.1d0 ,   0.1d0,  1.0d0  ]      ! (µmol L-1)
-    real(8), parameter :: Kp_PO4(4)    = [ 5.0d-2,    5.0d-2,  1.0d-2, 1.0d-2 ]      ! (µmol L-1)  (!!!Tuning parameters!!!)
+    real(8), parameter :: Kp_NO3(4)    = [ 1.0d0,    12.7d0 ,   0.1d0,  1.0d0  ]      ! (µmol L-1)
+    real(8), parameter :: Kp_PO4(4)    = [ 5.0d-2,    4.3d-1,  1.0d-2, 1.0d-2 ]      ! (µmol L-1)  (!!!Tuning parameters!!!)
 !   Coefficients for Hill equation.  
 !    V = K**n_Hill/(K**n_Hill + C**n_Hill), if n_Hill=1 -> Michaelis-Menten equation    
     real(8), parameter :: nNH4_Hill(4)   = [ 2.0d0,    1.0d0,    1.0d0,  1.0d0 ]      ! (µmol L-1)  (!!!Tuning parameters!!!)
@@ -203,17 +203,17 @@ CONTAINS
     real(8), parameter :: off_PO4(4)    = [ 0.0d0,    0.0d0,  0.0d0,  0.0d0 ]      ! (µmol L-1)  (!!!Tuning parameters!!!)
 
 !  Respiration rate at 0 oC
-    real(8), parameter :: k_Rp(4) = [ 3.0d-7,   5.0d-7,   1.0d-7,   1.0d-7   ]    ! (s-1)    (!!!Tuning parameters!!!)
+    real(8), parameter :: k_Rp(4) = [ 1.0d-7,   1.0d-7,   1.0d-7,   1.0d-7   ]    ! (s-1)    (!!!Tuning parameters!!!)
 !  Temperature coefficient for PhyC respiration rate (0.03d0 d-1; Kawamiya et al., 1995)
     real(8), parameter :: b_Rp(4) = [ 0.0519d0, 0.0519d0, 0.0519d0, 0.0519d0 ] ! (degC-1)
 
 !  Mortality rate at 0 oC (0.00562d0 umol-1 d-1; 0.0585L/umolN/day? 0.0088; Kishi et al., 2001)0.0066     
-    real(8), parameter :: k_Mp(4) = [ 1.0d-7,   5.0d-7,   6.5d-8,   6.5d-8   ] ! (L umol-1 s-1)
+    real(8), parameter :: k_Mp(4) = [ 1.0d-7,   1.0d-6,   6.5d-8,   6.5d-8   ] ! (L umol-1 s-1)
 !  Temperature coefficient for PhyC mortality (Kawamiya et al., 1995)
     real(8), parameter :: b_Mp(4) = [ 0.069d0,  0.069d0,  0.069d0,  0.069d0  ] ! (degC-1)   
     real(8), parameter :: rLPOMphy = 0.42d0  ! (Labile POM)/(Total POM) of phytoplankton tissue (no dim.) 
 !  PhyC ratio of extracellular excretion to production 0.135(Kawamiya et al., 1995)    
-    real(8), parameter :: k_Ep(4) = [ 1.0d-8,  2.0d-8,  1.0d-8,  1.0d-8  ] ! (no dim.) 
+    real(8), parameter :: k_Ep(4) = [ 1.0d-8,  1.0d-5,  1.0d-8,  1.0d-8  ] ! (no dim.) 
     real(8), parameter :: rLDOMphy = 0.42d0  ! (Labile DOM)/(Total DOM) of phytoplankton excreted DOM (no dim.) 
 !------- Zooplankton parameters ------------------------
 !                                          from     Dnfl       Dtm        Ccl         Cya
@@ -460,9 +460,12 @@ CONTAINS
 
 !----- Assimilation rate (umolC L-1 s-1) ----------------- 
 
-      cNH4 = MAX( NH4(iNt)-off_NH4(k), 0.0d0)  !!! Offset
-      cNO3 = MAX( NO3(iNt)-off_NO3(k), 0.0d0)  !!! Offset
-      cPO4 = MAX( PO4(iPt)-off_PO4(k), 0.0d0)  !!! Offset
+      cNH4 = MAX( NH4(iNt), 0.0d0)  !!! Offset
+      cNO3 = MAX( NO3(iNt), 0.0d0)  !!! Offset
+      cPO4 = MAX( PO4(iPt), 0.0d0)  !!! Offset
+!      cNH4 = MAX( NH4(iNt)-off_NH4(k), 0.0d0)  !!! Offset
+!      cNO3 = MAX( NO3(iNt)-off_NO3(k), 0.0d0)  !!! Offset
+!      cPO4 = MAX( PO4(iPt)-off_PO4(k), 0.0d0)  !!! Offset
       
       ! --- Hill equation (nC_Hill=1 -> Michaelis-Menten equation) -----
       nVp_NH4 =  nVmax_NH4(k)*cNH4**nNH4_Hill(k)/ &
@@ -476,7 +479,8 @@ CONTAINS
       !   Carbon based assimilation rate
       Ap = MIN( (nVp_NH4+nVp_NO3)/rNCp(k)*rPCp(k), nVp_PO4 )
 
-      Ap = Ap * Pp
+!      Ap = Ap * Pp
+      Ap = 0.0d0
 
       if(nVp_NH4 + nVp_NO3 > 0.0d0) then
         Ap_NO3 = Ap*rNCp(k)* nVp_NO3/( nVp_NH4 + nVp_NO3 )
@@ -536,6 +540,7 @@ CONTAINS
 !      Ep(k) = (Pp(k) - Ap(k))*k_Ep(k) 
 !      Ep(k) = Pp(k) - Ap(k)
       Ep = k_Ep(k)*cPhyC  !!!!**************
+!      Ep = 0.0d0  !!!!**************
 
 !     === Mass balance ===
 
@@ -562,6 +567,7 @@ CONTAINS
 !----- Respiration rate (umolC L-1 s-1) -----------------
 
       Rp = k_Rp(k) * exp(b_Rp(k)*Tmp) * cPhyC
+!      Rp = 0.0d0
 
 !     === Mass balance ===
 
@@ -584,6 +590,7 @@ CONTAINS
 !----- Mortality (umolC L-1 s-1) -----------------
 
       Mp = k_Mp(k) * exp(b_Mp(k)*Tmp) * cPhyC
+!      Mp = 0.0d0
 
 !     === Mass balance ===
 
@@ -760,8 +767,8 @@ CONTAINS
     , 0.0d0             &   ! Dry soil density (g cm-3)
     , 1.0d0             &   ! Soil porosity (= Vwater/(Vwater+Vsed) (non-dimensional: 0.0-1.0)
     , DOx               &   ! Dissolved oxygen (umol L-1)
-    , TA                &   ! Total alkalinity (TA: umol kg-1)
-    , DIC(:)            &   ! Total dissolved inorganic carbon (DIC: umol kg-1)
+    , TA                &   ! Total alkalinity (TA: umol L-1)
+    , DIC(:)            &   ! Total dissolved inorganic carbon (DIC: umol L-1)
     , NO3(:)            &   ! NO3 (umol L-1)
     , NH4(:)            &   ! NH4 (umol L-1)
     , PO4(:)            &   ! PO4 (umol L-1)
@@ -833,25 +840,16 @@ CONTAINS
 !    dDIC_dt(:)       = dDIC_dt(:)       + Dissol*rPIC(:,iDead)
 !    dTA_dt = dTA_dt + Dissol*2.0d0
 
-!#ifdef DEBUG_TEST  /*!!! To chcek mass balance !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-
 !===== Nitrogen fixation ==============================================
 
-    Nfx = k_Nfx * exp(b_Nfx*Tmp) * MAX( PhyN(iNt,iCya), 0.0d0 )  !!!! To be updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+!    Nfx = k_Nfx * exp(b_Nfx*Tmp) * MAX( PhyN(iNt,iCya), 0.0d0 )  !!!! To be updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+    Nfx = 0.0d0 !!!! To be updated !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
     !     === Mass balance ===
 
     dNH4_dt(:) = dNH4_dt(:) + Nfx *aN_N2fix(1:N_Nsp) *rN2(:)
     dTA_dt     = dTA_dt     + Nfx
-  
-
-!===== Unit adjustment ===========================================
-
-    dDIC_dt(:) = dDIC_dt(:)/rho_sw !(umol L-1 s-1) -> (umol kg-1 s-1)
-    dTA_dt     = dTA_dt/rho_sw     !(umol L-1 s-1) -> (umol kg-1 s-1)
-
-!#endif  /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
-      
+     
     RETURN
 
   END SUBROUTINE foodweb

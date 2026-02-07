@@ -452,8 +452,8 @@ contains
 
 !          t(i,j,k,nstp,iOxyg) = Oxyg0      !DO  (umol L-1)
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
-          t(i,j,k,nstp,iTAlk) = TAlk0      !TA  (umol kg-1)  2232.0d0 2275.0d0, 2500.0d0, 2150.0d0, 2000.0d0, 1800.0d0, 1700.0d0, 1600.0d0 
-          t(i,j,k,nstp,iTIC(iCt)) = TIC_0     !DIC  (umol kg-1) 1915.0d0 1930.0d0, 1700.0d0, 2100.0d0, 2300.0d0, 2500.0d0, 2700.0d0, 3000.0d0 
+          t(i,j,k,nstp,iTAlk) = TAlk0 *1.024d0      !TA  (umol L-1) 2232.0d0 2275.0d0, 2500.0d0, 2150.0d0, 2000.0d0, 1800.0d0, 1700.0d0, 1600.0d0 
+          t(i,j,k,nstp,iTIC(iCt)) = TIC_0 *1.024d0  !DIC (umol L-1) 1915.0d0 1930.0d0, 1700.0d0, 2100.0d0, 2300.0d0, 2500.0d0, 2700.0d0, 3000.0d0 
           t(i,j,k,nstp,iNO3(iNt)) = NO3_0      !NO3  (umol L-1)  0.5d0, 10.0d0 control0.2d0 N1.8d0 N*2 3.5d0
           t(i,j,k,nstp,iNH4(iNt)) = NH4_0      !NH4  (umol L-1) 
           t(i,j,k,nstp,iPO4(iPt)) = PO4_0      !PO4  (umol L-1) 0.03d0 0.05d0, 2.0d0 control0.04d0 P0.2d0
@@ -499,7 +499,7 @@ contains
 
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(d13C_TIC0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol L-1) 
           R13C=R13C_fromd13C(d13C_DOC1_0)
           t(i,j,k,nstp,iDO13C(1)) = R13C*t(i,j,k,nstp,iDO13C(1))       !DOC  (umol L-1) 
           R13C=R13C_fromd13C(d13C_DOC2_0)

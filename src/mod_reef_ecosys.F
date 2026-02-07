@@ -174,8 +174,8 @@ END SUBROUTINE allocate_reef_ecosys
     , Tmp            &   ! Tmp(N): Temperature (oC)
     , Sal            &   ! Sal(N): Salinity (PSU)
     , DOx            &   ! DOx(N): Dissolved oxygen (umol O2 L-1)
-    , TA             &   ! TA(N) : Total alkalinity (umol kg-1)
-    , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C kg-1)
+    , TA             &   ! TA(N) : Total alkalinity (umol L-1)
+    , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C L-1)
     , NO3            &   ! NO3(N_Nsp,N): (umol N L-1)
     , NH4            &   ! NH4(N_Nsp,N): (umol N L-1)
     , PO4            &   ! PO4(N_Psp,N): (umol P L-1)
@@ -221,8 +221,8 @@ END SUBROUTINE allocate_reef_ecosys
     , dTemp_dt       &   ! dTemp_dt(N)           : Temperature (oC s-1)
     , dSalt_dt       &   ! dSalt_dt(N)           : Salinity (PSU s-1)
     , dDOx_dt        &   ! dDOx_dt(N)            : dDOx/dt  (umol O2 L-1 s-1) 
-    , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol kg-1 s-1) 
-    , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+    , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol L-1 s-1) 
+    , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
     , dNO3_dt        &   ! dNO3_dt(N_Nsp,N)      : dNO3/dt  (umol N L-1 s-1)
     , dNH4_dt        &   ! dNH4_dt(N_Nsp,N)      : dNH4/dt  (umol N L-1 s-1)
     , dPO4_dt        &   ! dPO4_dt(N_Psp,N)      : dPO4/dt  (umol P L-1 s-1)
@@ -390,8 +390,8 @@ END SUBROUTINE allocate_reef_ecosys
     real(8), intent(out) :: dTemp_dt(N)            ! Tmp(N): Temperature (oC)
     real(8), intent(out) :: dSalt_dt(N)            ! Sal(N): Salinity (PSU)
     real(8), intent(out) :: dDOx_dt(N)             ! dDOx/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dTA_dt (N)             ! dTA/dt   (umol kg-1 s-1) 
-    real(8), intent(out) :: dDIC_dt(N_Csp,N)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+    real(8), intent(out) :: dTA_dt (N)             ! dTA/dt   (umol L-1 s-1) 
+    real(8), intent(out) :: dDIC_dt(N_Csp,N)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
     real(8), intent(out) :: dNO3_dt(N_Nsp,N)       ! dNO3/dt (umol L-1 s-1)
     real(8), intent(out) :: dNH4_dt(N_Nsp,N)       ! dNH4/dt (umol L-1 s-1)
     real(8), intent(out) :: dPO4_dt(N_Psp,N)       ! dPO4/dt (umol L-1 s-1)
@@ -710,8 +710,8 @@ END SUBROUTINE allocate_reef_ecosys
         , Tmp(k)       &   ! Temperature (oC)
         , Sal(k)       &   ! Salinity (PSU)
         , DOx(k)       &   ! DOx: Dissolved oxygen (umol O2 L-1)
-        , TA (k)       &   ! TA: Total alkalinity (umol kg-1)
-        , DIC(:,k)     &   ! DIC(N_Csp): Total dissolved inorganic carbon (umol C kg-1)
+        , TA (k)       &   ! TA: Total alkalinity (umol L-1)
+        , DIC(:,k)     &   ! DIC(N_Csp): Total dissolved inorganic carbon (umol C L-1)
         , NO3(:,k)     &   ! NO3(N_Nsp): (umol N L-1)
         , NH4(:,k)     &   ! NH4(N_Nsp): (umol N L-1)
         , PO4(:,k)     &   ! PO4(N_Psp): (umol P L-1)
@@ -738,8 +738,8 @@ END SUBROUTINE allocate_reef_ecosys
 #  endif
     !   output parameters
         , dDOx(k)      &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
-        , dTA (k)      &   ! dTA_dt              : dTA/dt   (umol kg-1 s-1) 
-        , dDIC(:,k)    &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+        , dTA (k)      &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
+        , dDIC(:,k)    &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
         , dNO3(:,k)    &   ! dNO3_dt(N_Nsp)      : dNO3/dt  (umol N L-1 s-1)
         , dNH4(:,k)    &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
         , dPO4(:,k)    &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
@@ -817,7 +817,7 @@ END SUBROUTINE allocate_reef_ecosys
             , Tmp(k)         &   ! Temperature (oC)
             , Sal(k)         &   ! Salinity (PSU)
             , DOx(k)         &   ! DOx             : Dissolved oxygen (umol O2 L-1)
-            , DIC(:,k)       &   ! DIC(N_Csp): Total dissolved inorganic carbon (umol C kg-1)
+            , DIC(:,k)       &   ! DIC(N_Csp): Total dissolved inorganic carbon (umol C L-1)
             , Wcal(k)        &   ! Calcite saturation state
             , PhyC(:,:,k)    &   ! Phytoplankton C bomass (umol C L-1)
             , PhyN(:,:,k)    &   ! Phytoplankton N bomass (umol N L-1)
@@ -825,8 +825,8 @@ END SUBROUTINE allocate_reef_ecosys
             , PIC (:,:,k)    &   ! Particulate inorganic carbon (PIC: umolC L-1), coccolith (CaCO3)
         !   output parameters
             , dDOx(k)        &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
-            , dTA (k)        &   ! dTA_dt              : dTA/dt   (umol kg-1 s-1) 
-            , dDIC(:,k)      &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+            , dTA (k)        &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
+            , dDIC(:,k)      &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
             , dNH4(:,k)      &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
             , dPO4(:,k)      &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
             , dDOC(:,:,k)    &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
@@ -973,8 +973,8 @@ END SUBROUTINE allocate_reef_ecosys
             , Tmp(1)          &   ! Temperature (oC)
             , Sal(1)          &   ! Salinity (PSU)
             , DOx(1)          &   ! Dissolved oxygen (umol L-1)
-            , TA (1)          &   ! Total alkalinity (TA: umol kg-1)
-            , DIC(:,1)        &   ! Total dissolved inorganic carbon (DIC: umol kg-1)
+            , TA (1)          &   ! Total alkalinity (TA: umol L-1)
+            , DIC(:,1)        &   ! Total dissolved inorganic carbon (DIC: umol L-1)
 #  if defined CORAL_NUTRIENTS
             , NO3(:,1)        &   ! NO3 (umol L-1)
             , NH4(:,1)        &   ! NH4 (umol L-1)
@@ -1019,8 +1019,8 @@ END SUBROUTINE allocate_reef_ecosys
         cff=0.01d0 /dz(1) * p_coral(icl)*P2R(icl)
          
         dDOx_dt(1) = dDOx_dt(1) - Flux_DO  * cff
-        dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff/rho_sw(1)
-        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff/rho_sw(1)
+        dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff
+        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff
 #  if defined CORAL_NUTRIENTS
         dNO3_dt(:,1) = dNO3_dt(:,1) - Flux_NO3(:) * cff
         dNH4_dt(:,1) = dNH4_dt(:,1) - Flux_NH4(:) * cff
@@ -1069,7 +1069,7 @@ END SUBROUTINE allocate_reef_ecosys
 #  endif
           , PFD                 &   ! Photon flux density (umol m-2 s-1)
           , rho_sw(1)           &   ! Density of seawater (g cm-3)
-          , DIC(:,1)*rho_sw(1)  &   ! DIC (umol l-1)            ! [umol/L] = [umol/kg] [g/cm3] (kg/1000g)(1000cm3/L)
+          , DIC(:,1)            &   ! DIC (umol l-1)            ! [umol/L] = [umol/kg] [g/cm3] (kg/1000g)(1000cm3/L)
           , DOx(1)              &   ! DO  (umol L-1)
 #  if defined SEAGRASS_LEAF_NUTRIENT_UPTAKE         
           , NO3(:,1)            &   ! NO3 concentration (umol L-1)
@@ -1104,7 +1104,7 @@ END SUBROUTINE allocate_reef_ecosys
 
         ! cff = unit_conversion_factor / height * coverage_area_fraction
         cff = 1.0d0/dz(1) * p_sgrass(icl)
-        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff/rho_sw(1)
+        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff
         dDOx_dt(1) = dDOx_dt(1) - Flux_DO  * cff
         dNO3_dt(:,1) = dNO3_dt(:,1) - Flux_NO3(:) * cff
         dNH4_dt(:,1) = dNH4_dt(:,1) - Flux_NH4(:) * cff
@@ -1149,7 +1149,7 @@ END SUBROUTINE allocate_reef_ecosys
           , PFDbott        &   ! Photon flux density (umol m-2 s-1)
           , rho_sw(1)      &   ! Density of seawater (g cm-3)
           , DOx(1)         &   ! DO  (umol L-1)
-          , DIC(:,1)       &   ! DIC (umol kg-1)
+          , DIC(:,1)       &   ! DIC (umol L-1)
           , NO3(:,1)       &   ! NO3 concentration (umol L-1)
           , NH4(:,1)       &   ! NH4 concentration (umol L-1)
           , PO4(:,1)       &   ! NH4 concentration (umol L-1)
@@ -1173,8 +1173,8 @@ END SUBROUTINE allocate_reef_ecosys
         cff = 1.0d0/dz(1) * p_algae(icl)
         
         dDOx_dt(1) = dDOx_dt(1) - Flux_DO  * cff
-        dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff/rho_sw(1)
-        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff/rho_sw(1)
+!        dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff
+        dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff
         dNO3_dt(:,1) = dNO3_dt(:,1) - Flux_NO3(:) * cff
         dNH4_dt(:,1) = dNH4_dt(:,1) - Flux_NH4(:) * cff
         dPO4_dt(:,1) = dPO4_dt(:,1) - Flux_PO4(:) * cff
@@ -1203,8 +1203,8 @@ END SUBROUTINE allocate_reef_ecosys
         ( ng, i, j       &   ! ng: nested grid number; i,j: position
         , PFDbott        &   ! Photon flux density (umol m-2 s-1)
         , rho_sw(1)      &   ! Density of seawater (g cm-3)
-        , DIC(:,1)       &   ! DIC (umol kg-1)
-        , TA (1)         &   ! TA (umol kg-1)
+        , DIC(:,1)       &   ! DIC (umol L-1)
+        , TA (1)         &   ! TA (umol L-1)
         , DOx(1)         &   ! DO (umol L-1)
         , NH4(1)         &   ! NH4 concentration (umol L-1)
 !       output parameters
@@ -1221,8 +1221,8 @@ END SUBROUTINE allocate_reef_ecosys
 
       cff=1.0d0 /dz(1) * p_sand
 
-      dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff/rho_sw(1)
-      dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff/rho_sw(1)
+      dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff
+      dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff
       dDOx_dt(1) = dDOx_dt(1) - Flux_DO  * cff
       dNO3_dt(:,1) = dNO3_dt(:,1) - Flux_NO3(:) * cff
       dNH4_dt(:,1) = dNH4_dt(:,1) - Flux_NH4(:) * cff
@@ -1279,8 +1279,8 @@ END SUBROUTINE allocate_reef_ecosys
           , Tmp(1)           &   ! Tmp: Temperature (oC)
           , Sal(1)           &   ! Sal: Salinity (PSU)
           , DOx(1)           &   ! DOx: Dissolved oxygen (umol L-1)
-          , TA(1)            &   ! TA: Total alkalinity (umol kg-1)
-          , DIC(:,1)         &   ! DIC: Dissolved inorganic carbon (umol kg-1)
+          , TA(1)            &   ! TA: Total alkalinity (umol L-1)
+          , DIC(:,1)         &   ! DIC: Dissolved inorganic carbon (umol L-1)
           , NO3(:,1)         &   ! NO3: NO3 (umol L-1)
           , NH4(:,1)         &   ! NH4: NH4 (umol L-1)
           , PO4(:,1)         &   ! PO4: PO4 (umol L-1)
@@ -1362,8 +1362,8 @@ END SUBROUTINE allocate_reef_ecosys
       dTemp_dt(1) = dTemp_dt(1) - Flux_Tmp  * cff
       dSalt_dt(1) = dSalt_dt(1) - Flux_Sal  * cff
       dDOx_dt(1) = dDOx_dt(1) - Flux_DO  * cff
-      dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff/rho_sw(1)
-      dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff/rho_sw(1)
+      dTA_dt (1) = dTA_dt (1) - Flux_TA  * cff
+      dDIC_dt(:,1) = dDIC_dt(:,1) - Flux_DIC(:) * cff
       dNO3_dt(:,1) = dNO3_dt(:,1) - Flux_NO3(:) * cff
       dNH4_dt(:,1) = dNH4_dt(:,1) - Flux_NH4(:) * cff
       dPO4_dt(:,1) = dPO4_dt(:,1) - Flux_PO4(:) * cff

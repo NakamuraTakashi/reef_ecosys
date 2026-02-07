@@ -5,10 +5,8 @@
 
 &ecosys_config
 ! Simulation period     
-!  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-  Tmax = 730.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-!  Tmax = 30.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-!  ymax = 1.0d0 !years
+  Tmax = 5.8d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+
 ! Start time
   time0 = 0.0d0 ! day
 
@@ -21,16 +19,15 @@
 !                5: Incubation chamber simulation of Nakamura & Nakamori (2009) experiments
 !                6: Flume simulation of Comeau et al. (2016) experiments   
 !                7: Vertical profile simulation   
-!  nSetting = 7
-  nSetting = 3
+  nSetting = 2
 
-  Im = 2  ! Im = 2 for nSetting = 3
+  Im = 1
   Jm = 1
   N  = 1
 
-  dt = 60.0d0 ! Time step (sec)
+  dt = 1.0d0
 
-  depth = 9.0d0 ! Set depth (m)
+  depth = 1.0d0 ! Set depth (m)
 
   isplitc  = 20
 
@@ -61,7 +58,7 @@
 !    
 !           1       5     8 9 10  12
 !           |       |     | | |   |
-  in_file = 0,0,0,0,0,0,0,0,0,0,0,0
+  in_file = 0,0,0,0,0,0,0,0,1,1,0,0
 /
 
 &input
@@ -78,9 +75,9 @@
   Cloud_FILE = "input/Ishigaki_frc_JMAobs_2018_cloud.nc"    ! Relative humidity (%)
 
 ! Only ascii text file is acceptable.
-  PPFD_FILE  = "input/PPFD_day_since_20150828_000000.txt"  !!! Used
+  PPFD_FILE  = "input/PFD_2022.txt"  !!! Used
 ! Only ascii text file is acceptable.
-  WTEMP_FILE  = "input/temp_day_since_20150828_000000.txt" !!! Used
+  WTEMP_FILE  = "input/Temp_2022.txt" !!! Used
   
   WLEVEL_FILE = "input/level2017.txt"
 ! Only ascii text file is acceptable.
@@ -88,38 +85,14 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/oys_dens0.005'
+  OUTFILE_prefix = 'output/2022NP'
 /
 
 &sedeco_config
 
-  Fdep_sed_in  = 3.0d-8  ! Sedimentation rate (g cm-2 s-1); 2.77d-8 g/cm2/s = 1.0 g/m2/h
-                          ! (Positive: sedimentation; Negative: erosion)
-  MnO2_sed_in  = 1.0d4   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
-!  MnO2_sed_in  = 1.0d4   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
-  FeOOH_sed_in = 1.0d5   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
-  FeS2_sed_in  = 1.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
-!  FeOOH_sed_in = 5.0d5   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
-!  FeS2_sed_in  = 5.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
-  LPOC_sed_in = 2.0d3   ! Labile Organic carbon in sediments [nmol/g(DW)]
-  RPOC_sed_in = 2.0d6   ! Refractory Organic carbon in sediments [nmol/g(DW)]
-                         !  (~2000 umolC g-1; Miyajima et al., 2015)
-  rCaCO3_sed_in = 0.8d0 ! Fraction of Calcium carbonate (CaCO3) in sediments [% DW]
-
-! parameters of sumbarine groundwater discharge (set: SGD_ON)
-  sgd_flux_in = 0.0d-2   ! sumbarine groundwater discharge rate (cm s-1) 
-  sgd_Tmp_in  = 25.0d0  ! SGD concentration coming in through bottom: Tmp: Temperature (oC)
-  sgd_Sal_in  = 1.0d0  ! SGD concentration coming in through bottom: Sal: Salinity (PSU)
-  sgd_DOx_in  = 50.0d0  ! SGD concentration coming in through bottom: DOx: Dissolved oxygen (umol L-1)
-  sgd_TA_in   = 3500.0d0  ! SGD concentration coming in through bottom: TA : Total alkalinity (TA: umol kg-1)
-  sgd_DIC_in  = 3500.0d0  ! SGD concentration coming in through bottom: DIC: Total dissolved inorganic carbon (DIC: umol kg-1)
-  sgd_NO3_in  = 100.0d0  ! SGD concentration coming in through bottom: NO3: NO3 (umol L-1)
-  sgd_NH4_in  = 1.0d0  ! SGD concentration coming in through bottom: NH4: NH4 (umol L-1)
-  sgd_PO4_in  = 1.0d0  ! SGD concentration coming in through bottom: PO4: PO4 (umol L-1)
-  sgd_DOC_in  = 200.0d0, 100.0d0
-  sgd_DON_in  =  30.2d0,  15.1d0
-  sgd_DOP_in  =   1.9d0,   0.9d0
-
+  MnO2_sed_in  = 1.0d2   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
+  FeOOH_sed_in = 1.0d3   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
+  FeS2_sed_in  = 0.0d0   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
 /
 
 &vprof_config
@@ -132,23 +105,10 @@
   ETA_size_in = 50.0d0 ! (m)
 /
 
-&aquaculture_config
-          !  01 Oyster        
-          !  02 Wakame Seaweed
-          !  03 Sea squirt  
-          !  04 Scallop
-          !  05 Salmon (not used) 
-          !
-          !      01      02        03      04      05
-!  dens_aqua0  = 0.01d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
-  dens_aqua0  = 0.005d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
-          !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
-/
-
 !--- Initial Condition -----------------------------------------------------
 &initial
 
-  T0 = 20.0d0          ! Water temperature (oC)
+  T0 = 28.0d0          ! Water temperature (oC)
   S0 = 34.0d0          ! Salinity (PSU)
   Sed1_0  = 0.0d0      ! Sediment concentration (g m-3)
 
@@ -157,9 +117,9 @@
   Oxyg0 = 250.0d0      ! DO  (umol L-1)
   TAlk0 = 2232.0d0     ! TA  (umol kg-1) 
   TIC_0 = 1915.0d0     ! DIC (umol kg-1)  !!! 2050.0d0 @ fCO2=800uatm;  2030.0d0 @ fCO2=700uatm 
-  NO3_0 = 0.2d0        ! NO3  (umol L-1)  control: 0.2d0, N: 1.8d0, N*2: 3.5d0
+  NO3_0 = 24.0d0        ! NO3  (umol L-1)  control: 0.2d0, N: 1.8d0, N*2: 3.5d0
   NH4_0 = 0.26d0       ! NH4  (umol L-1) 
-  PO4_0 = 0.04d0       ! PO4  (umol L-1)  control: 0.04d0, P: 0.2d0
+  PO4_0 = 1.2d0       ! PO4  (umol L-1)  control: 0.04d0, P: 0.2d0
 
   DOC_0 = 10.0d0, 50.0d0         ! DOC (umol C L-1); Labile, Refractory
   POC_0 = 1.0d0,  0.1d0, 0.1d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
@@ -167,8 +127,8 @@
 !  PON_0 = 1.0d0,  0.1d0, 0.1d0  ! PON (umol N L-1); Labile, Refractory, Coarse 
 !  DOP_0 = 5.0d0, 50.0d0         ! DOP (umol P L-1); Labile, Refractory
 !  POP_0 = 1.0d0,  0.1d0, 0.1d0  ! POP (umol P L-1); Labile, Refractory, Coarse 
- PhyC_0 = 2.0d0,  10.0d0, 1.0d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
- ZooC_0 = 0.3d0 !0.1d0       ! ZooC (umol L-1)
+ PhyC_0 = 0.02d0,  0.08d0, 0.002d0, 0.002d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+ ZooC_0 = 0.0d0 !0.1d0       ! ZooC (umol L-1)
 ! PhyN_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
 ! ZooN_0 = 0.1d0       ! ZooC (umol L-1)
 ! PhyP_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  

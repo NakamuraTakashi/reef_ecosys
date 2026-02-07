@@ -88,7 +88,7 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/oys_dens0.002'
+  OUTFILE_prefix = 'output_x3.0/OYSx3.0' ! x1
 /
 
 &sedeco_config
@@ -140,9 +140,10 @@
           !  05 Salmon (not used) 
           !
           !      01      02        03      04      05
-!  dens_aqua0  = 0.01d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
-  dens_aqua0  = 0.002d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0
+  dens_aqua0  = 0.055d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x1
           !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
+
+  f_dens = 3.0d0 ! x3.0 Oyster density adjustment factor
 /
 
 !--- Initial Condition -----------------------------------------------------
@@ -162,12 +163,13 @@
   PO4_0 = 0.04d0       ! PO4  (umol L-1)  control: 0.04d0, P: 0.2d0
 
   DOC_0 = 10.0d0, 50.0d0         ! DOC (umol C L-1); Labile, Refractory
-  POC_0 = 1.0d0,  0.1d0, 0.1d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
+  POC_0 = 15.0d0,  1.0d0, 0.0d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
 !  DON_0 = 5.0d0, 50.0d0         ! DON (umol N L-1); Labile, Refractory
 !  PON_0 = 1.0d0,  0.1d0, 0.1d0  ! PON (umol N L-1); Labile, Refractory, Coarse 
 !  DOP_0 = 5.0d0, 50.0d0         ! DOP (umol P L-1); Labile, Refractory
 !  POP_0 = 1.0d0,  0.1d0, 0.1d0  ! POP (umol P L-1); Labile, Refractory, Coarse 
- PhyC_0 = 2.0d0,  10.0d0, 1.0d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+! PhyC_0 = 2.0d0,  10.0d0, 1.0d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+ PhyC_0 = 0.1d0,  2.0d0, 0.1d0, 0.1d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
  ZooC_0 = 0.3d0 !0.1d0       ! ZooC (umol L-1)
 ! PhyN_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
 ! ZooN_0 = 0.1d0       ! ZooC (umol L-1)
