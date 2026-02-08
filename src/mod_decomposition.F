@@ -25,8 +25,8 @@ CONTAINS
     , rhos_d         &   ! Dry soil density (g cm-3)
     , poro           &   ! Soil porosity (= Vwater/(Vwater+Vsed) (non-dimensional: 0.0-1.0)
     , O2             &   ! Dissolved oxygen (umol L-1)
-    , TA             &   ! Total alkalinity (TA: umol kg-1)
-    , DIC            &   ! Total dissolved inorganic carbon (DIC: umol kg-1)
+    , TA             &   ! Total alkalinity (TA: umol L-1)
+    , DIC            &   ! Total dissolved inorganic carbon (DIC: umol L-1)
     , NO3            &   ! NO3 (umol L-1)
     , NH4            &   ! NH4 (umol L-1)
     , PO4            &   ! PO4 (umol L-1)
@@ -560,8 +560,8 @@ CONTAINS
       R_O2       = R_O2       - v1c
 
       ! R2:   4/5 NO3- + CH2O + 4/5 H+ --> 4/5 N2 + CO2 + 7/5 H2O
-!      R_NO3(:)   = R_NO3(:)   - v2c*0.8d0 *aN_denitr(1:N_Nsp)*rNO3(:)
-!      R_TA       = R_TA       + v2c*0.8d0
+      R_NO3(:)   = R_NO3(:)   - v2c*0.8d0 *aN_denitr(1:N_Nsp)*rNO3(:)
+      R_TA       = R_TA       + v2c*0.8d0
 
       ! R3:   2MnO2 + CH2O + 4H+ --> 2Mn2+ + CO2 + 3H2O
       R_MnO2     = R_MnO2     - v3c*2.0d0
@@ -621,8 +621,8 @@ CONTAINS
       R_O2       = R_O2       - v1c
 
       ! R2:   4/5 NO3- + CH2O + 4/5 H+ --> 4/5 N2 + CO2 + 7/5 H2O
-!      R_NO3(:)   = R_NO3(:)   - v2c*0.8d0 *aN_denitr(1:N_Nsp)*rNO3(:)
-!      R_TA       = R_TA       + v2c*0.8d0
+      R_NO3(:)   = R_NO3(:)   - v2c*0.8d0 *aN_denitr(1:N_Nsp)*rNO3(:)
+      R_TA       = R_TA       + v2c*0.8d0
 
       ! R3:   2MnO2 + CH2O + 4H+ --> 2Mn2+ + CO2 + 3H2O
       R_MnO2     = R_MnO2     - v3c*2.0d0

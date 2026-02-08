@@ -290,21 +290,21 @@ CONTAINS
     real(8), intent(in) :: PhyP(N_Psp,Nphy)     ! phytoplankton P biomass (umol P L-1), dinoflagellate
     real(8), intent(in) :: PIC (N_Csp,Npim)     ! Particulate inorganic carbon (PIC: umol L-1), coccolith (CaCO3)
 ! output parameters
-    real(8), intent(out) :: dDOx_dt              ! dDOx/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dTA_dt               ! dTA/dt   (umol L-1 s-1) 
-    real(8), intent(out) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1
-    real(8), intent(out) :: dNH4_dt(N_Nsp)       ! dNH4/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPO4_dt(N_Psp)       ! dPO4/dt (umol L-1 s-1)
-    real(8), intent(out) :: dDOC_dt(N_Csp,Ndom)  ! dDOC/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dPOC_dt(N_Csp,Npom)  ! dPOC/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dDON_dt(N_Nsp,Ndom)  ! dDON/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPON_dt(N_Nsp,Npom)  ! dPON/dt (umol L-1 s-1)
-    real(8), intent(out) :: dDOP_dt(N_Psp,Ndom)  ! dDOP/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPOP_dt(N_Psp,Npom)  ! dPOP/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPhyC_dt(N_Csp,Nphy) ! dPhyC/dt  (umolC L-1 s-1)  
-    real(8), intent(out) :: dPhyN_dt(N_Nsp,Nphy) ! dPhyN/dt  (umolN L-1 s-1)  
-    real(8), intent(out) :: dPhyP_dt(N_Psp,Nphy) ! dPhyP/dt  (umolP L-1 s-1)  
-    real(8), intent(out) :: dPIC_dt (N_Csp,Npim) ! dPIC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dDOx_dt              ! dDOx/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dTA_dt               ! dTA/dt   (umol L-1 s-1) 
+    real(8), intent(inout) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1
+    real(8), intent(inout) :: dNH4_dt(N_Nsp)       ! dNH4/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPO4_dt(N_Psp)       ! dPO4/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dDOC_dt(N_Csp,Ndom)  ! dDOC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dPOC_dt(N_Csp,Npom)  ! dPOC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dDON_dt(N_Nsp,Ndom)  ! dDON/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPON_dt(N_Nsp,Npom)  ! dPON/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dDOP_dt(N_Psp,Ndom)  ! dDOP/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPOP_dt(N_Psp,Npom)  ! dPOP/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPhyC_dt(N_Csp,Nphy) ! dPhyC/dt  (umolC L-1 s-1)  
+    real(8), intent(inout) :: dPhyN_dt(N_Nsp,Nphy) ! dPhyN/dt  (umolN L-1 s-1)  
+    real(8), intent(inout) :: dPhyP_dt(N_Psp,Nphy) ! dPhyP/dt  (umolP L-1 s-1)  
+    real(8), intent(inout) :: dPIC_dt (N_Csp,Npim) ! dPIC/dt  (umol L-1 s-1) 
 
 ! --- C:N:P:CaCO3 ratio of bivalves ---
     real(8), parameter :: rNCb(2)  = [ 16d0/106d0, 16d0/106d0 ] ! (no dim.) Oyster N:C ratio
@@ -422,21 +422,21 @@ CONTAINS
 
 !======================================================================================
 !  Preparation
-    dDOx_dt       = 0.0d0
-    dTA_dt        = 0.0d0
-    dDIC_dt(:)    = 0.0d0
-    dNH4_dt(:)    = 0.0d0
-    dPO4_dt(:)    = 0.0d0
-    dDOC_dt(:,:)  = 0.0d0
-    dPOC_dt(:,:)  = 0.0d0
-    dDON_dt(:,:)  = 0.0d0
-    dPON_dt(:,:)  = 0.0d0
-    dDOP_dt(:,:)  = 0.0d0
-    dPOP_dt(:,:)  = 0.0d0
-    dPhyC_dt(:,:) = 0.0d0
-    dPhyN_dt(:,:) = 0.0d0
-    dPhyP_dt(:,:) = 0.0d0
-    dPIC_dt (:,:) = 0.0d0
+!    dDOx_dt       = 0.0d0
+!    dTA_dt        = 0.0d0
+!    dDIC_dt(:)    = 0.0d0
+!    dNH4_dt(:)    = 0.0d0
+!    dPO4_dt(:)    = 0.0d0
+!    dDOC_dt(:,:)  = 0.0d0
+!    dPOC_dt(:,:)  = 0.0d0
+!    dDON_dt(:,:)  = 0.0d0
+!    dPON_dt(:,:)  = 0.0d0
+!    dDOP_dt(:,:)  = 0.0d0
+!    dPOP_dt(:,:)  = 0.0d0
+!    dPhyC_dt(:,:) = 0.0d0
+!    dPhyN_dt(:,:) = 0.0d0
+!    dPhyP_dt(:,:) = 0.0d0
+!    dPIC_dt (:,:) = 0.0d0
 
     dQCe_dt(:) = 0.0d0
     dQCv_dt(:) = 0.0d0

@@ -132,32 +132,32 @@ CONTAINS
     real(8), intent(in) :: COTl           ! COT starfish larvae (umol L-1)
 # endif
 !   output parameters
-    real(8), intent(out) :: dDOx_dt              ! dDOx/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dTA_dt               ! dTA/dt   (umol kg-1 s-1) 
-    real(8), intent(out) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
-    real(8), intent(out) :: dNO3_dt(N_Nsp)       ! dNO3/dt (umol L-1 s-1)
-    real(8), intent(out) :: dNH4_dt(N_Nsp)       ! dNH4/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPO4_dt(N_Psp)       ! dPO4/dt (umol L-1 s-1)
-    real(8), intent(out) :: dDOC_dt(N_Csp,Ndom)  ! dDOC/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dPOC_dt(N_Csp,Npom)  ! dPOC/dt  (umol L-1 s-1) 
-    real(8), intent(out) :: dDON_dt(N_Nsp,Ndom)  ! dDON/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPON_dt(N_Nsp,Npom)  ! dPON/dt (umol L-1 s-1)
-    real(8), intent(out) :: dDOP_dt(N_Psp,Ndom)  ! dDOP/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPOP_dt(N_Psp,Npom)  ! dPOP/dt (umol L-1 s-1)
-    real(8), intent(out) :: dPhyC_dt(N_Csp,Nphy) ! dPhyC/dt  (umolC L-1 s-1)  
-    real(8), intent(out) :: dZooC_dt(N_Csp,Nzoo) ! dZooC/dt  (umolC L-1 s-1)  
-    real(8), intent(out) :: dPhyN_dt(N_Nsp,Nphy) ! dPhyN/dt  (umolN L-1 s-1)  
-    real(8), intent(out) :: dZooN_dt(N_Nsp,Nzoo) ! dZooN/dt  (umolN L-1 s-1)  
-    real(8), intent(out) :: dPhyP_dt(N_Psp,Nphy) ! dPhyP/dt  (umolP L-1 s-1)  
-    real(8), intent(out) :: dZooP_dt(N_Psp,Nzoo) ! dZooP/dt  (umolP L-1 s-1)  
-    real(8), intent(out) :: dPIC_dt (N_Csp,Npim) ! dPIC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dDOx_dt              ! dDOx/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dTA_dt               ! dTA/dt   (umol kg-1 s-1) 
+    real(8), intent(inout) :: dDIC_dt(N_Csp)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+    real(8), intent(inout) :: dNO3_dt(N_Nsp)       ! dNO3/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dNH4_dt(N_Nsp)       ! dNH4/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPO4_dt(N_Psp)       ! dPO4/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dDOC_dt(N_Csp,Ndom)  ! dDOC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dPOC_dt(N_Csp,Npom)  ! dPOC/dt  (umol L-1 s-1) 
+    real(8), intent(inout) :: dDON_dt(N_Nsp,Ndom)  ! dDON/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPON_dt(N_Nsp,Npom)  ! dPON/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dDOP_dt(N_Psp,Ndom)  ! dDOP/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPOP_dt(N_Psp,Npom)  ! dPOP/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dPhyC_dt(N_Csp,Nphy) ! dPhyC/dt  (umolC L-1 s-1)  
+    real(8), intent(inout) :: dZooC_dt(N_Csp,Nzoo) ! dZooC/dt  (umolC L-1 s-1)  
+    real(8), intent(inout) :: dPhyN_dt(N_Nsp,Nphy) ! dPhyN/dt  (umolN L-1 s-1)  
+    real(8), intent(inout) :: dZooN_dt(N_Nsp,Nzoo) ! dZooN/dt  (umolN L-1 s-1)  
+    real(8), intent(inout) :: dPhyP_dt(N_Psp,Nphy) ! dPhyP/dt  (umolP L-1 s-1)  
+    real(8), intent(inout) :: dZooP_dt(N_Psp,Nzoo) ! dZooP/dt  (umolP L-1 s-1)  
+    real(8), intent(inout) :: dPIC_dt (N_Csp,Npim) ! dPIC/dt  (umol L-1 s-1) 
 # if defined BLUE_TIDE         
-    real(8), intent(out) :: dH2S_dt(N_Ssp)       ! dH2S/dt  (umol S L-1 s-1)
-    real(8), intent(out) :: dS0_dt (N_Ssp)       ! dS0/dt   (umol S L-1 s-1)
+    real(8), intent(inout) :: dH2S_dt(N_Ssp)       ! dH2S/dt  (umol S L-1 s-1)
+    real(8), intent(inout) :: dS0_dt (N_Ssp)       ! dS0/dt   (umol S L-1 s-1)
 # endif
 # if defined COT_STARFISH
-    real(8), intent(out) :: dCOTe_dt      ! dCOTe/dt (umol L-1 s-1)
-    real(8), intent(out) :: dCOTl_dt      ! dCOTl/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dCOTe_dt      ! dCOTe/dt (umol L-1 s-1)
+    real(8), intent(inout) :: dCOTl_dt      ! dCOTl/dt (umol L-1 s-1)
 # endif
     real(8), intent(out) :: pH             ! pH
     real(8), intent(out) :: Wcal           ! Calcite saturation state
@@ -170,7 +170,7 @@ CONTAINS
 !  Phytoplankton photosynthesis Parameter         
 !                                       Dnfl      Dtm        Ccl      Cya
 !  Maximum photosynthetic rate ( s-1) (0.4d0 d-1; Kishi et al., 2007)0.3     (!!!Tuning parameters!!!) 
-    real(8), parameter :: Pp_max(4)= [ 5.0d-5,   5.0d-4,  1.0d-5,   3.5d-5 ]  ! (s-1)   JS_edit check reference values for all parameters
+    real(8), parameter :: Pp_max(4)= [ 5.0d-5,   2.0d-3,  1.0d-5,   3.5d-5 ]  ! (s-1)   JS_edit check reference values for all parameters
 !  Parameters for temperature dependency on photosynthetic rate
 !    fp_temp = A_Pp*exp(-Ea_Pp/Rg/TK)/(1.0d0+exp((TK*dS_Pp-dH_Pp)/Rg/TK))
     real(8), parameter :: A_Pp (4) = [3.0d11,   3.0d11,   3.0d11,   3.0d11 ]     ! !!! Tuning
@@ -186,10 +186,10 @@ CONTAINS
 !                                           Dnfl       Dtm      Ccl     Cya
 !   Maximum N uptake rate normalized by maximum PO4 updatke rate.
 !    nVmax_NH4 = Vmax_NH4/Vmax_PO4;  nVmax_NO3 = Vmax_NO3/Vmax_PO4
-    real(8), parameter :: nVmax_NH4(4) = [ 5.0d0, 20.0d0, 10.0d0,   5.0d0 ]     ! (no dim.) 
+    real(8), parameter :: nVmax_NH4(4) = [ 5.0d0, 40.0d0, 10.0d0,   5.0d0 ]     ! (no dim.) 
     real(8), parameter :: nVmax_NO3(4) = [ 5.0d0, 6.5d0, 15.0d0, 10.0d0 ]      ! (no dim.)
 !   Half-saturation constants.           
-    real(8), parameter :: Kp_NH4(4)    = [ 0.1d0,    0.5d0 ,  0.5d0, 0.1d0 ]      ! (µmol L-1)  
+    real(8), parameter :: Kp_NH4(4)    = [ 0.1d0,    1.0d0 ,  0.5d0, 0.1d0 ]      ! (µmol L-1)  
     real(8), parameter :: Kp_NO3(4)    = [ 1.0d0,    12.7d0 ,   0.1d0,  1.0d0  ]      ! (µmol L-1)
     real(8), parameter :: Kp_PO4(4)    = [ 5.0d-2,    4.3d-1,  1.0d-2, 1.0d-2 ]      ! (µmol L-1)  (!!!Tuning parameters!!!)
 !   Coefficients for Hill equation.  
@@ -208,7 +208,7 @@ CONTAINS
     real(8), parameter :: b_Rp(4) = [ 0.0519d0, 0.0519d0, 0.0519d0, 0.0519d0 ] ! (degC-1)
 
 !  Mortality rate at 0 oC (0.00562d0 umol-1 d-1; 0.0585L/umolN/day? 0.0088; Kishi et al., 2001)0.0066     
-    real(8), parameter :: k_Mp(4) = [ 1.0d-7,   1.0d-6,   6.5d-8,   6.5d-8   ] ! (L umol-1 s-1)
+    real(8), parameter :: k_Mp(4) = [ 1.0d-7,   1.12d-5,   6.5d-8,   6.5d-8   ] ! (L umol-1 s-1)
 !  Temperature coefficient for PhyC mortality (Kawamiya et al., 1995)
     real(8), parameter :: b_Mp(4) = [ 0.069d0,  0.069d0,  0.069d0,  0.069d0  ] ! (degC-1)   
     real(8), parameter :: rLPOMphy = 0.42d0  ! (Labile POM)/(Total POM) of phytoplankton tissue (no dim.) 
@@ -314,61 +314,27 @@ CONTAINS
     real(8) :: H2S(N_Ssp)           ! H2S (umol L-1) 
     real(8) :: S0(N_Ssp)            ! S (umol L-1) *solid
 # endif
-    real(8) :: SO4(N_Ssp)           ! SO42- (umol L-1) 
-    real(8) :: dMn2_dt              ! d[Mn2+]/dt (umol L-1 s-1)
-    real(8) :: dMnO2_dt             ! d[MnO2]/dt (umol L-1 s-1) *solid
-    real(8) :: dFe2_dt              ! d[Fe2+]/dt (umol L-1 s-1)
-    real(8) :: dFeS_dt(N_Ssp)       ! d[FeS]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeS2_dt(N_Ssp)      ! d[FeS2]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeOOH_dt            ! d[FeOOH]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeOOH_PO4_dt(N_Psp) ! d[FeOOH=O4]/dt (umol L-1 s-1) *solid
+    real(8) :: SO4(N_Ssp)           = 0.0d0 ! SO42- (umol L-1) 
+    real(8) :: dMn2_dt              = 0.0d0 ! d[Mn2+]/dt (umol L-1 s-1)
+    real(8) :: dMnO2_dt             = 0.0d0 ! d[MnO2]/dt (umol L-1 s-1) *solid
+    real(8) :: dFe2_dt              = 0.0d0 ! d[Fe2+]/dt (umol L-1 s-1)
+    real(8) :: dFeS_dt(N_Ssp)       = 0.0d0 ! d[FeS]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeS2_dt(N_Ssp)      = 0.0d0 ! d[FeS2]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeOOH_dt            = 0.0d0 ! d[FeOOH]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeOOH_PO4_dt(N_Psp) = 0.0d0 ! d[FeOOH=O4]/dt (umol L-1 s-1) *solid
 # ifndef BLUE_TIDE  
-    real(8) :: dH2S_dt(N_Ssp)       ! d[H2S]/dt (umol L-1 s-1)
-    real(8) :: dS0_dt(N_Ssp)        ! d[S]/dt (umol L-1 s-1) *solid
+    real(8) :: dH2S_dt(N_Ssp)       = 0.0d0 ! d[H2S]/dt (umol L-1 s-1)
+    real(8) :: dS0_dt(N_Ssp)        = 0.0d0 ! d[S]/dt (umol L-1 s-1) *solid
 # endif
-    real(8) :: dSO4_dt(N_Ssp)       ! d[SO42-]/dt (umol L-1 s-1)
+    real(8) :: dSO4_dt(N_Ssp)       = 0.0d0 ! d[SO42-]/dt (umol L-1 s-1)
 
 # if defined FOODWEB_TESTMODE
 !  Output
     real(8), save :: dsec(4) = 0.d0 !sec
 # endif
 
-!===== Initiallize tracer parameters =================================
+!===== Initiallize parameters =================================
     TK = Tmp + 273.15d0 !(K)
-
-    dDOx_dt = 0.0d0
-    dTA_dt  = 0.0d0
-    dDIC_dt(:) = 0.0d0
-    dNO3_dt(:) = 0.0d0
-    dNH4_dt(:) = 0.0d0
-    dPO4_dt(:) = 0.0d0
-    dPOC_dt(:,:) = 0.0d0
-    dDOC_dt(:,:) = 0.0d0
-    dDON_dt(:,:) = 0.0d0
-    dPON_dt(:,:) = 0.0d0
-    dDOP_dt(:,:) = 0.0d0
-    dPOP_dt(:,:) = 0.0d0
-    dPhyC_dt(:,:) = 0.0d0
-    dZooC_dt(:,:) = 0.0d0
-    dPhyN_dt(:,:) = 0.0d0
-    dZooN_dt(:,:) = 0.0d0
-    dPhyP_dt(:,:) = 0.0d0
-    dZooP_dt(:,:) = 0.0d0
-    dPIC_dt(:,:) = 0.0d0
-# if defined COT_STARFISH
-    dCOTe_dt = 0.0d0
-    dCOTl_dt = 0.0d0
-# endif
-    dMn2_dt           = 0.0d0
-    dMnO2_dt          = 0.0d0
-    dFe2_dt           = 0.0d0
-    dFeS_dt(:)        = 0.0d0
-    dFeS2_dt(:)       = 0.0d0
-    dFeOOH_dt         = 0.0d0
-    dFeOOH_PO4_dt(:)  = 0.0d0
-    dH2S_dt(:)        = 0.0d0
-    dS0_dt(:)         = 0.0d0
-    dSO4_dt(:)        = 0.0d0
 
 !===== Calculate istope ratio =================================
     DO isp=1,N_Csp
@@ -460,12 +426,12 @@ CONTAINS
 
 !----- Assimilation rate (umolC L-1 s-1) ----------------- 
 
-      cNH4 = MAX( NH4(iNt), 0.0d0)  !!! Offset
-      cNO3 = MAX( NO3(iNt), 0.0d0)  !!! Offset
-      cPO4 = MAX( PO4(iPt), 0.0d0)  !!! Offset
-!      cNH4 = MAX( NH4(iNt)-off_NH4(k), 0.0d0)  !!! Offset
-!      cNO3 = MAX( NO3(iNt)-off_NO3(k), 0.0d0)  !!! Offset
-!      cPO4 = MAX( PO4(iPt)-off_PO4(k), 0.0d0)  !!! Offset
+!      cNH4 = MAX( NH4(iNt), 0.0d0)  !!! Offset
+!      cNO3 = MAX( NO3(iNt), 0.0d0)  !!! Offset
+!      cPO4 = MAX( PO4(iPt), 0.0d0)  !!! Offset
+      cNH4 = MAX( NH4(iNt)-off_NH4(k), 0.0d0)  !!! Offset
+      cNO3 = MAX( NO3(iNt)-off_NO3(k), 0.0d0)  !!! Offset
+      cPO4 = MAX( PO4(iPt)-off_PO4(k), 0.0d0)  !!! Offset
       
       ! --- Hill equation (nC_Hill=1 -> Michaelis-Menten equation) -----
       nVp_NH4 =  nVmax_NH4(k)*cNH4**nNH4_Hill(k)/ &
@@ -479,12 +445,14 @@ CONTAINS
       !   Carbon based assimilation rate
       Ap = MIN( (nVp_NH4+nVp_NO3)/rNCp(k)*rPCp(k), nVp_PO4 )
 
-!      Ap = Ap * Pp
-      Ap = 0.0d0
+      Ap = Ap * Pp
+!      Ap = 0.0d0
 
       if(nVp_NH4 + nVp_NO3 > 0.0d0) then
-        Ap_NO3 = Ap*rNCp(k)* nVp_NO3/( nVp_NH4 + nVp_NO3 )
-        Ap_NH4 = Ap*rNCp(k)* nVp_NH4/( nVp_NH4 + nVp_NO3 )
+!        Ap_NO3 = Ap*rNCp(k)* nVp_NO3/( nVp_NH4 + nVp_NO3 )
+!        Ap_NH4 = Ap*rNCp(k)* nVp_NH4/( nVp_NH4 + nVp_NO3 )
+        Ap_NO3 = Ap*rNCp(k)!* nVp_NO3/( nVp_NH4 + nVp_NO3 ) !!!!!! Debug !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        Ap_NH4 = 0.0d0 !!!!!! Debug !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       else
         Ap_NO3 = 0.0d0
         Ap_NH4 = 0.0d0

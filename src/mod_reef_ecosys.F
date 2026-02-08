@@ -737,67 +737,37 @@ END SUBROUTINE allocate_reef_ecosys
         , COTl(k)      &   ! COT starfish larvae (umol L-1)
 #  endif
     !   output parameters
-        , dDOx(k)      &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
-        , dTA (k)      &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
-        , dDIC(:,k)    &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
-        , dNO3(:,k)    &   ! dNO3_dt(N_Nsp)      : dNO3/dt  (umol N L-1 s-1)
-        , dNH4(:,k)    &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
-        , dPO4(:,k)    &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
-        , dDOC(:,:,k)  &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
-        , dPOC(:,:,k)  &   ! dPOC_dt(N_Csp,Npom) : dPOC/dt  (umol C L-1 s-1) 
-        , dDON(:,:,k)  &   ! dDON_dt(N_Nsp,Ndom) : dDON/dt  (umol N L-1 s-1)
-        , dPON(:,:,k)  &   ! dPON_dt(N_Nsp,Npom) : dPON/dt  (umol N L-1 s-1)
-        , dDOP(:,:,k)  &   ! dDOP_dt(N_Psp,Ndom) : dDOP/dt  (umol P L-1 s-1)
-        , dPOP(:,:,k)  &   ! dPOP_dt(N_Psp,Npom) : dPOP/dt  (umol P L-1 s-1)
-        , dPhyC(:,:,k) &   ! dPhyC_dt(N_Csp,Nphy): dPhyC/dt (umol C L-1 s-1)  
-        , dZooC(:,:,k) &   ! dZooC_dt(N_Csp,Nzoo): dZooC/dt (umol C L-1 s-1)  
-        , dPhyN(:,:,k) &   ! dPhyN_dt(N_Nsp,Nphy): dPhyN/dt (umol N L-1 s-1)  
-        , dZooN(:,:,k) &   ! dZooN_dt(N_Nsp,Nzoo): dZooN/dt (umol N L-1 s-1)  
-        , dPhyP(:,:,k) &   ! dPhyP_dt(N_Psp,Nphy): dPhyP/dt (umol P L-1 s-1)  
-        , dZooP(:,:,k) &   ! dZooP_dt(N_Psp,Nzoo): dZooP/dt (umol P L-1 s-1)  
-        , dPIC (:,:,k) &   ! dPIC_dt (N_Csp,Npim): dPIC/dt  (umol C L-1 s-1)
+        , dDOx_dt(k)      &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
+        , dTA_dt (k)      &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
+        , dDIC_dt(:,k)    &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
+        , dNO3_dt(:,k)    &   ! dNO3_dt(N_Nsp)      : dNO3/dt  (umol N L-1 s-1)
+        , dNH4_dt(:,k)    &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
+        , dPO4_dt(:,k)    &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
+        , dDOC_dt(:,:,k)  &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
+        , dPOC_dt(:,:,k)  &   ! dPOC_dt(N_Csp,Npom) : dPOC/dt  (umol C L-1 s-1) 
+        , dDON_dt(:,:,k)  &   ! dDON_dt(N_Nsp,Ndom) : dDON/dt  (umol N L-1 s-1)
+        , dPON_dt(:,:,k)  &   ! dPON_dt(N_Nsp,Npom) : dPON/dt  (umol N L-1 s-1)
+        , dDOP_dt(:,:,k)  &   ! dDOP_dt(N_Psp,Ndom) : dDOP/dt  (umol P L-1 s-1)
+        , dPOP_dt(:,:,k)  &   ! dPOP_dt(N_Psp,Npom) : dPOP/dt  (umol P L-1 s-1)
+        , dPhyC_dt(:,:,k) &   ! dPhyC_dt(N_Csp,Nphy): dPhyC/dt (umol C L-1 s-1)  
+        , dZooC_dt(:,:,k) &   ! dZooC_dt(N_Csp,Nzoo): dZooC/dt (umol C L-1 s-1)  
+        , dPhyN_dt(:,:,k) &   ! dPhyN_dt(N_Nsp,Nphy): dPhyN/dt (umol N L-1 s-1)  
+        , dZooN_dt(:,:,k) &   ! dZooN_dt(N_Nsp,Nzoo): dZooN/dt (umol N L-1 s-1)  
+        , dPhyP_dt(:,:,k) &   ! dPhyP_dt(N_Psp,Nphy): dPhyP/dt (umol P L-1 s-1)  
+        , dZooP_dt(:,:,k) &   ! dZooP_dt(N_Psp,Nzoo): dZooP/dt (umol P L-1 s-1)  
+        , dPIC_dt (:,:,k) &   ! dPIC_dt (N_Csp,Npim): dPIC/dt  (umol C L-1 s-1)
 #  if defined BLUE_TIDE         
-        , dH2S(:,k)    &   ! dH2S_dt(N_Ssp)      : dH2S/dt  (umol S L-1 s-1)
-        , dS0 (:,k)    &   ! dS0_dt(N_Ssp)       : dS0/dt   (umol S L-1 s-1)
+        , dH2S_dt(:,k)    &   ! dH2S_dt(N_Ssp)      : dH2S/dt  (umol S L-1 s-1)
+        , dS0_dt (:,k)    &   ! dS0_dt(N_Ssp)       : dS0/dt   (umol S L-1 s-1)
 #  endif
 #  if defined COT_STARFISH         
-        , dCOTe(k)     &   ! dCOTe/dt (umol L-1 s-1)
-        , dCOTl(k)     &   ! dCOTl/dt (umol L-1 s-1)
+        , dCOTe_dt(k)     &   ! dCOTe_dt (umol L-1 s-1)
+        , dCOTl_dt(k)     &   ! dCOTl_dt (umol L-1 s-1)
 #  endif
         , pH  (k)      &   ! pH
         , Wcal(k)      &   ! Calcite saturation state
         , Warg(k)      &   ! Aragonite saturation state
         )
-
-       
-!----- Mass balance equation -----------------------------------------------------------
-      dDOx_dt(k) = dDOx_dt(k) + dDOx(k)
-      dTA_dt (k) = dTA_dt (k) + dTA(k)
-      dDIC_dt(:,k) = dDIC_dt(:,k) + dDIC(:,k)
-      dNO3_dt(:,k) = dNO3_dt(:,k) + dNO3(:,k)
-      dNH4_dt(:,k) = dNH4_dt(:,k) + dNH4(:,k)
-      dPO4_dt(:,k) = dPO4_dt(:,k) + dPO4(:,k)
-      dDOC_dt(:,:,k) = dDOC_dt(:,:,k) + dDOC(:,:,k)
-      dPOC_dt(:,:,k) = dPOC_dt(:,:,k) + dPOC(:,:,k)
-      dDON_dt(:,:,k) = dDON_dt(:,:,k) + dDON(:,:,k)
-      dPON_dt(:,:,k) = dPON_dt(:,:,k) + dPON(:,:,k)
-      dDOP_dt(:,:,k) = dDOP_dt(:,:,k) + dDOP(:,:,k)
-      dPOP_dt(:,:,k) = dPOP_dt(:,:,k) + dPOP(:,:,k)
-      dPhyC_dt(:,:,k) = dPhyC_dt(:,:,k) + dPhyC(:,:,k)
-      dZooC_dt(:,:,k) = dZooC_dt(:,:,k) + dZooC(:,:,k)
-      dPhyN_dt(:,:,k) = dPhyN_dt(:,:,k) + dPhyN(:,:,k)
-      dZooN_dt(:,:,k) = dZooN_dt(:,:,k) + dZooN(:,:,k)
-      dPhyP_dt(:,:,k) = dPhyP_dt(:,:,k) + dPhyP(:,:,k)
-      dZooP_dt(:,:,k) = dZooP_dt(:,:,k) + dZooP(:,:,k)
-      dPIC_dt(:,:,k) = dPIC_dt(:,:,k) + dPIC(:,:,k)
-#  if defined BLUE_TIDE         
-      dH2S_dt(:,k) = dH2S_dt(:,k) + dH2S(:,k)
-      dS0_dt (:,k) = dS0_dt (:,k) + dS0 (:,k)
-#  endif
-#  if defined COT_STARFISH
-      dCOTe_dt(k) = dCOTe_dt(k) + dCOTe(k)
-      dCOTl_dt(k) = dCOTl_dt(k) + dCOTl(k)
-#  endif
 # endif
                              
 # if defined BIVALVE
@@ -824,43 +794,25 @@ END SUBROUTINE allocate_reef_ecosys
             , PhyP(:,:,k)    &   ! Phytoplankton P bomass (umol P L-1)
             , PIC (:,:,k)    &   ! Particulate inorganic carbon (PIC: umolC L-1), coccolith (CaCO3)
         !   output parameters
-            , dDOx(k)        &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
-            , dTA (k)        &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
-            , dDIC(:,k)      &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
-            , dNH4(:,k)      &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
-            , dPO4(:,k)      &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
-            , dDOC(:,:,k)    &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
-            , dPOC(:,:,k)    &   ! dPOC_dt(N_Csp,Npom) : dPOC/dt  (umol C L-1 s-1) 
-            , dDON(:,:,k)    &   ! dDON_dt(N_Nsp,Ndom) : dDON/dt  (umol N L-1 s-1)
-            , dPON(:,:,k)    &   ! dPON_dt(N_Nsp,Npom) : dPON/dt  (umol N L-1 s-1)
-            , dDOP(:,:,k)    &   ! dDOP_dt(N_Psp,Ndom) : dDOP/dt  (umol P L-1 s-1)
-            , dPOP(:,:,k)    &   ! dPOP_dt(N_Psp,Npom) : dPOP/dt  (umol P L-1 s-1)
-            , dPhyC(:,:,k)   &   ! dPhyC_dt(N_Csp,Nphy): dPhyC/dt (umol C L-1 s-1)  
-            , dPhyN(:,:,k)   &   ! dPhyN_dt(N_Nsp,Nphy): dPhyN/dt (umol N L-1 s-1)  
-            , dPhyP(:,:,k)   &   ! dPhyP_dt(N_Psp,Nphy): dPhyP/dt (umol P L-1 s-1)  
-            , dPIC (:,:,k)   &   ! dPIC_dt (N_Csp,Npim): dPIC/dt  (umol C L-1 s-1)
+            , dDOx_dt(k)        &   ! dDOx_dt             : dDOx/dt  (umol O2 L-1 s-1) 
+            , dTA_dt (k)        &   ! dTA_dt              : dTA/dt   (umol L-1 s-1) 
+            , dDIC_dt(:,k)      &   ! dDIC_dt(N_Csp)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1
+            , dNH4_dt(:,k)      &   ! dNH4_dt(N_Nsp)      : dNH4/dt  (umol N L-1 s-1)
+            , dPO4_dt(:,k)      &   ! dPO4_dt(N_Psp)      : dPO4/dt  (umol P L-1 s-1)
+            , dDOC_dt(:,:,k)    &   ! dDOC_dt(N_Csp,Ndom) : dDOC/dt  (umol C L-1 s-1) 
+            , dPOC_dt(:,:,k)    &   ! dPOC_dt(N_Csp,Npom) : dPOC/dt  (umol C L-1 s-1) 
+            , dDON_dt(:,:,k)    &   ! dDON_dt(N_Nsp,Ndom) : dDON/dt  (umol N L-1 s-1)
+            , dPON_dt(:,:,k)    &   ! dPON_dt(N_Nsp,Npom) : dPON/dt  (umol N L-1 s-1)
+            , dDOP_dt(:,:,k)    &   ! dDOP_dt(N_Psp,Ndom) : dDOP/dt  (umol P L-1 s-1)
+            , dPOP_dt(:,:,k)    &   ! dPOP_dt(N_Psp,Npom) : dPOP/dt  (umol P L-1 s-1)
+            , dPhyC_dt(:,:,k)   &   ! dPhyC_dt(N_Csp,Nphy): dPhyC/dt (umol C L-1 s-1)  
+            , dPhyN_dt(:,:,k)   &   ! dPhyN_dt(N_Nsp,Nphy): dPhyN/dt (umol N L-1 s-1)  
+            , dPhyP_dt(:,:,k)   &   ! dPhyP_dt(N_Psp,Nphy): dPhyP/dt (umol P L-1 s-1)  
+            , dPIC_dt (:,:,k)   &   ! dPIC_dt (N_Csp,Npim): dPIC/dt  (umol C L-1 s-1)
             )
         END IF
       END DO
 # endif
-       
-!----- Mass balance equation -----------------------------------------------------------
-
-      dDOx_dt(k) = dDOx_dt(k) + dDOx(k)
-      dTA_dt (k) = dTA_dt (k) + dTA(k)
-      dDIC_dt(:,k) = dDIC_dt(:,k) + dDIC(:,k)
-      dNH4_dt(:,k) = dNH4_dt(:,k) + dNH4(:,k)
-      dPO4_dt(:,k) = dPO4_dt(:,k) + dPO4(:,k)
-      dDOC_dt(:,:,k) = dDOC_dt(:,:,k) + dDOC(:,:,k)
-      dPOC_dt(:,:,k) = dPOC_dt(:,:,k) + dPOC(:,:,k)
-      dDON_dt(:,:,k) = dDON_dt(:,:,k) + dDON(:,:,k)
-      dPON_dt(:,:,k) = dPON_dt(:,:,k) + dPON(:,:,k)
-      dDOP_dt(:,:,k) = dDOP_dt(:,:,k) + dDOP(:,:,k)
-      dPOP_dt(:,:,k) = dPOP_dt(:,:,k) + dPOP(:,:,k)
-      dPhyC_dt(:,:,k) = dPhyC_dt(:,:,k) + dPhyC(:,:,k)
-      dPhyN_dt(:,:,k) = dPhyN_dt(:,:,k) + dPhyN(:,:,k)
-      dPhyP_dt(:,:,k) = dPhyP_dt(:,:,k) + dPhyP(:,:,k)
-      dPIC_dt(:,:,k) = dPIC_dt(:,:,k) + dPIC(:,:,k)
 
 !-----------------------------------------------------------------------
 !  Light attenuation at the bottom of the grid cell. It is the starting
