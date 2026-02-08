@@ -30,7 +30,7 @@
 
 # Output Files
 *.csv
-*.txt
+#*.txt
 *.xlsx
 *.png
 !.gitkeep
