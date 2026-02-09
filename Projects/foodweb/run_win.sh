@@ -42,6 +42,6 @@ mkdir -p output_2023NP
 #./ecosys_test.exe < foodweb_P.in
 #
 # Plot time series CSV files
-python3 ../../postproc/python/plot_csv_timeseries.py -o output_2023NP -p output_2023NP/plots
+uv run ../../postproc/python/plot_csv_timeseries.py -o output_2023NP -p output_2023NP/plots
 
 #mv output/ output_2023NP/
