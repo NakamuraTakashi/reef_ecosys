@@ -39,7 +39,7 @@ mkdir -p output_x3.0
 ./ecosys_test.exe < oyster_x3.0.in
 #
 # Plot time series CSV files
-python3 ../../postproc/python/plot_csv_timeseries.py -o output_x1.0 -p output_x1.0/plots
-python3 ../../postproc/python/plot_csv_timeseries.py -o output_x3.0 -p output_x3.0/plots
+uv run ../../postproc/python/plot_csv_timeseries.py -o output_x1.0 -p output_x1.0/plots
+uv run ../../postproc/python/plot_csv_timeseries.py -o output_x3.0 -p output_x3.0/plots
 
 #mv output/ output_x3.0/
