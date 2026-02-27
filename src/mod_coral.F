@@ -569,9 +569,9 @@ CONTAINS
 
     real(8), parameter :: Rmax(2)   = [  0.4d0,  0.4d0 ] !!!0.53d0*  0.37d0** !Maximum respiration rate (nmol O2 cm-2 s-1) *Tuned using Kuhl et al (1995), Al-Horani et al. (2003) data
     real(8), parameter :: K_QC(2)   = [  5.0d0,  5.0d0 ]     !!!5.0d0* umol cm-2!!!
-    real(8), parameter :: K_DO(2)   = [ 100.0d0, 100.0d0 ]   ! ca. 46 (umol kg-1) Newton & Atkinson (1991)
+    real(8), parameter :: K_DO(2)   = [ 46.0d0, 46.0d0 ]   ! ca. 46 (umol kg-1) Newton & Atkinson (1991)
 
-    real(8), parameter :: Rratio(2) = [ 0.9d0, 0.9d0 ] !!!0.9d0** 0.8d0  !1.0d0* !!!
+    real(8), parameter :: Rratio(2) = [ 0.5d0, 0.5d0 ] !!!0.9d0** 0.8d0  !1.0d0* !!!
 
 !   Temperature dependency parameters (Hikosaka et al. 2006) 
 !      - Parameters estimated from data by Fujimura et al. (2008)
@@ -581,17 +581,18 @@ CONTAINS
 ! ---- OC turnover ---------------------
     real(8), parameter :: C_dec(2) = [ 0.02d0, 0.02d0 ] ! (nmol cm-2 s-1) ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
     real(8), parameter :: p2r = 0.5d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
-    real(8), parameter :: Ebs = 230.0d3  ! (J molC-1) energy required for biosynthesis 
+    real(8), parameter :: Ebs = 5.29d5   ! (J molC-1), Energy content of reserves (Ren & Schiel, 2008)
 
 !----- for calcification ------------------------
 
-    real(8), parameter :: eeff(2)  = [ 0.12d0, 0.12d0 ]   !!! 0.01d0** !0.3d0*!Energy efficency of calcification (<12%, 4~7%?; Lervik et al., 2012)
+!    real(8), parameter :: eeff(2)  = [ 0.12d0, 0.12d0 ]   !!! 0.01d0** !0.3d0*!Energy efficency of calcification (<12%, 4~7%?; Lervik et al., 2012)
+    real(8), parameter :: eeff(2)  = [ 0.8d0, 0.8d0 ]   !!! 100% Energy efficency (Trevorroe and Haynes, 1983)
 !    real(8), parameter :: E_m(2)=[ 2.0d4, 2.0d4 ]   !!! 1.0d4** ! 5.0d3* Energy flux for maintenance (nJ cm-2 s-1)
     real(8) :: E_m
 
-    real(8), parameter :: k_CO2i(2) =[ 1.5d-3, 1.5d-3 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
-    real(8), parameter :: k_TA(2)   =[ 3.0d-3, 3.0d-3 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of TA through the leak pass (cm s-1) *Tuned
-    real(8), parameter :: k_DIC(2)  =[ 3.0d-3, 3.0d-3 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of DIC through the leak pass (cm s-1) *Tuned
+    real(8), parameter :: k_CO2i(2) =[ 1.0d-4, 1.5d-3 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
+    real(8), parameter :: k_TA(2)   =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of TA through the leak pass (cm s-1) *Tuned
+    real(8), parameter :: k_DIC(2)  =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of DIC through the leak pass (cm s-1) *Tuned
 
     real(8), parameter :: c2g(2) = [ 6.6d0, 6.6d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension)!!!!!!!! Tuning parameter
 
@@ -719,7 +720,7 @@ CONTAINS
 # if defined CORAL_NONE_CO2_EQ
     real(8) :: cHcoe,cOHcoe
     real(8) :: cHcal,cOHcal
-    real(8) :: Fpp_CO2(N_Csp), Flux_CO2(N_Csp)
+    real(8) :: Fpp_CO2(N_Csp), Flux_CO2aq(N_Csp)
     real(8) :: kp1(N_Csp),km1(N_Csp),kp4(N_Csp),km4(N_Csp)
 # endif
 !----- for gross photosynthesis -------------------
@@ -878,24 +879,39 @@ CONTAINS
 !----CO2*+H2O <-> H+ +HCO3- is none equilibrium
 # if defined CORAL_NONE_CO2_EQ
 !--------- CO2 system in calcified fulid -------------------
-    pHcal         = pH_fromATCTcCO2aq(CORAL(ng)%TAcal(n,i,j),CORAL(ng)%DICcal(iCt,n,i,j),CORAL(ng)%CO2cal(n,i,j),TKamb, Samb)
-    HCO3cal(iCt)  = cHCO3_noneq(CORAL(ng)%DICcal(iCt,n,i,j),CORAL(ng)%CO2cal(iCt,n,i,j),pHcal,TKamb, Samb)!! for Isotope
-    CO3cal (iCt)  = cCO3_noneq(CORAL(ng)%DICcal(iCt,n,i,j),CORAL(ng)%CO2cal(iCt,n,i,j),pHcal,TKamb, Samb)
-    fCO2cal       = fCO2_fromcCO2aq(CORAL(ng)%CO2cal(iCt,n,i,j),TKamb, Samb)  !! for output
-    Wargcal       = Warg_fromcCO3cCa(CO3cal,10.4d0,TKamb, Samb)  !Calcifying fluid {Ca2+]=10.4 mmol kg-1   Assumed
+    pHcal         = pH_fromATCTcCO2aq(CORAL(ng)%TAcal(n,i,j)/1.024d0      &
+                                    , CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0 &
+                                    , CORAL(ng)%CO2cal(iCt,n,i,j)/1.024d0,TKamb, Samb)
+    HCO3cal(iCt)  = cHCO3_noneq(CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0      &
+                               ,CORAL(ng)%CO2cal(iCt,n,i,j)/1.024d0,pHcal,TKamb, Samb)!! for Isotope; umol/kg
+    CO3cal (iCt)  = cCO3_noneq(CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0       &
+                              ,CORAL(ng)%CO2cal(iCt,n,i,j)/1.024d0,pHcal,TKamb, Samb) ! umol/kg
+    fCO2cal       = fCO2_fromcCO2aq(CORAL(ng)%CO2cal(iCt,n,i,j)/1.024d0,TKamb, Samb)  !! for output
+    Wargcal       = Warg_fromcCO3cCa(CO3cal(iCt),10.4d0,TKamb, Samb)  !Calcifying fluid {Ca2+]=10.4 mmol kg-1   Assumed
+    HCO3cal(iCt)  = HCO3cal(iCt)*1.024d0 ! umol/kg -> umol/L
+    CO3cal (iCt)  = CO3cal (iCt)*1.024d0 ! umol/kg -> umol/L
 !--------- CO2 system in coelenteron -------------------
-    pHcoe         = pH_fromATCTcCO2aq(CORAL(ng)%TAcoe(n,i,j),CORAL(ng)%DICcoe(iCt,n,i,j),CORAL(ng)%CO2coe(iCt,n,i,j),TKamb, Samb)
-    HCO3coe(iCt)  = cHCO3_noneq(CORAL(ng)%DICcoe(iCt,n,i,j),CORAL(ng)%CO2coe(iCt,n,i,j),pHcoe,TKamb, Samb)
-    CO3coe (iCt)  = cCO3_noneq(CORAL(ng)%DICcoe(iCt,n,i,j),CORAL(ng)%CO2coe(iCt,n,i,j),pHcoe,TKamb, Samb)!! for Isotope
-    fCO2coe       = fCO2_fromcCO2aq(CORAL(ng)%CO2coe(iCt,n,i,j),TKamb, Samb)  !! for output
+    pHcoe         = pH_fromATCTcCO2aq(CORAL(ng)%TAcoe(n,i,j)/1.024d0      &
+                                     ,CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0      &
+                                     ,CORAL(ng)%CO2coe(iCt,n,i,j)/1.024d0,TKamb, Samb)
+    HCO3coe(iCt)  = cHCO3_noneq(CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0      &
+                               ,CORAL(ng)%CO2coe(iCt,n,i,j)/1.024d0,pHcoe,TKamb, Samb)
+    CO3coe (iCt)  = cCO3_noneq(CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0       &
+                              ,CORAL(ng)%CO2coe(iCt,n,i,j)/1.024d0,pHcoe,TKamb, Samb)!! for Isotope
+    fCO2coe       = fCO2_fromcCO2aq(CORAL(ng)%CO2coe(iCt,n,i,j)/1.024d0,TKamb, Samb)  !! for output
+    HCO3coe(iCt)  = HCO3coe(iCt)*1.024d0 ! umol/kg -> umol/L
+    CO3coe (iCt)  = CO3coe (iCt)*1.024d0 ! umol/kg -> umol/L
 
 !--------- CO2 system in ambient seawater ------------------- !! for output
-    pHamb        = pH_fromATCT(TAamb,DICamb(iCt),TKamb, Samb)
-    CO2amb (iCt) = cCO2aq_fromCTpH(DICamb(iCt),pHamb,TKamb, Samb)
-    HCO3amb(iCt) = cHCO3_fromCTpH (DICamb(iCt),pHamb,TKamb, Samb)
-    CO3amb (iCt) = cCO3_fromCTpH  (DICamb(iCt),pHamb,TKamb, Samb)
+    pHamb        = pH_fromATCT(TAamb/1.024d0,DICamb(iCt)/1.024d0,TKamb, Samb)
+    CO2amb (iCt) = cCO2aq_fromCTpH(DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
+    HCO3amb(iCt) = cHCO3_fromCTpH (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
+    CO3amb (iCt) = cCO3_fromCTpH  (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
     fCO2amb      = fCO2_fromcCO2aq(CO2amb(iCt),TKamb, Samb)  !! for output
     Wargamb      = Warg_fromcCO3  (CO3amb(iCt),TKamb, Samb)
+    CO2amb (iCt) = CO2amb (iCt)*1.024d0 ! umol/kg -> umol/L
+    HCO3amb(iCt) = HCO3amb(iCt)*1.024d0 ! umol/kg -> umol/L
+    CO3amb (iCt) = CO3amb (iCt)*1.024d0 ! umol/kg -> umol/L
 !----CO2 equilibrium
 #  if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE 
 !----------- CO2 system in calcified fulid -------------------
@@ -905,7 +921,7 @@ CONTAINS
     HCO3coe(iC13) = cH13CO3_noneq2(CORAL(ng)%DICcoe(iC13,n,i,j), CORAL(ng)%CO2coe(iC13,n,i,j),HCO3coe(iCt),CO3coe(iCt),TKamb)
     CO3coe (iC13) = c13CO3_noneq2 (CORAL(ng)%DICcoe(iC13,n,i,j), CORAL(ng)%CO2coe(iC13,n,i,j),HCO3coe(iCt),CO3coe(iCt),TKamb)
 !----------- CO2 system in ambient seawater -------------------
-    CO2amb (iC13) = conc13CO2(DICamb(iC13),CO2amb(iCt),HCO3amb(iCt),CO3amb(iCt),TKamb)
+    CO2amb (iC13) = conc13CO2aq(DICamb(iC13),CO2amb(iCt),HCO3amb(iCt),CO3amb(iCt),TKamb)
 #   if defined CLUMPED_ISOTOPE 
 !----------- CO2 system in calcified fulid -------------------
     HCO3cal(iD47) = ???
@@ -921,21 +937,26 @@ CONTAINS
 !----CO2 system equilibrium is assumed
 # else
 !--------- CO2 system in calcified fulid -------------------
-    pHcal        = pH_fromATCT(CORAL(ng)%TAcal(n,i,j),CORAL(ng)%DICcal(iCt,n,i,j),TKamb, Samb)
+    pHcal        = pH_fromATCT(CORAL(ng)%TAcal(n,i,j)/1.024d0,CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0,TKamb, Samb)
     CORAL(ng)%CO2cal(iCt,n,i,j) &
-                 = cCO2aq_fromCTpH(CORAL(ng)%DICcal(iCt,n,i,j),pHcal,TKamb, Samb)
-    HCO3cal(iCt) = cHCO3_fromCTpH (CORAL(ng)%DICcal(iCt,n,i,j),pHcal,TKamb, Samb)!! for Isotope
-    CO3cal (iCt) = cCO3_fromCTpH  (CORAL(ng)%DICcal(iCt,n,i,j),pHcal,TKamb, Samb)
+                 = cCO2aq_fromCTpH(CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0,pHcal,TKamb, Samb)
+    HCO3cal(iCt) = cHCO3_fromCTpH (CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0,pHcal,TKamb, Samb)!! for Isotope
+    CO3cal (iCt) = cCO3_fromCTpH  (CORAL(ng)%DICcal(iCt,n,i,j)/1.024d0,pHcal,TKamb, Samb)
     fCO2cal      = fCO2_fromcCO2aq(CORAL(ng)%CO2cal(iCt,n,i,j),TKamb, Samb)  !! for output
     Wargcal      = Warg_fromcCO3cCa(CO3cal(iCt),10.4d0,TKamb, Samb)  !Calcifying fluid {Ca2+]=10.4 mmol kg-1   Assumed
-
+    CORAL(ng)%CO2cal(iCt,n,i,j) = CORAL(ng)%CO2cal(iCt,n,i,j)*1.024d0 ! umol/kg -> umol/L
+    HCO3cal(iCt) = HCO3cal(iCt)*1.024d0 ! umol/kg -> umol/L 
+    CO3cal (iCt) = CO3cal (iCt)*1.024d0 ! umol/kg -> umol/L
 !--------- CO2 system in coelenteron -------------------
-    pHcoe        = pH_fromATCT(CORAL(ng)%TAcoe(n,i,j),CORAL(ng)%DICcoe(iCt,n,i,j),TKamb, Samb)
+    pHcoe        = pH_fromATCT(CORAL(ng)%TAcoe(n,i,j)/1.024d0,CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0,TKamb, Samb)
     CORAL(ng)%CO2coe(iCt,n,i,j) &
-                 = cCO2aq_fromCTpH(CORAL(ng)%DICcoe(iCt,n,i,j),pHcoe,TKamb, Samb)!! for Isotope and output
-    HCO3coe(iCt) = cHCO3_fromCTpH (CORAL(ng)%DICcoe(iCt,n,i,j),pHcoe,TKamb, Samb)
-    CO3coe (iCt) = cCO3_fromCTpH  (CORAL(ng)%DICcoe(iCt,n,i,j),pHcoe,TKamb, Samb)!! for Isotope
+                 = cCO2aq_fromCTpH(CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0,pHcoe,TKamb, Samb)!! for Isotope and output
+    HCO3coe(iCt) = cHCO3_fromCTpH (CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0,pHcoe,TKamb, Samb)
+    CO3coe (iCt) = cCO3_fromCTpH  (CORAL(ng)%DICcoe(iCt,n,i,j)/1.024d0,pHcoe,TKamb, Samb)!! for Isotope
     fCO2coe      = fCO2_fromcCO2aq(CORAL(ng)%CO2coe(iCt,n,i,j),TKamb, Samb)  !! for output
+    CORAL(ng)%CO2coe(iCt,n,i,j) = CORAL(ng)%CO2coe(iCt,n,i,j)*1.024d0 ! umol/kg -> umol/L
+    HCO3coe(iCt) = HCO3coe(iCt)*1.024d0 ! umol/kg -> umol/L
+    CO3coe (iCt) = CO3coe (iCt)*1.024d0 ! umol/kg -> umol/L
 
 #  if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE 
 !!! ----- Isotope calculation ----------------------------------------------------
@@ -961,12 +982,15 @@ CONTAINS
 #  endif
 #  if defined CORAL_TESTMODE
 !--------- CO2 system in ambient seawater ------------------- !! for output
-    pHamb        = pH_fromATCT(TAamb,DICamb(iCt),TKamb, Samb)
-    CO2amb (iCt) = cCO2aq_fromCTpH(DICamb(iCt),pHamb,TKamb, Samb)
-    HCO3amb(iCt) = cHCO3_fromCTpH (DICamb(iCt),pHamb,TKamb, Samb)
-    CO3amb (iCt) = cCO3_fromCTpH  (DICamb(iCt),pHamb,TKamb, Samb)
+    pHamb        = pH_fromATCT(TAamb,DICamb(iCt)/1.024d0,TKamb, Samb)
+    CO2amb (iCt) = cCO2aq_fromCTpH(DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
+    HCO3amb(iCt) = cHCO3_fromCTpH (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
+    CO3amb (iCt) = cCO3_fromCTpH  (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
     fCO2amb      = fCO2_fromcCO2aq(CO2amb(iCt),TKamb, Samb)  !! for output
     Wargamb      = Warg_fromcCO3  (CO3amb(iCt),TKamb, Samb)
+    CO2amb (iCt) = CO2amb (iCt)*1.024d0 ! umol/kg -> umol/L
+    HCO3amb(iCt) = HCO3amb(iCt)*1.024d0 ! umol/kg -> umol/L
+    CO3amb (iCt) = CO3amb (iCt)*1.024d0 ! umol/kg -> umol/L
 #  endif
 # endif  /*end CORAL_NONE_CO2_EQ*/
 
@@ -1051,12 +1075,12 @@ CONTAINS
 !------- Flux calculation (nmol cm-2 s-1) ------------------------
 
 ! DIC uptake (nmol cm-2 s-1)
-    Flux_DIC(:) = Si_DIC(:)*(DICamb(:)-CORAL(ng)%DICcoe(:,n,i,j))*rho_sw
+    Flux_DIC(:) = Si_DIC(:)*(DICamb(:)-CORAL(ng)%DICcoe(:,n,i,j))!*rho_sw
 # if defined CORAL_NONE_CO2_EQ
-    Flux_CO2(:) = Si_CO2*(CO2amb(:)-CORAL(ng)%CO2coe(:,n,i,j))*rho_sw
+    Flux_CO2aq(:) = Si_CO2*(CO2amb(:)-CORAL(ng)%CO2coe(:,n,i,j))!*rho_sw
 # endif
 ! TA uptake (nmol cm-2 s-1)
-    Flux_TA  = Si_TA *(TAamb-CORAL(ng)%TAcoe(n,i,j))*rho_sw
+    Flux_TA  = Si_TA *(TAamb-CORAL(ng)%TAcoe(n,i,j))!*rho_sw
 ! DO uptake (nmol cm-2 s-1)
     Flux_DO  = Si_DO *(DOamb-CORAL(ng)%DOcoe(n,i,j))
 
@@ -1065,7 +1089,7 @@ CONTAINS
     F_DOcoe = F_DOcoe + Flux_DO
     F_DICcoe(:) = F_DICcoe(:) + Flux_DIC(:)
 # if defined CORAL_NONE_CO2_EQ
-    F_CO2coe(:) = F_CO2coe(:) + Flux_CO2(:)
+    F_CO2coe(:) = F_CO2coe(:) + Flux_CO2aq(:)
 # endif
 
 # if defined CORAL_NUTRIENTS
@@ -1255,13 +1279,13 @@ CONTAINS
 !   Temperature dependent term
     f_temp=1.d0
 !    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
-    Rc = Rmax(n) * f_temp * CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j))   &
-               * CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j))
+!    Rc = Rmax(n) * f_temp * CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j))   &
+!               * CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j))
 
-!    f_min = min( CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j)),                      &
-!                 CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j)) )  !  Michaelis-Menten equation
+    f_min = min( CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j)),                      &
+                 CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j)) )  !  Michaelis-Menten equation
 !
-!    Rc = Rmax(n) * f_temp * f_min
+    Rc = Rmax(n) * f_temp * f_min
 
     CORAL(ng)%R(n,i,j) = Rc + Rz
 
@@ -1286,15 +1310,18 @@ CONTAINS
 !  C6H12O6 + 6 O2 + 30 ADP + 30 Pi -> 6 CO2 + 6 H2O + 30 ATP
 !  ATP + H2O -> ADP + Pi  dG=-7.3kcal/mol=-30.5kJ/mol
 
-!    E_tot=30.5d3 * 30.0d0/6.0d0 * Rc  !nJ cm-2 s-1
+    E_tot=30.5d3 * 30.0d0/6.0d0 * Rc  !nJ cm-2 s-1
 
 !  C6H12O6 + 6 O2 -> 6 CO2 + 6 H2O  dG=-2850 kJ/mol (dG=-475 kJ/molC)
-    E_tot= 475.0d3 * Rc  !nJ cm-2 s-1
+!    E_tot= 475.0d3 * Rc  !nJ cm-2 s-1
+
     E_m = C_dec(n)*Ebs
 
 !  Energy for 1 mol H+ transport from coe. to cal.: E_rq_H_transport                        
     E_rq_H_transport = (2.3d0*8.31d0*(Tamb+273.15d0)                &
                        *max((pHcal-pHcoe)+0.01d0, 0.01d0)) / eeff(n)
+!  Minimum energy for Ca2+ transport. ATP:Ca2+:H+ = 1:2:4
+    E_rq_H_transport = max(E_rq_H_transport, 7.625d3) ! 30.5d3 J/mol /4.0d0 = 7.625d0 J/mol
 
     if (E_tot > E_m ) then
 # if defined CORAL_SIZE_DYNAMICS
@@ -1323,7 +1350,7 @@ CONTAINS
 !     Mass fluxes related to growth (nmol cm-2 s-1)
 !======================================================================
 
-    F_Cgrowth = E_g/Ebs
+    F_Cgrowth(iCt) = E_g/Ebs
 
 # if defined CORAL_SIZE_DYNAMICS
 !
@@ -1333,25 +1360,25 @@ CONTAINS
 
 #  if defined CORAL_NUTRIENTS
 
-    F_Cgrowth = g_max(n)*min( 1.0d0 - QC0(n)/CORAL(ng)%QC(iCt,n,i,j) ,    &
+    F_Cgrowth(iCt) = g_max(n)*min( 1.0d0 - QC0(n)/CORAL(ng)%QC(iCt,n,i,j) ,    &
                           min(1.0d0 - QN0(n)/CORAL(ng)%QN(iNt,n,i,j),     &
                               1.0d0 - QP0(n)/CORAL(ng)%QP(iPt,n,i,j) ) )  &
-    F_Cgrowth = max(F_Cgrowth, 0.0d0)
+    F_Cgrowth(iCt) = max(F_Cgrowth(iCt), 0.0d0)
     
-    F_Ngrowth = F_Cgrowth*CORAL(ng)%QN(n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
-    F_Pgrowth = F_Cgrowth*CORAL(ng)%QP(n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
+    F_Ngrowth(iNt) = F_Cgrowth(iCt)*CORAL(ng)%QN(iNt,n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
+    F_Pgrowth(iPt) = F_Cgrowth(iCt)*CORAL(ng)%QP(iPt,n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
 
 #  else
 !    F_Cgrowth = g_max(n) * (1.0d0 - QC0(n)/CORAL(ng)%QC(n,i,j) )
-    F_Cgrowth = 5.0d-5 * (CORAL(ng)%QC(iCt,n,i,j) - QC0(n))
-    F_Cgrowth = max(F_Cgrowth, 0.0d0)
+    F_Cgrowth(iCt) = 5.0d-5 * (CORAL(ng)%QC(iCt,n,i,j) - QC0(n))
+    F_Cgrowth(iCt) = max(F_Cgrowth(iCt), 0.0d0)
 #  endif
 !
 !----- Convert internal conditions to size dynamics parameters
 !
 !---------- Coral growth rate (cm cm-2 s-1) ------------
 !
-    CORAL(ng)%growth(n,i,j) = F_Cgrowth/CORAL(ng)%QC(iCt,n,i,j)*1.0d-3  ! growth rate (cm2 cm-2 s-1)
+    CORAL(ng)%growth(n,i,j) = F_Cgrowth(iCt)/CORAL(ng)%QC(iCt,n,i,j)*1.0d-3  ! growth rate (cm2 cm-2 s-1)
 !   (cm2 cm-2 s-1)=(nmol cm-2 s-1)/(umol cm-2)*1.d-3
 !
 !---------- Coral mortality (cm cm-2 s-1) ------------
@@ -1378,10 +1405,10 @@ CONTAINS
 # endif
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-    F_QCe(:) = F_QCe(:) - F_Cgrowth*rQCe(:)
+    F_QCe(:) = F_QCe(:) - F_Cgrowth(iCt)*rQCe(:)
 # if defined CORAL_NUTRIENTS
-    F_QNe(:) = F_QNe(:) - F_Ngrowth*rQNe(:)
-    F_QPe(:) = F_QPe(:) - F_Pgrowth*rQPe(:)
+    F_QNe(:) = F_QNe(:) - F_Ngrowth(iNt)*rQNe(:)
+    F_QPe(:) = F_QPe(:) - F_Pgrowth(iPt)*rQPe(:)
 # endif
 
 
@@ -1423,15 +1450,15 @@ CONTAINS
 
 !   CO2* flux (nmol cm-2 s-1) through membrane permeation
 !    Fpm_CO2(:)=k_CO2i(n)*(fCO2coe-fCO2cal)
-    Fpm_CO2(:) = k_CO2i_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))*rho_sw
+    Fpm_CO2(:) = k_CO2i_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))!*rho_sw
     
 !   DIC Leak flux (nmol cm-2 s-1) 
-    Fpp_DIC(:) = k_DIC_tmp(:) *(CORAL(ng)%DICcoe(:,n,i,j)-CORAL(ng)%DICcal(:,n,i,j))*rho_sw
+    Fpp_DIC(:) = k_DIC_tmp(:) *(CORAL(ng)%DICcoe(:,n,i,j)-CORAL(ng)%DICcal(:,n,i,j))!*rho_sw
 # if defined CORAL_NONE_CO2_EQ
-    Fpp_CO2(:) = k_CO2_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))*rho_sw
+    Fpp_CO2(:) = k_CO2_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))!*rho_sw
 # endif
 !   TA Leak flux (nmol cm-2 s-1) 
-    Fpp_TA = k_TA(n) *(CORAL(ng)%TAcoe(n,i,j)-CORAL(ng)%TAcal(n,i,j))*rho_sw
+    Fpp_TA = k_TA(n) *(CORAL(ng)%TAcoe(n,i,j)-CORAL(ng)%TAcal(n,i,j))!*rho_sw
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
     F_TAcoe = F_TAcoe - Fpp_TA
@@ -1521,21 +1548,21 @@ CONTAINS
                   -(kp1(:)+kp4(:)*cOHcoe)*CORAL(ng)%CO2coe(:,n,i,j)  & ! umol L-1 s-1
                  ) *dt   ! umol L-1
 
-    if(CORAL(ng)%CO2coe(n,i,j)<0.0d0) then
-      write(*,*) 'DEBUG1',CORAL(ng)%CO2coe(n,i,j)
+    if(CORAL(ng)%CO2coe(iCt,n,i,j)<0.0d0) then
+      write(*,*) 'DEBUG1',CORAL(ng)%CO2coe(iCt,n,i,j)
       Stop
     endif
 
 !    [CO2*] (umol L-1) in calcified fulid
-    CORAL(ng)%CO2cal(n,i,j)=CORAL(ng)%CO2cal(n,i,j)                  &
+    CORAL(ng)%CO2cal(:,n,i,j)=CORAL(ng)%CO2cal(:,n,i,j)              &
                 + F_CO2cal(:)/hcal *dt                        &!nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
 !     kinetics of CO2 system
                 +( (km1(:)*cHcal+km4(:))*HCO3cal(:)                  &! umol L-1 s-1
                   -(kp1(:)+kp4(:)*cOHcal)*CORAL(ng)%CO2cal(:,n,i,j)  &! umol L-1 s-1
                  ) *dt   ! umol L-1
     
-    if(CORAL(ng)%CO2cal(n,i,j)<0.0d0) then
-      write(*,*) 'DEBUG2',CORAL(ng)%CO2cal(n,i,j)
+    if(CORAL(ng)%CO2cal(iCt,n,i,j)<0.0d0) then
+      write(*,*) 'DEBUG2',CORAL(ng)%CO2cal(iCt,n,i,j)
       Stop
     endif
 # endif
@@ -1599,13 +1626,11 @@ CONTAINS
           ,'fCO2cal','fCO2coe','fCO2amb'                        &
           ,'CO2aqcal','HCO3cal','CO3cal'                        &
           ,'CO2aqcoe','HCO3coe','CO3coe'                        &
-# if defined CORAL_CARBON_ISOTOPE
-          ,'d13C_DICamb','d13C_DICcoe','d13C_QC','d13C_DICcal'  &
-          ,'d13C_arg','d13C_argxGn'                             &
-          ,'d13C_CO2aqcal','d13C_HCO3cal','d13C_CO3cal'         &
-          ,'d13C_CO2aqcoe','d13C_HCO3coe','d13C_CO3coe'         &
-          ,'c13CO2aqcal','cH13CO3cal','c13CO3cal'               &
-          ,'c13CO2aqcoe','cH13CO3coe','c13CO3coe'               &
+# if defined CARBON_ISOTOPE
+          , 'd13C_DICamb', 'd13C_CO2amb', 'd13C_HCO3amb', 'd13C_CO3amb'           &
+          , 'd13C_DICcoe', 'd13C_CO2coe', 'd13C_HCO3coe', 'd13C_CO3coe'           &
+          , 'd13C_DICcal', 'd13C_CO2cal', 'd13C_HCO3cal', 'd13C_CO3cal'           &
+          , 'd13C_QCe', 'd13C_QCv', 'd13C_QCr', 'd13C_QCh', 'd13C_G', 'd13C_arg'  &
 # endif
 # if defined CORAL_ZOOXANTHELLAE
           ,'ROS','Rz', 'F_Csec', 'F_ROS','F_detox','F_dam'      &
@@ -1657,9 +1682,9 @@ CONTAINS
 #  endif
 #  if defined CORAL_SIZE_DYNAMICS
        , CORAL(ng)%growth(n,i,j), CORAL(ng)%mort(n,i,j)                          &
-       , Damage,F_Cgrowth                                                        &
+       , Damage,F_Cgrowth(iCt)                                                   &
 #  endif
-       , E_ca, F_Cgrowth, Si_DIC(iCt), Si_DO, F_H
+       , E_ca, F_Cgrowth(iCt), Si_DIC(iCt), Si_DO, F_H
     END IF
 
 ! Coral record calculation section
@@ -1682,7 +1707,7 @@ CONTAINS
         ! Write lavels at the first step
         write(20+n,'(*(g0:,", "))') 'day'     &
           ,'S_PFD_dt'                         &   ! Photon flux density (mol m-2 d-1)
-# if defined CORAL_CARBON_ISOTOPE
+# if defined CARBON_ISOTOPE
 !          ,'S_d13CargxGn_dt'                  &
           ,'d13Carg'                          &   ! d13C
 !          ,'S_d13C_QC_dt'                     &   ! 1 day avaraged value of d13C_QC
@@ -1693,7 +1718,9 @@ CONTAINS
           ,'S_Pg_dt'                          &   ! Gross photosynthesis rate (umol cm-2 d-1)
           ,'S_R_dt'                           &   ! Respiration rate (umol cm-2 d-1)
           ,'S_Gn_dt'                          &   ! Calcification rate (umol cm-2 d-1)
-!          ,'S_QC_dt'                          &   ! 1 day avaraged value of QC
+# if defined CARBON_ISOTOPE
+          ,'S_Gn_13C_dt'                      &   ! Calcification rate (umol cm-2 d-1)
+# endif
           ,'S_Pn_dt'                              ! Net photosynthesis rate (umol cm-2 d-1)
 
       else
@@ -1718,7 +1745,7 @@ CONTAINS
       S_Pg_dt(n)=0.d0
       S_R_dt(n)=0.d0
 #  if defined CARBON_ISOTOPE
-      S_d13CargxGn_dt(n)=0.d0
+!      S_d13CargxGn_dt(n)=0.d0
 #  endif
 #  if defined CORAL_BORON_ISOTOPE
       S_d11BargxGn_dt(n)=0.d0
@@ -2246,6 +2273,7 @@ CONTAINS
     , F_zROS          & ! Flux of ROS from photosystem (pmol cell-1 s-1)
     )
 !-----------------------------------------------------------------------
+    USE mod_reef_ecosys_param
 
     implicit none
 !   input parameters

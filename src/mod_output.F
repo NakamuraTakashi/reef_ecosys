@@ -287,6 +287,7 @@ END SUBROUTINE files_close
   SUBROUTINE write_env_vprof(OUT_FILE, date, N)
   
     USE mod_param
+    USE mod_geochem, ONLY: d13C_fromR13C
     
     implicit none
     
@@ -629,6 +630,7 @@ END SUBROUTINE files_close
       
     integer, intent(in) :: fid
 #if defined CARBON_ISOTOPE
+    real(8) :: R13C
     real(8) :: d13C_DIC
 #endif
     integer :: i,j,k,nstp
@@ -640,7 +642,7 @@ END SUBROUTINE files_close
     nstp=1
 
 #if defined CARBON_ISOTOPE
-    d13C_DIC=d13C_fromR13C(t(i,j,k,nstp,iTIC(iC13))/t(i,j,k,nstp,iTIC(iCt)))
+    d13C_DIC=delta_from_Ci_Ct( t(i,j,k,nstp,iTIC(iC13)), t(i,j,k,nstp,iTIC(iCt)), R13C_VPDB )
 #endif
         
     write(fid,'(*(g0:,", "))') time, PFDsurf           &
@@ -681,49 +683,6 @@ END SUBROUTINE files_close
 
   END SUBROUTINE write_env_data
     
-#if defined ECOSYS_TESTMODE
-! **********************************************************************
-!  Write lavel of coral internal conditions
-! **********************************************************************
-
-  SUBROUTINE write_ecosys_his_lavel(fid)
-  
-    USE mod_param
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-    write(fid,'(*(g0:,", "))') 'time', 'PFDbott'              &
-# ifdef CORAL_POLYP
-        ,'coral1_Pg', 'coral1_R', 'coral1_Pn', 'coral1_G'    &
-        ,'coral2_Pg', 'coral2_R', 'coral2_Pn', 'coral2_G'    &
-# endif
-# ifdef SEAGRASS
-        ,'sgrass_Pg', 'sgrass_R', 'sgrass_Pn'                &
-# endif
-# ifdef MACROALGAE
-        ,'algae_Pg' , 'algae_R' , 'algae_Pn'                 &
-# endif
-# ifdef SEDIMENT_ECOSYS
-!        ,'sedeco_Pg', 'sedeco_R', 'sedeco_Pn', 'sedeco_G'    &
-# endif
-        ,'dDIC_dt','dTA_dt','dDO_dt'                         &
-        ,'dDOC_dt','dPOC_dt'                                 &
-# if defined CARBON_ISOTOPE
-        ,'dDI13C_dt'                                         &
-# endif
-        ,'dNO3_dt','dNH4_dt'                                 &
-        ,'dPO4_dt'                                           &
-        ,'dDON_dt','dPON_dt','dDOP_dt','dPOP_dt'             &
-        ,'pH', 'fCO2', 'Warg', 'Wcal'                        &
-        ,'U10', 'CO2flux' , 'O2flux'
-
-    RETURN
-
-  END SUBROUTINE write_ecosys_his_lavel
-#endif
-
 #if defined SEDIMENT_TESTMODE
 ! **********************************************************************
 !  Write lavel of sedecosys
@@ -754,6 +713,7 @@ END SUBROUTINE files_close
   SUBROUTINE write_sedeco_his_data(OUT_FILE, date)
   
     USE mod_reef_ecosys_param
+    USE mod_geochem, ONLY: d13C_fromR13C
     USE mod_sedecosys
       
     implicit none
@@ -764,6 +724,7 @@ END SUBROUTINE files_close
     integer,parameter :: fid = 51
 
     real(8) :: zr(0:Nsed)
+    real(8) :: Ratio
     integer :: i,j,k,ng
 
     i=1

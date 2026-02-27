@@ -291,9 +291,6 @@ PROGRAM main
     
 !----- Write data labels -------------------------
   CALL write_env_lavel(10)        
-#if defined ECOSYS_TESTMODE
-  CALL write_ecosys_his_lavel(40)
-#endif
 #if defined REEF_FLOW_TESTMODE
   CALL write_flow_lavel(45)
 #endif
@@ -750,7 +747,7 @@ PROGRAM main
 !          t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           ipcl = 2
         end if
@@ -766,7 +763,7 @@ PROGRAM main
 !            t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
             R13C=R13C_fromd13C(0.7d0)
-            t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+            t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           else if (time*24.0d0 >= WQ_time(ipcl)  ) then
             ipcl = ipcl +1
@@ -824,30 +821,30 @@ PROGRAM main
         
         if( inight == 1 .and. iflag == 1 ) then  ! Night treatment ~pH -0.1 (18:00-06:00)
 #if defined FLUME_AMBIENT
-          t(i,j,k,nstp,iTIC_) = 2090.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2090.0d0
 #elif defined FLUME_HPCO2
-          t(i,j,k,nstp,iTIC_) = 2269.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2269.0d0
 #endif
           t(i,j,k,nstp,iTAlk) = 2340.0d0
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           iflag = 0
         end if
         
         if( inight == 0 .and. iflag == 1 ) then
 #if defined FLUME_AMBIENT
-          t(i,j,k,nstp,iTIC_) = 2033.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2033.0d0
 #elif defined FLUME_HPCO2
-          t(i,j,k,nstp,iTIC_) = 2243.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2243.0d0
 #endif
           t(i,j,k,nstp,iTAlk) = 2340.0d0
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           iflag = 0
         end if

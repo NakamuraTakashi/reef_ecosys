@@ -498,26 +498,22 @@ contains
           t(i,j,k,nstp,iPIC (iCt,iLive)) = PhyC_0(iCcl)*rCaCp(iCcl)     !Particulated inorganic carbon (umol L-1)
 
 #if defined CARBON_ISOTOPE
-          R13C=R13C_fromd13C(d13C_TIC0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol L-1) 
-          R13C=R13C_fromd13C(d13C_DOC1_0)
-          t(i,j,k,nstp,iDO13C(1)) = R13C*t(i,j,k,nstp,iDO13C(1))       !DOC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_DOC2_0)
-          t(i,j,k,nstp,iDO13C(2)) = R13C*t(i,j,k,nstp,iDO13C(2))      !DOC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_POC1_0)
-          t(i,j,k,nstp,iPO13C(1)) = R13C*t(i,j,k,nstp,iPO13C(1))        !POC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_POC2_0)
-          t(i,j,k,nstp,iPO13C(2)) = R13C*t(i,j,k,nstp,iPO13C(2))        !POC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_Phyt1_0)
-          t(i,j,k,nstp,iPhyt13C(1)) = R13C*t(i,j,k,nstp,iPhyt13C(1))     !Phytoplankton1 0.3(umolC L-1) all0.561 0.746-gC/gchla-1h 2.23-gC/gchla-30 4.47-gC/gchla-60	others
-          R13C=R13C_fromd13C(d13C_Phyt2_0)
-          t(i,j,k,nstp,iPhyt13C(2)) = R13C*t(i,j,k,nstp,iPhyt13C(2))       !Phytoplankton2 0.3(umolC L-1) 							diatom
-          R13C=R13C_fromd13C(d13C_Phyt3_0)
-          t(i,j,k,nstp,iPhyt13C(3)) = R13C*t(i,j,k,nstp,iPhyt13C(3))       !Phytoplankton3 0.3(umolC L-1) 							diatom
-          R13C=R13C_fromd13C(d13C_Zoop1_0)
-          t(i,j,k,nstp,iZoop13C(1)) = R13C*t(i,j,k,nstp,iZoop13C(1))       !Zooplankton (umol L-1)1.3
-          R13C=R13C_fromd13C(d13C_PIC1_0)
-          t(i,j,k,nstp,iPI13C(1)) = R13C*t(i,j,k,nstp,iPI13C(1))       !Particulated inorganic carbon (umol L-1)1.3
+          t(i,j,k,nstp,iTIC(iC13)) = Ci_from_Ct_delta(t(i,j,k,nstp,iTIC(iCt)), d13C_TIC0, R13C_VPDB) !DI13C (umol L-1)
+          DO m=1,Ndom
+            t(i,j,k,nstp,iDOC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iDOC(iCt,m)), d13C_DOC_0(m), R13C_VPDB)       !DOC  (umol L-1) 
+          END DO
+          DO m=1,Npom
+            t(i,j,k,nstp,iPOC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPOC(iCt,m)), d13C_POC_0(m), R13C_VPDB)       !POC  (umol L-1) 
+          END DO
+          DO m=1,Nphy
+            t(i,j,k,nstp,iPhyC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPhyC(iCt,m)), d13C_PhyC_0(m), R13C_VPDB)       !Phytoplankton  (umol L-1) 
+          END DO
+          DO m=1,Nzoo
+            t(i,j,k,nstp,iZooC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iZooC(iCt,m)), d13C_ZooC_0(m), R13C_VPDB)       !Zooplankton  (umol L-1) 
+          END DO
+          DO m=1,Npim
+            t(i,j,k,nstp,iPIC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPIC(iCt,m)), d13C_PIC_0(m), R13C_VPDB)       !PIC  (umol L-1) 
+          END DO
 #endif
 !!!!!!!!!!!!
 #if defined NITROGEN_ISOTOPE            

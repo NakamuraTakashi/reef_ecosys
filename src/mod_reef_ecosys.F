@@ -507,6 +507,9 @@ END SUBROUTINE allocate_reef_ecosys
 !  Output
 !    real(8), parameter :: ECOSYS_OUTPUT_INTERVAL = 1.0d0     ! Output interval (min)
     real(8), save :: dsec = 0.0d0 !sec
+#  if defined CARBON_ISOTOPE
+    real(8) :: R13C, d13C_DIC
+#  endif
 # endif
 
 !-----------------------------------------------------------------------
@@ -547,7 +550,7 @@ END SUBROUTINE allocate_reef_ecosys
 # endif
       pH(k)   = 8.0d0   ! sea surface pH
       Warg(k) = 4.0d0   ! aragonite saturation state
-      Wcal(k) = 4.0d0   ! calcite saturation state
+      Wcal(k) = 5.0d0   ! calcite saturation state
     END DO
     ssfCO2    = 380.0d0 ! sea surface fCO2 (uatm)
     ssCO2flux = 0.0d0   ! sea surface CO2 flux (mmol m-2 s-1)
@@ -1353,6 +1356,31 @@ END SUBROUTINE allocate_reef_ecosys
     IF( date*86400.0d0 >= dsec ) THEN
       if(dsec == 0.0d0) then
         dsec=date*86400.0d0+ECOSYS_OUTPUT_INTERVAL*60.0d0
+        write(40,'(*(g0:,", "))') 'time', 'PFDbott'          &
+#  ifdef CORAL_POLYP
+        ,'coral1_Pg', 'coral1_R', 'coral1_Pn', 'coral1_G'    &
+        ,'coral2_Pg', 'coral2_R', 'coral2_Pn', 'coral2_G'    &
+#  endif
+#  ifdef SEAGRASS
+        ,'sgrass_Pg', 'sgrass_R', 'sgrass_Pn'                &
+#  endif
+#  ifdef MACROALGAE
+        ,'algae_Pg' , 'algae_R' , 'algae_Pn'                 &
+#  endif
+#  ifdef SEDIMENT_ECOSYS
+!        ,'sedeco_Pg', 'sedeco_R', 'sedeco_Pn', 'sedeco_G'    &
+#  endif
+        ,'dDIC_dt','dTA_dt','dDO_dt'                         &
+        ,'dDOC_dt','dPOC_dt'                                 &
+#  if defined CARBON_ISOTOPE
+        ,'dDI13C_dt'                                         &
+        ,'d13C_DIC'                                          &
+#  endif
+        ,'dNO3_dt','dNH4_dt'                                 &
+        ,'dPO4_dt'                                           &
+        ,'dDON_dt','dPON_dt','dDOP_dt','dPOP_dt'             &
+        ,'pH', 'fCO2', 'Warg', 'Wcal'                        &
+        ,'U10', 'CO2flux' , 'O2flux'
       else
         dsec=dsec+ECOSYS_OUTPUT_INTERVAL*60.0d0
       endif
@@ -1373,6 +1401,9 @@ END SUBROUTINE allocate_reef_ecosys
 #   else
       cff5 = 0.01d0*p_sand*3600.0d0   ! cff4: convert [nmol cm-2 s-1] to [mmol m-2 h-1]
 #   endif
+#  endif
+#  if defined CARBON_ISOTOPE
+      d13C_DIC = delta_from_Ci_Ct( DIC(iC13,1), DIC(iCt,1), R13C_VPDB )
 #  endif
 
       write(40,'(*(g0:,", "))') date, PFDbott                     &
@@ -1399,11 +1430,15 @@ END SUBROUTINE allocate_reef_ecosys
 #  endif
         , dDIC_dt(iCt,1),dTA_dt(1), dDOx_dt(1)                    &
         , dDOC_dt(iCt,1,1), dPOC_dt(iCt,1,1)                      &
+#  if defined CARBON_ISOTOPE
+        , dDIC_dt(iC13,1)                                          &
+        , d13C_DIC                                                 &
+#  endif
         , dNO3_dt(iNt,1), dNH4_dt(iNt,1)                          &
         , dPO4_dt(iPt,1)                                          &
         , dDON_dt(iNt,1,1), dPON_dt(iNt,1,1)                      &
         , dDOP_dt(iPt,1,1), dPOP_dt(iPt,1,1)                      &
-        , pH(N), ssfCO2, Warg(N), Wcal(N), U10, ssCO2flux, ssO2flux
+        , pH(1), ssfCO2, Warg(1), Wcal(1), U10, ssCO2flux, ssO2flux
         
     END IF
 !-----------------------------------------------------------------------

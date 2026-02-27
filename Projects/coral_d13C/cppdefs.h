@@ -21,7 +21,7 @@
 # define ANA_BIOLOGY
 
 /*** Isotopes or tracer options ***/
-/*# define CARBON_ISOTOPE*/
+# define CARBON_ISOTOPE
 /*# define CARBON_TRACE*/
 /*# define CLUMPED_ISOTOPE*/
 
@@ -48,7 +48,7 @@
 
 /*** Coral Polyp model options. ***/
 # if defined CORAL_POLYP
-#  define CORAL_ZOOXANTHELLAE
+/*#  define CORAL_ZOOXANTHELLAE*/
 /*#  define CORAL_MUCUS*/           /*Mucus release from coral */
 /*#  define CORAL_INGESTION*/
 /*#  define CORAL_NONE_CO2_EQ*/

@@ -80,7 +80,7 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/01'
+  OUTFILE_prefix = 'output01/ctrl'
 /
 
 &sedeco_config
