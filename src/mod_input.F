@@ -49,7 +49,7 @@ contains
     integer :: ios
     integer :: i,j
     real(8) :: tmp
-    integer :: Num_header = 0
+    integer :: Num_header
 
     namelist/refdate/Ryear, Rmonth, Rday
     namelist/input/SWRad_FILE, LWRad_FILE, Tair_FILE, Pair_FILE   &
@@ -58,6 +58,8 @@ contains
                  , SGD_FILE                                       &
                  , pH_FILE, DO_FILE, DIC_FILE, TA_FILE            &
                  , NH4_FILE, NOx_FILE, PO4_FILE
+
+    Num_header = 0
 
     rewind(5)
     read (5, nml=refdate)

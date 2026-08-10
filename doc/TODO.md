@@ -11,7 +11,8 @@
 | ~~[1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない)~~ | ~~`ecosys_his.csv` のヘッダとデータの列数不一致~~ | 対応済み | マージ |
 | ~~[2](#2-reef_flow-構成がビルドできない)~~ | ~~`reef_flow` 構成がビルド不可~~ | 対応済み（実行は入力データ待ち） | 既存 |
 | ~~[3](#3-blue_tide-を有効にするとコンパイルできない)~~ | ~~`BLUE_TIDE` 有効時にコンパイル不可~~ | 対応済み | 既存 |
-| [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
+| ~~[4](#4-mod_inputf-num_header-が暗黙の-save-になっている)~~ | ~~`Num_header` の暗黙 SAVE~~ | 対応済み | 既存 |
+| [7](#7-carbon_trace-のみ有効な構成で-13c-トレーサが未初期化) | `CARBON_TRACE` のみ有効な構成で 13C トレーサが未初期化 | 出力に異常値 | 既存 |
 | ~~[5](#5-他4つのプロジェクト構成がコンパイルできない)~~ | ~~他4構成がコンパイル不可~~ | `chamber`・`coral_exp_T04` は対応済み。他2つは対象外 | 既存 |
 | [6](#6-coral_nutrients-が有効化できない) | `CORAL_NUTRIENTS` が有効化できない | 当該機能が使用不能・**規模大** | 既存 |
 
@@ -241,7 +242,7 @@ mod_input.F, around line 148: Error allocating 521034539008 bytes: Cannot alloca
 
 ## 4. `mod_input.F`: `Num_header` が暗黙の SAVE になっている
 
-**状態**: 未対応 / 実害なし
+**状態**: 対応済み
 
 ```fortran
 src/mod_input.F:52:    integer :: Num_header = 0
@@ -249,16 +250,34 @@ src/mod_input.F:52:    integer :: Num_header = 0
 
 Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付き、初期化はプログラム開始時に一度だけ実行される。呼び出しごとにはゼロ初期化されない。
 
-ただし本変数は使用前に必ず `Num_header = 0`（または `4`, `1`）が代入され、`read_data` 自体も `main.F:247` で起動時に1回呼ばれるのみのため、**実害はない**。宣言と代入を分けるか `save` を明示すれば意図が明確になる。
+**実害は無かった。** `read_data` は `main.F:267` で起動時に1回しか呼ばれず、`Num_header` は `read_infiles_ascii` に渡す直前で必ず代入される（`#ifdef INPUT_ROMS_NCDUMP` / `#else` のどちらの分岐でも代入されるので、前回値が読まれる経路がない）。
+
+同じ機構で実害を出した `mod_foodweb.F` の `d*_dt`（`571b559` で修正）との違いは次のとおり。
+
+| | `mod_foodweb.F` | `Num_header` |
+|---|---|---|
+| 使用前の代入 | なし（`decomposition` が加算） | あり（必ず） |
+| 呼び出し回数 | 全タイムステップ×全格子 | 1回 |
+| 実害 | あり | なし |
+
+将来の落とし穴を断つため、宣言と代入を分けた。`read_data` が複数回呼ばれるようになったり、代入を伴わない分岐が追加された時点で静かに壊れる書き方だった。
+
+```fortran
+    integer :: Num_header      ! 初期化子を外す
+    ...
+    Num_header = 0             ! 実行文で代入
+```
+
+`seagrass` を実行して `ecosys_his.csv` がビット単位で一致することを確認済み（挙動不変）。
 
 ### 関連する対応済みの修正
 
-同じ機構による不具合として、以下は対応済み。
+同じ機構による不具合として、以下も対応済み。
 
 - `571b559` — `mod_foodweb.F` の `d*_dt` 系。`decomposition` が `intent(inout)` で加算する変数が全タイムステップにわたり累積していた
 - `0a08ab6` — `mod_geochem.F` の `l2mol` を `parameter` 化（`!$acc routine seq` 下の静的変数を回避）、`mod_reef_flow.F` の `dsec` に `save` を明示
 
-全ソースを走査済みで、`d*_dt` という名前で同じ問題が残っている箇所は他にない。
+全ソースを走査済みで、**手続き内の暗黙 SAVE はこれで全て解消**した。
 
 ---
 
@@ -395,6 +414,51 @@ F_Ngrowth, F_Pgrowth
 (1) と (3) は機械的に直せる。(2) は項目5と同じ判断（どのプールを指すか）が要る。(4) はモデルの定式化を決める必要があり、性質が異なる。
 
 そのため「(1)(3) を直して残りのエラーを可視化する」→「(2) をプールごとに判断」→「(4) を検討」の順が現実的。
+
+---
+
+## 7. `CARBON_TRACE` のみ有効な構成で 13C トレーサが未初期化
+
+**状態**: 未対応
+
+`RDOC_13C` 列に `-0.52E-311` や `0.14E+071` といった異常値が出力される。未初期化メモリを読んでいる。
+
+### 原因
+
+`N_Csp`（炭素種数）は `CARBON_ISOTOPE` **または** `CARBON_TRACE` で 2 になる。
+
+```fortran
+src/mod_reef_ecosys_param.F:14:  #if defined CARBON_ISOTOPE || defined CARBON_TRACE
+src/mod_reef_ecosys_param.F:15:    integer, parameter :: N_Csp = 2
+```
+
+一方、13C 成分の初期化は `CARBON_ISOTOPE` だけで囲まれている。
+
+```fortran
+src/mod_param.F:579:  #if defined CARBON_ISOTOPE
+src/mod_param.F:582:    t(i,j,k,nstp,iDOC(iC13,m)) = Ci_from_Ct_delta(...)
+```
+
+`CARBON_TRACE` だけが有効な構成では、13C のトレーサ枠は確保されるのに初期値が入らない。多くの 13C 列は積分中に上書きされて見かけ上まともな値になるが、`RDOC`（難分解性 DOC）はほとんど変化しないため初期のゴミが残り続ける。
+
+### 影響範囲
+
+`sedecosys_dev_muto` と `test` を除く**全10構成が該当**する（いずれも `CARBON_TRACE=ON`、`CARBON_ISOTOPE=off`）。
+
+出力値が実行ごとに変わるため、`RDOC_13C` 列を使った解析は信頼できない。他の列への波及は確認していないが、13C 系の値を使う計算があれば影響しうる。
+
+### 対応方針
+
+`mod_param.F:579` のガードを `#if defined CARBON_ISOTOPE || defined CARBON_TRACE` に広げるか、13C 枠を一律ゼロで初期化する。どちらが妥当かは `CARBON_TRACE` の意図（同位体比を持たせるのか、単なるトレース用か）による。
+
+### 再現手順
+
+```sh
+cd Projects/seagrass && sh run_win.sh
+awk -F',' 'NR==2{print $18}' output/01-env_his.csv   # RDOC_13C 列
+```
+
+実行ごとに異なる異常値が出る。
 
 ---
 
