@@ -9,9 +9,10 @@
 | # | 内容 | 影響 | 起因 |
 |---|---|---|---|
 | ~~[1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない)~~ | ~~`ecosys_his.csv` のヘッダとデータの列数不一致~~ | 対応済み | マージ |
-| [2](#2-reef_flow-構成がコンパイルできない) | `reef_flow` 構成がコンパイル不可 | 当該構成が使用不能 | 既存 |
+| [2](#2-reef_flow-構成がコンパイルできない) | `reef_flow` 構成がリンク不可（コンパイルは通るようになった） | 当該構成が使用不能 | 既存 |
 | [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
+| [5](#5-他に4つのプロジェクト構成がコンパイルできない) | 他4構成がコンパイル不可 | 当該構成が使用不能 | 既存 |
 
 ---
 
@@ -75,11 +76,11 @@ awk -F',' 'NR<=2{print NR": "NF" 列"}' output/01-ecosys_his.csv
 
 ## 2. `reef_flow` 構成がコンパイルできない
 
-**状態**: 未対応 / マージ前から存在（master・ecology_dev 双方で同一エラー）
+**状態**: 2-a・2-b は対応済み。全19ファイルがコンパイルできるようになったが、**リンクが通らない**（2-c）。
 
-`Projects/reef_flow/cppdefs.h` を使うとコンパイルが通らない。独立した原因が2つある。
+`Projects/reef_flow/cppdefs.h` を使うと失敗する。独立した原因が3つあった。
 
-### 2-a. `FLOW_OUTPUT_INTERVAL` が未定義
+### 2-a. `FLOW_OUTPUT_INTERVAL` が未定義 — 対応済み（`8165c8c`）
 
 ```
 src/mod_reef_flow.F:197:48:
@@ -87,18 +88,13 @@ src/mod_reef_flow.F:197:48:
 Error: Symbol 'flow_output_interval' at (1) has no IMPLICIT type
 ```
 
-`src/mod_reef_flow.F:144` で定義がコメントアウトされたままになっている。
+`Projects/reef_flow/cppdefs.h` だけが、他の全プロジェクトが持つ「出力間隔ブロック」を欠いていた。同じ値のブロックを追加して解消。
 
-```fortran
-#if defined REEF_FLOW_TESTMODE
-!    real(8), parameter :: FLOW_OUTPUT_INTERVAL  = 5.0d0    ! Output interval (min)
-    real(8), save :: dsec = 0.d0 !sec
-#endif
-```
+`src/mod_reef_flow.F:144` にあるコメントアウトされた `parameter` 定義は旧方式の名残で、`mod_coral.F:1973`、`mod_reef_ecosys.F:513`、`mod_sedecosys.F:782` にも同じものがある。ソース側の変更は不要。
 
-コメントを外すか、他モジュールと同様に `cppdefs.h` 側で定義する。
+これにより `ECOSYS_OUTPUT_INTERVAL` 未定義も併せて解消した。`main.F` が致命的エラーで打ち切られていたため表面化していなかったもの。
 
-### 2-b. `write_env_vprof` に `USE mod_reef_flow` がない
+### 2-b. `write_env_vprof` に `USE mod_reef_flow` がない — 対応済み（`c88bb7f`）
 
 ```
 src/mod_output.F:490:22:
@@ -106,9 +102,41 @@ src/mod_output.F:490:22:
 Error: Symbol 'reef' at (1) has no IMPLICIT type
 ```
 
-`write_env_vprof`（`src/mod_output.F:287`〜）は `#if defined REEF_FLOW` のブロックで `REEF` を参照するが、USE 文は `mod_param` と `mod_geochem` のみ。同ファイルの `write_env_data`（626行目付近）には `#if defined REEF_FLOW / USE mod_reef_flow / #endif` があるので、同じものを追加すればよい。
+`mod_output.F` には `REEF(1)%...` を参照するサブルーチンが2つある。
 
-上記2件により `mod_reef_flow.mod` と `mod_output.mod` が生成されず、`main.F` まで連鎖して失敗する。
+| サブルーチン | REEF 参照 | `USE mod_reef_flow` |
+|---|---|---|
+| `write_env_data` | 677行 | あり（626行、`#if defined REEF_FLOW` 付き） |
+| `write_env_vprof` | 490行 | **なし** |
+
+出力行が両者で完全に同一なことから、ブロックをコピーした際に `USE` を持ってこなかったものと見られる。Fortran の `USE` はスコープ単位なので `write_env_data` のものは届かない。`write_env_vprof` に同じガード付き `USE` を追加して解消。
+
+`REEF_FLOW` を define するのは `reef_flow` だけなので、他構成では当該行ごと無効化され表面化しなかった。
+
+### 2-c. `main.F` の `reef_ecosys` 呼び出しにガードがない — 未対応
+
+```
+main.F:(.text+0x14a8): undefined reference to `allocate_reef_ecosys_'
+main.F:(.text+0x14d1): undefined reference to `initialize_reef_ecosys_'
+main.F:(.text+0x3081): undefined reference to `reef_ecosys_'
+```
+
+`mod_reef_ecosys` は本体全体が `#if defined REEF_ECOSYS` で囲まれている（`src/mod_reef_ecosys.F:9`）。一方 `main.F` の3つの呼び出し（267, 275, 474行）は囲まれていない。
+
+`reef_flow` は `REEF_ECOSYS` がコメントアウトされた「流動のみ」構成のため、モジュール本体が空になり実体が見つからない。
+
+```c
+Projects/reef_flow/cppdefs.h:14:  /*#define REEF_ECOSYS*/
+```
+
+`REEF_ECOSYS` は 2020-12-03 (`a670be2`) 時点では有効だったが、2022-10-27 の改修 (`f462cf1`) でコメントアウトされ、以後 `reef_flow` は更新されていない。約4年間ビルドできない状態が続いていたことになる。
+
+対処は方針判断が必要。
+
+1. **`main.F` の呼び出しを `#if defined REEF_ECOSYS` で囲む** — 流動のみモードを成立させる。ただし `main.F` はトレーサ配列など生態系側の変数を広く参照しているため、囲む範囲の見極めが要る
+2. **`reef_flow` で `REEF_ECOSYS` を有効に戻す** — 流動＋生態系のフル構成にする。試したところ `mod_coral.F` で別のエラーが出る（`aC_resp`、`R13C_fromd13C` が未定義、`CORAL_AVERAGE_INTERVAL` 未定義）。これは項目5の `chamber` / `test` と同じ症状で、`CORAL_CARBON_ISOTOPE` 系のオプション組み合わせが陳腐化しているため
+
+どちらを意図した構成なのかは、`reef_flow` プロジェクトの用途次第。
 
 ### 再現手順
 
@@ -180,13 +208,46 @@ Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付�
 
 ---
 
+## 5. 他に4つのプロジェクト構成がコンパイルできない
+
+**状態**: 未対応 / いずれもマージ前から存在
+
+`Projects/` 配下の13構成を全て確認したところ、`reef_flow` 以外にも4つが失敗する。
+
+| 構成 | 主なエラー |
+|---|---|
+| `chamber` | `aC_resp` / `R13C_fromd13C` が未定義、`CORAL_AVERAGE_INTERVAL` が未定義 |
+| `test` | 同上（`chamber` と同一症状） |
+| `coral_exp_T04` | `Syntax error in argument list` |
+| `sedecosys_dev_muto` | `ECOSYS_OUTPUT_INTERVAL` / `SEDECO_OUTPUT_INTERVAL` が未定義 |
+
+`sedecosys_dev_muto` は項目 2-a と同じく `cppdefs.h` の出力間隔ブロック欠落なので、同じ方法で直せる見込み。
+
+`chamber` と `test` は `CORAL_CARBON_ISOTOPE` 系のオプション組み合わせが、その後のサンゴモジュール改修に追随できていないものと見られる。項目 2-c で `reef_flow` の `REEF_ECOSYS` を有効に戻した場合にも同じエラーが出る。
+
+### 再現手順
+
+```sh
+for P in chamber coral_exp_T04 sedecosys_dev_muto test; do
+  ( cd Projects/$P && sh run_win.sh )
+done
+```
+
+---
+
 ## 検証環境
 
 - gfortran 15.2.0 (Ubuntu 15.2.0-16ubuntu1)
 - Linux 6.18.33.2-microsoft-standard-WSL2
 
-### コンパイルが確認できている構成
+### 構成ごとのビルド状況
 
-`coral`, `coral_d13C`, `foodweb`, `oyster`, `pelagic_bentic`, `sedecosys`, `seagrass`, `seagrass_chamber`
+`Projects/` 配下の全13構成を確認した結果。
 
-`seagrass` 構成では 1 日分の積分完走まで確認済み。
+| 状態 | 構成 |
+|---|---|
+| コンパイル・リンクとも成功 | `coral`, `coral_d13C`, `foodweb`, `oyster`, `pelagic_bentic`, `sedecosys`, `seagrass`, `seagrass_chamber` |
+| コンパイルは成功・リンク不可 | `reef_flow`（項目 2-c） |
+| コンパイル不可 | `chamber`, `coral_exp_T04`, `sedecosys_dev_muto`, `test`（項目5） |
+
+`seagrass` 構成では 1 日分の積分完走と出力 CSV の確認まで実施済み。
