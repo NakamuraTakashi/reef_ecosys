@@ -50,7 +50,8 @@ CONTAINS
 
   SUBROUTINE initialize_macroalgae(ng, LBi, UBi, LBj, UBj)
     USE mod_reef_ecosys_param
-    
+    USE mod_geochem
+
     implicit none
 ! input parameters
     integer, intent(in) :: ng, LBi, UBi, LBj, UBj
