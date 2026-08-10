@@ -906,9 +906,21 @@ END SUBROUTINE allocate_reef_ecosys
     Flux_PhyP(:,:) = 0.0d0
     Flux_ZooP(:,:) = 0.0d0
     Flux_PIC(:,:) = 0.0d0
-# if defined BLUE_TIDE         
+# if defined BLUE_TIDE
     Flux_H2S(:) = 0.0d0
 # endif
+!   The seagrass call writes only some elements of these staging arrays
+!   (Sg_Flux_DOC at iLDOM, Sg_Flux_POC/PON/POP at iCPOM) and they are then
+!   copied wholesale into Flux_*, so the untouched elements must start at zero.
+    Sg_Flux_DIC(:) = 0.0d0
+    Sg_Flux_DO     = 0.0d0
+    Sg_Flux_NO3(:) = 0.0d0
+    Sg_Flux_NH4(:) = 0.0d0
+    Sg_Flux_PO4(:) = 0.0d0
+    Sg_Flux_DOC(:,:) = 0.0d0
+    Sg_Flux_POC(:,:) = 0.0d0
+    Sg_Flux_PON(:,:) = 0.0d0
+    Sg_Flux_POP(:,:) = 0.0d0
 
 # if defined CORAL_POLYP
 !-----------------------------------------------------------------------
