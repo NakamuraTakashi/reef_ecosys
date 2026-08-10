@@ -12,7 +12,7 @@
 | [2](#2-reef_flow-構成がコンパイルできない) | `reef_flow` 構成がリンク不可（コンパイルは通るようになった） | 当該構成が使用不能 | 既存 |
 | [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
-| [5](#5-他に4つのプロジェクト構成がコンパイルできない) | 他4構成がコンパイル不可 | 当該構成が使用不能 | 既存 |
+| [5](#5-他4つのプロジェクト構成がコンパイルできない) | 他4構成がコンパイル不可 | `chamber`・`coral_exp_T04` は対応済み | 既存 |
 
 ---
 
@@ -131,12 +131,19 @@ Projects/reef_flow/cppdefs.h:14:  /*#define REEF_ECOSYS*/
 
 `REEF_ECOSYS` は 2020-12-03 (`a670be2`) 時点では有効だったが、2022-10-27 の改修 (`f462cf1`) でコメントアウトされ、以後 `reef_flow` は更新されていない。約4年間ビルドできない状態が続いていたことになる。
 
-対処は方針判断が必要。
+対処は方針判断が必要。`reef_flow` を「流動だけを見る構成」とするか「流動＋生態系」とするかで変わる。
 
-1. **`main.F` の呼び出しを `#if defined REEF_ECOSYS` で囲む** — 流動のみモードを成立させる。ただし `main.F` はトレーサ配列など生態系側の変数を広く参照しているため、囲む範囲の見極めが要る
-2. **`reef_flow` で `REEF_ECOSYS` を有効に戻す** — 流動＋生態系のフル構成にする。試したところ `mod_coral.F` で別のエラーが出る（`aC_resp`、`R13C_fromd13C` が未定義、`CORAL_AVERAGE_INTERVAL` 未定義）。これは項目5の `chamber` / `test` と同じ症状で、`CORAL_CARBON_ISOTOPE` 系のオプション組み合わせが陳腐化しているため
+1. **`main.F` の呼び出しを `#if defined REEF_ECOSYS` で囲む** — 流動のみモードを成立させる。ただし `main.F` はトレーサ配列など生態系側の変数を広く参照しているため、囲む範囲の見極めが要る。未検証
+2. **`reef_flow` で `REEF_ECOSYS` を有効に戻す** — 流動＋生態系のフル構成にする。**こちらは動作確認済み**
 
-どちらを意図した構成なのかは、`reef_flow` プロジェクトの用途次第。
+選択肢2は、項目5で `chamber` を直した結果、成立するようになった。以下の2行を変更すればビルドとリンクが通る。
+
+```c
+Projects/reef_flow/cppdefs.h:14   /*#define REEF_ECOSYS*/       -> #define REEF_ECOSYS
+Projects/reef_flow/cppdefs.h:30   #  define SEDIMENT_EMPIRICAL  -> コメントアウト
+```
+
+2行目が必要なのは、`SEDIMENT_EMPIRICAL` が `#if defined REEF_ECOSYS` の内側にあり、1行目だけ変えると死んだ経路（項目5参照）が有効になってしまうため。
 
 ### 再現手順
 
@@ -208,27 +215,61 @@ Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付�
 
 ---
 
-## 5. 他に4つのプロジェクト構成がコンパイルできない
+## 5. 他4つのプロジェクト構成がコンパイルできない
 
-**状態**: 未対応 / いずれもマージ前から存在
+**状態**: `chamber`・`coral_exp_T04` は対応済み。`sedecosys_dev_muto`・`test` は**対応しない方針**（使用しないプロジェクトのため）。
 
-`Projects/` 配下の13構成を全て確認したところ、`reef_flow` 以外にも4つが失敗する。
+`Projects/` 配下の13構成を全て確認したところ、`reef_flow` 以外にも4つが失敗していた。
 
-| 構成 | 主なエラー |
+| 構成 | 状態 |
 |---|---|
-| `chamber` | `aC_resp` / `R13C_fromd13C` が未定義、`CORAL_AVERAGE_INTERVAL` が未定義 |
-| `test` | 同上（`chamber` と同一症状） |
-| `coral_exp_T04` | `Syntax error in argument list` |
-| `sedecosys_dev_muto` | `ECOSYS_OUTPUT_INTERVAL` / `SEDECO_OUTPUT_INTERVAL` が未定義 |
+| `coral_exp_T04` | 対応済み（`e04cf5c`） |
+| `chamber` | 対応済み（`a0af00f`） |
+| `sedecosys_dev_muto` | 対応しない。`cppdefs.h` の出力間隔ブロック欠落（項目 2-a と同型）なので、必要になれば同じ方法で直せる |
+| `test` | 対応しない。`chamber` と同型 |
 
-`sedecosys_dev_muto` は項目 2-a と同じく `cppdefs.h` の出力間隔ブロック欠落なので、同じ方法で直せる見込み。
+### 共通の根本原因
 
-`chamber` と `test` は `CORAL_CARBON_ISOTOPE` 系のオプション組み合わせが、その後のサンゴモジュール改修に追随できていないものと見られる。項目 2-c で `reef_flow` の `REEF_ECOSYS` を有効に戻した場合にも同じエラーが出る。
+`c0b9c87`（2026-01-16「Bugfix: coral calcification process」）でサンゴの炭素プールが分割された。
 
-### 再現手順
+```fortran
+- real(8), pointer :: QC(:,:,:,:)     ! 初期値 300.0 umolC/cm2
++ real(8), pointer :: QCe(:,:,:,:)    ! 初期値  15.0
++ real(8), pointer :: QCv(:,:,:,:)    ! 初期値 290.0  ← Tanaka et al. 2018 のコメントを継承
++ real(8), pointer :: QCr(:,:,:,:), QCh(:,:,:,:)
+```
+
+このとき、当時どのプロジェクトも有効にしていなかった `CORAL_SIZE_DYNAMICS` と `CORAL_MUCUS` のブロックが取り残された。同様に `QC0(2) = [250.0d0, 250.0d0]` の宣言が `d09cbdf` で削除されていた。
+
+`coral_exp_T04` は `CORAL_MUCUS` の `rQC` → `rQCe`、`chamber` は `CORAL_SIZE_DYNAMICS` の `%QC` → `%QCv` と `QC0` の復活で解消。プール選択の根拠は、粘液側は直後に `F_QCe` へ計上していること、サイズ動態側は閾値 `QC0=250` が分割前の `QC=300` と同オーダー（`QCe` は 15）であること。
+
+### `chamber` で追加で必要だったもの
+
+`SEDIMENT_EMPIRICAL` を無効化した。この経路は成立していない。
+
+- `mod_sedecosys_empirical.F` はどの run スクリプトにも含まれない
+- `USE mod_sedecosys_empirical` がソース中に存在しない
+- 呼び出し側 `mod_reef_ecosys.F:1188` が rank2 の引数に `NH4(1)` を渡している
+
+選択していたのは失敗中の3構成（`chamber`, `reef_flow`, `test`）だけだった。経験式の堆積物モデルを再び使うなら、モジュールの復活から別途必要になる。
+
+また `mod_macroalgae.F` の `rQC` / `rDIC` が配列宣言なのにスカラーとして使われていた既存バグも解消した（`aC_resp` のエラーに隠れていた）。
+
+### 残っている関連事項（現時点で影響なし）
+
+いずれも `CORAL_NUTRIENTS` 配下で、有効にしている構成がないため表面化しない。
+
+- `mod_coral.F` の 1103, 1391〜1393 行と `zooxanthellae` 側 2004, 2005, 2231 行に旧名 `%QC` / `%QN` / `%QP` が残る
+- `mod_coral.F:1364〜1367` の `F_Cgrowth` 代入文が末尾の `&` で次の文と連結されており、有効化すると構文エラーになる
+
+### `chamber` の実行について
+
+ビルドとリンクまでは確認したが、実行は未確認。`.in` ファイルが無く、`runeco_s*.sh` が `mod_*.F90` や `ecosys_test5.F90` という現存しないファイル名を参照しているため。
+
+### 再現手順（未対応の2構成）
 
 ```sh
-for P in chamber coral_exp_T04 sedecosys_dev_muto test; do
+for P in sedecosys_dev_muto test; do
   ( cd Projects/$P && sh run_win.sh )
 done
 ```
@@ -246,8 +287,8 @@ done
 
 | 状態 | 構成 |
 |---|---|
-| コンパイル・リンクとも成功 | `coral`, `coral_d13C`, `foodweb`, `oyster`, `pelagic_bentic`, `sedecosys`, `seagrass`, `seagrass_chamber` |
+| コンパイル・リンクとも成功 | `chamber`, `coral`, `coral_d13C`, `coral_exp_T04`, `foodweb`, `oyster`, `pelagic_bentic`, `sedecosys`, `seagrass`, `seagrass_chamber` |
 | コンパイルは成功・リンク不可 | `reef_flow`（項目 2-c） |
-| コンパイル不可 | `chamber`, `coral_exp_T04`, `sedecosys_dev_muto`, `test`（項目5） |
+| 対応しない（使用しないプロジェクト） | `sedecosys_dev_muto`, `test`（項目5） |
 
 `seagrass` 構成では 1 日分の積分完走と出力 CSV の確認まで実施済み。
