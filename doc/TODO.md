@@ -12,7 +12,7 @@
 | ~~[2](#2-reef_flow-構成がビルドできない)~~ | ~~`reef_flow` 構成がビルド不可~~ | 対応済み（実行は入力データ待ち） | 既存 |
 | ~~[3](#3-blue_tide-を有効にするとコンパイルできない)~~ | ~~`BLUE_TIDE` 有効時にコンパイル不可~~ | 対応済み | 既存 |
 | ~~[4](#4-mod_inputf-num_header-が暗黙の-save-になっている)~~ | ~~`Num_header` の暗黙 SAVE~~ | 対応済み | 既存 |
-| [7](#7-carbon_trace-のみ有効な構成で-13c-トレーサが未初期化) | `CARBON_TRACE` のみ有効な構成で 13C トレーサが未初期化 | 出力に異常値 | 既存 |
+| [7](#7-sg_flux_-が未初期化のまま-flux_-にコピーされる) | `Sg_Flux_*` が未初期化のまま `Flux_*` にコピーされる | **物質収支に異常値が混入** | 既存 |
 | ~~[5](#5-他4つのプロジェクト構成がコンパイルできない)~~ | ~~他4構成がコンパイル不可~~ | `chamber`・`coral_exp_T04` は対応済み。他2つは対象外 | 既存 |
 | [6](#6-coral_nutrients-が有効化できない) | `CORAL_NUTRIENTS` が有効化できない | 当該機能が使用不能・**規模大** | 既存 |
 
@@ -417,48 +417,66 @@ F_Ngrowth, F_Pgrowth
 
 ---
 
-## 7. `CARBON_TRACE` のみ有効な構成で 13C トレーサが未初期化
+## 7. `Sg_Flux_*` が未初期化のまま `Flux_*` にコピーされる
 
-**状態**: 未対応
+**状態**: 未対応 / マージ前から存在（master の `Sg_Flux_*` 導入時から）
 
-`RDOC_13C` 列に `-0.52E-311` や `0.14E+071` といった異常値が出力される。未初期化メモリを読んでいる。
+`env_his.csv` の `RDOC_13C` 列に `-0.52E-311` や `0.41E+227` といった異常値が出力される。実行ごとに値が変わる。
 
 ### 原因
 
-`N_Csp`（炭素種数）は `CARBON_ISOTOPE` **または** `CARBON_TRACE` で 2 になる。
+`mod_reef_ecosys.F` で、海草モジュールに渡す中継配列 `Sg_Flux_*` がどこでもゼロ初期化されていない。
 
 ```fortran
-src/mod_reef_ecosys_param.F:14:  #if defined CARBON_ISOTOPE || defined CARBON_TRACE
-src/mod_reef_ecosys_param.F:15:    integer, parameter :: N_Csp = 2
+ 896:    Flux_DOC(:,:) = 0.0d0            ← Flux_DOC は初期化される
+1047:          , Sg_Flux_DOC(:,iLDOM)   & ← 海草が書くのは iLDOM 列だけ
+1064:        Flux_DOC = Sg_Flux_DOC       ← 配列全体をコピー。iRDOM 列は未初期化のゴミ
+1160:        dDOC_dt(:,:,1) = dDOC_dt(:,:,1) - Flux_DOC(:,:) * cff
 ```
 
-一方、13C 成分の初期化は `CARBON_ISOTOPE` だけで囲まれている。
+`Flux_DOC` は896行で正しくゼロ初期化されるが、1064行の代入が**配列全体を上書き**するため無効化される。海草が書き込むのは `iLDOM` 列のみなので、`iRDOM` 列は `Sg_Flux_DOC` の未初期化値がそのまま `dDOC_dt` に入り、時間積分でトレーサに蓄積していく。
 
-```fortran
-src/mod_param.F:579:  #if defined CARBON_ISOTOPE
-src/mod_param.F:582:    t(i,j,k,nstp,iDOC(iC13,m)) = Ci_from_Ct_delta(...)
-```
+同じ構造の中継配列が他にもある。海草が一部の要素しか書かないもの:
 
-`CARBON_TRACE` だけが有効な構成では、13C のトレーサ枠は確保されるのに初期値が入らない。多くの 13C 列は積分中に上書きされて見かけ上まともな値になるが、`RDOC`（難分解性 DOC）はほとんど変化しないため初期のゴミが残り続ける。
+| 配列 | 海草が書く範囲 | 未初期化のまま残る範囲 |
+|---|---|---|
+| `Sg_Flux_DOC(N_Csp,Ndom)` | `(:,iLDOM)` | `(:,iRDOM)` |
+| `Sg_Flux_POC(N_Csp,Npom)` | `(:,iCPOM)` | `(:,iLPOM)`, `(:,iRPOM)` |
+| `Sg_Flux_PON(N_Nsp,Npom)` | `(:,iCPOM)` | 同上 |
+| `Sg_Flux_POP(N_Psp,Npom)` | `(:,iCPOM)` | 同上 |
+
+`Sg_Flux_DIC` / `Sg_Flux_DO` / `Sg_Flux_NO3` / `Sg_Flux_NH4` / `Sg_Flux_PO4` は全要素が書かれるので影響しない。
+
+**注意**: これは 13C 固有の問題ではない。`RDOC_13C` で目立つのは、難分解性 DOC がほとんど変化せず初期のゴミが残り続けるため。`CARBON_ISOTOPE` を有効にした構成では 13C 成分が実際に使われるので、より広範囲に影響しうる。
 
 ### 影響範囲
 
-`sedecosys_dev_muto` と `test` を除く**全10構成が該当**する（いずれも `CARBON_TRACE=ON`、`CARBON_ISOTOPE=off`）。
+`SEAGRASS` を有効にする構成が該当する。マージ前の master（`613a115`）にも同じ構造があり、`Sg_Flux_*` を導入した時点からの問題。
 
-出力値が実行ごとに変わるため、`RDOC_13C` 列を使った解析は信頼できない。他の列への波及は確認していないが、13C 系の値を使う計算があれば影響しうる。
+### 対応方針（動作確認済み）
 
-### 対応方針
+`mod_reef_ecosys.F:896` の `Flux_DOC(:,:) = 0.0d0` の隣で、`Sg_Flux_*` も併せてゼロ初期化する。
 
-`mod_param.F:579` のガードを `#if defined CARBON_ISOTOPE || defined CARBON_TRACE` に広げるか、13C 枠を一律ゼロで初期化する。どちらが妥当かは `CARBON_TRACE` の意図（同位体比を持たせるのか、単なるトレース用か）による。
+```fortran
+    Sg_Flux_DIC(:) = 0.0d0
+    Sg_Flux_DO     = 0.0d0
+    Sg_Flux_NO3(:) = 0.0d0
+    Sg_Flux_NH4(:) = 0.0d0
+    Sg_Flux_PO4(:) = 0.0d0
+    Sg_Flux_DOC(:,:) = 0.0d0
+    Sg_Flux_POC(:,:) = 0.0d0
+    Sg_Flux_PON(:,:) = 0.0d0
+    Sg_Flux_POP(:,:) = 0.0d0
+```
+
+試験的に適用して `seagrass` を実行したところ、`RDOC_13C` は全行 `0.0` になった。
 
 ### 再現手順
 
 ```sh
 cd Projects/seagrass && sh run_win.sh
-awk -F',' 'NR==2{print $18}' output/01-env_his.csv   # RDOC_13C 列
+awk -F',' 'NR<=4{print NR": "$18}' output/01-env_his.csv   # RDOC_13C 列
 ```
-
-実行ごとに異なる異常値が出る。
 
 ---
 
