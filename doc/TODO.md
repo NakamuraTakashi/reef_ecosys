@@ -8,7 +8,7 @@
 
 | # | 内容 | 影響 | 起因 |
 |---|---|---|---|
-| [1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない) | `ecosys_his.csv` のヘッダとデータの列数不一致 | **出力の解析に支障** | マージ |
+| ~~[1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない)~~ | ~~`ecosys_his.csv` のヘッダとデータの列数不一致~~ | 対応済み | マージ |
 | [2](#2-reef_flow-構成がコンパイルできない) | `reef_flow` 構成がコンパイル不可 | 当該構成が使用不能 | 既存 |
 | [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
@@ -17,7 +17,7 @@
 
 ## 1. `ecosys_his.csv` のヘッダとデータの列数が一致しない
 
-**状態**: 未対応 / 最優先
+**状態**: 対応済み（`mod_reef_ecosys.F` のヘッダ行にラベルを移植）
 
 `ECOSYS_TESTMODE` の出力で、ヘッダ行が **24列**、データ行が **49列** となり、列名と数値が対応していない。25列ぶんの数値に列名がない状態。
 
@@ -30,15 +30,15 @@
 
 master では対応するヘッダが `mod_output.F` の `write_ecosys_his_lavel` にあり整合していたが、ecology_dev が出力系を再構成した際に同ルーチンと呼び出し側を削除。マージで ecology_dev 側（削除）を採用した結果、master のデータ行だけが残った。
 
-### 対応方針
+### 実施した対応
 
-`src/mod_reef_ecosys.F:1383` のヘッダに、master の `write_ecosys_his_lavel` が持っていたラベルを移植する。ラベル定義は以下で参照できる。
+`src/mod_reef_ecosys.F:1383` のヘッダに、master の `write_ecosys_his_lavel` が持っていたラベルを移植した。ラベル定義は以下で参照できる。
 
 ```sh
 git show 613a115:src/mod_output.F | sed -n '723,768p'
 ```
 
-`SEAGRASS` ブロックを次の23列に置換し、`SEDIMENT_ECOSYS` ブロックにフラックス5列を追加する。
+`SEAGRASS` ブロックを次の23列に置換し、`SEDIMENT_ECOSYS` ブロックにフラックス5列を追加した。
 
 ```
 sgrass_GrossPhot, sgrass_Grow, sgrass_Phot_lim, sgrass_Grow_lim,
@@ -54,16 +54,22 @@ sgrass_NH4stockRatio, sgrass_NO3stockRatio, sgrass_PO4stockRatio
 sedeco_fluxDIC, sedeco_fluxDO, sedeco_fluxNO3, sedeco_fluxNH4, sedeco_fluxPO4
 ```
 
-なお master のヘッダは NH4/NO3/PO4 系のラベルを `#if defined SEAGRASS_LEAF_NUTRIENT_UPTAKE` で囲っていなかった。データ行側は囲っているため、**同マクロが無効な構成では master 時点でも不一致が生じる**。移植の際はデータ行と同じガードを付けること。
+なお master のヘッダは NH4/NO3/PO4 系のラベルを `#if defined SEAGRASS_LEAF_NUTRIENT_UPTAKE` で囲っていなかった。データ行側は囲っているため、**同マクロが無効な構成では master 時点でも不一致が生じていた**。移植にあたってはデータ行と同じガードを付与し、この潜在的な不整合も解消してある。
 
-### 再現手順
+### 確認結果
+
+修正前は 24列 / 49列。修正後は両方 49列で一致する。
 
 ```sh
 cd Projects/seagrass && sh run_win.sh
 awk -F',' 'NR<=2{print NR": "NF" 列"}' output/01-ecosys_his.csv
-# 1: 24 列
+# 1: 49 列
 # 2: 49 列
 ```
+
+関連マクロ（`CORAL_POLYP`, `SEAGRASS`, `MACROALGAE`, `SEDIMENT_ECOSYS`, `CARBON_ISOTOPE`,
+`SEAGRASS_LEAF_NUTRIENT_UPTAKE`）の 64 通りすべての組み合わせで、ヘッダとデータの
+列数が一致することを確認済み。
 
 ---
 

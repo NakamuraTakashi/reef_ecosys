@@ -1386,13 +1386,27 @@ END SUBROUTINE allocate_reef_ecosys
         ,'coral2_Pg', 'coral2_R', 'coral2_Pn', 'coral2_G'    &
 #  endif
 #  ifdef SEAGRASS
-        ,'sgrass_Pg', 'sgrass_R', 'sgrass_Pn'                &
+        ,'sgrass_GrossPhot', 'sgrass_Grow'                   &
+        ,'sgrass_Phot_lim', 'sgrass_Grow_lim'                &
+        ,'sgrass_Resp', 'sgrass_NetPhot', 'sgrass_Dieoff'    &
+        ,'sgrass_Wt', 'sgrass_LfWt', 'sgrass_RtWt'           &
+        ,'sgrass_LAI', 'sgrass_ELAP'                         &
+        ,'sgrass_ocean_flux_DIC', 'sgrass_ocean_flux_DO'     &
+#   if defined SEAGRASS_LEAF_NUTRIENT_UPTAKE
+        ,'sgrass_ocean_flux_NH4', 'sgrass_ocean_flux_NO3', 'sgrass_ocean_flux_PO4'  &
+#   endif
+        ,'sgrass_DOstockRatio', 'sgrass_DICstockRatio', 'sgrass_CH2OstockRatio'     &
+#   if defined SEAGRASS_LEAF_NUTRIENT_UPTAKE
+        ,'sgrass_NH4stockRatio', 'sgrass_NO3stockRatio', 'sgrass_PO4stockRatio'     &
+#   endif
 #  endif
 #  ifdef MACROALGAE
         ,'algae_Pg' , 'algae_R' , 'algae_Pn'                 &
 #  endif
 #  ifdef SEDIMENT_ECOSYS
 !        ,'sedeco_Pg', 'sedeco_R', 'sedeco_Pn', 'sedeco_G'    &
+        ,'sedeco_fluxDIC', 'sedeco_fluxDO'                   &
+        ,'sedeco_fluxNO3', 'sedeco_fluxNH4', 'sedeco_fluxPO4' &
 #  endif
         ,'dDIC_dt','dTA_dt','dDO_dt'                         &
         ,'dDOC_dt','dPOC_dt'                                 &
