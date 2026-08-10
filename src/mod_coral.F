@@ -630,6 +630,7 @@ CONTAINS
     real(8), parameter :: km_dam = 1.0d-10  ! (s-1)!!!!!!!!!!!!!!!!! Tuning parameter
     real(8), parameter :: km_es(2) = [ 1.0d0, 1.0d0 ]   ! !!!!!!!!!!!!!! TBC
     real(8), parameter :: km(2) = [ 1.0d0, 1.0d0 ]   ! !!!!!!!!!!!!!! TBC
+    real(8), parameter :: QC0(2) = [ 250.0d0, 250.0d0 ]   ! !!!!!!!!!!!!!! TBC
 # endif
 
 !--- Variables for summing mass fluxes (nmol cm-2 s-1) -----------------
@@ -1326,7 +1327,7 @@ CONTAINS
     if (E_tot > E_m ) then
 # if defined CORAL_SIZE_DYNAMICS
       netCgrowth = ( CORAL(ng)%growth(n,i,j)-CORAL(ng)%mort(n,i,j) )  &
-                   *CORAL(ng)%QC(iCt,n,i,j)*1.0d3    ! growth rate (nmol cm-2 s-1)=(cm2 cm-2 s-1)*(umol cm-2)*1.d3
+                   *CORAL(ng)%QCv(iCt,n,i,j)*1.0d3    ! growth rate (nmol cm-2 s-1)=(cm2 cm-2 s-1)*(umol cm-2)*1.d3
       g2c_tmp = netCgrowth/CORAL(ng)%G(n,i,j)
       E_g = (E_tot - E_m)*g2c_tmp
       E_ca = E_tot - E_m - E_g
@@ -1360,17 +1361,17 @@ CONTAINS
 
 #  if defined CORAL_NUTRIENTS
 
-    F_Cgrowth(iCt) = g_max(n)*min( 1.0d0 - QC0(n)/CORAL(ng)%QC(iCt,n,i,j) ,    &
-                          min(1.0d0 - QN0(n)/CORAL(ng)%QN(iNt,n,i,j),     &
-                              1.0d0 - QP0(n)/CORAL(ng)%QP(iPt,n,i,j) ) )  &
+    F_Cgrowth(iCt) = g_max(n)*min( 1.0d0 - QC0(n)/CORAL(ng)%QCv(iCt,n,i,j) ,    &
+                          min(1.0d0 - QN0(n)/CORAL(ng)%QNv(iNt,n,i,j),     &
+                              1.0d0 - QP0(n)/CORAL(ng)%QPv(iPt,n,i,j) ) )  &
     F_Cgrowth(iCt) = max(F_Cgrowth(iCt), 0.0d0)
     
-    F_Ngrowth(iNt) = F_Cgrowth(iCt)*CORAL(ng)%QN(iNt,n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
-    F_Pgrowth(iPt) = F_Cgrowth(iCt)*CORAL(ng)%QP(iPt,n,i,j)/CORAL(ng)%QC(iCt,n,i,j)
+    F_Ngrowth(iNt) = F_Cgrowth(iCt)*CORAL(ng)%QNv(iNt,n,i,j)/CORAL(ng)%QCv(iCt,n,i,j)
+    F_Pgrowth(iPt) = F_Cgrowth(iCt)*CORAL(ng)%QPv(iPt,n,i,j)/CORAL(ng)%QCv(iCt,n,i,j)
 
 #  else
 !    F_Cgrowth = g_max(n) * (1.0d0 - QC0(n)/CORAL(ng)%QC(n,i,j) )
-    F_Cgrowth(iCt) = 5.0d-5 * (CORAL(ng)%QC(iCt,n,i,j) - QC0(n))
+    F_Cgrowth(iCt) = 5.0d-5 * (CORAL(ng)%QCv(iCt,n,i,j) - QC0(n))
     F_Cgrowth(iCt) = max(F_Cgrowth(iCt), 0.0d0)
 #  endif
 !
@@ -1378,7 +1379,7 @@ CONTAINS
 !
 !---------- Coral growth rate (cm cm-2 s-1) ------------
 !
-    CORAL(ng)%growth(n,i,j) = F_Cgrowth(iCt)/CORAL(ng)%QC(iCt,n,i,j)*1.0d-3  ! growth rate (cm2 cm-2 s-1)
+    CORAL(ng)%growth(n,i,j) = F_Cgrowth(iCt)/CORAL(ng)%QCv(iCt,n,i,j)*1.0d-3  ! growth rate (cm2 cm-2 s-1)
 !   (cm2 cm-2 s-1)=(nmol cm-2 s-1)/(umol cm-2)*1.d-3
 !
 !---------- Coral mortality (cm cm-2 s-1) ------------
@@ -1394,7 +1395,7 @@ CONTAINS
                    +mort_es !!!!!!!!!!!!!!!TBC
 #  else
     CORAL(ng)%mort(n,i,j) =                                   &
-          km(n) *exp( aC_m*(QC0(n)-CORAL(ng)%QC(iCt,n,i,j)) )     &
+          km(n) *exp( aC_m*(QC0(n)-CORAL(ng)%QCv(iCt,n,i,j)) )     &
          +km_dam * Damage                                     & !!!!!!!!!!!!!!!!!TBC
          +mort_es
 

@@ -151,11 +151,9 @@ CONTAINS
     real(8) npref
     real(8) ldocn,ldocd
 #if defined CARBON_ISOTOPE
-    real(8), parameter :: aC_phot(2)  = [  1.d0, -20.0d-3+1.d0 ]  ! -5 to -10 per mill (Dr. Miyajima, pers. comn.)
-    real(8), parameter :: aC_resp(2)  = [  1.d0,   0.0d-3+1.d0 ]!
     real(8) R13C_DIC, R13C_QC
 #endif
-    real(8) :: rQC(N_Csp),rDIC(N_Csp)
+    real(8) :: rQC, rDIC   ! isotope ratio of the species handled in the isp loop below
 
     integer :: isp
 
@@ -190,7 +188,7 @@ CONTAINS
       rQC = Iso_ratio( ALGAE(ng)%QC(isp,n,i,j), ALGAE(ng)%QC(iCt,n,i,j) )
   
       Flux_DIC(isp)= ALGAE(ng)%Pg(n,i,j)*rDIC*aC_phot(isp)        &
-                   - ALGAE(ng)%R (n,i,j)*rQC *aC_resp(isp)
+                   - ALGAE(ng)%R (n,i,j)*rQC
     ENDDO
       
 ! --- Nutrient fluxes between water column and coral -----

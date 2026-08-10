@@ -27,7 +27,7 @@
 # define MACROALGAE        /* USE algae module  */
 # define SEDIMENT_ECOSYS        /* USE sedecosys module  */
 # if defined SEDIMENT_ECOSYS
-#  define SEDIMENT_EMPIRICAL     /* USE empirical sediment module  */
+/*#  define SEDIMENT_EMPIRICAL*/     /* mod_sedecosys_empirical.F is in no build script and is never USEd, so this path cannot compile */
 # endif
 
 # if defined ORGANIC_MATTER
