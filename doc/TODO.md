@@ -13,6 +13,7 @@
 | [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
 | ~~[5](#5-他4つのプロジェクト構成がコンパイルできない)~~ | ~~他4構成がコンパイル不可~~ | `chamber`・`coral_exp_T04` は対応済み。他2つは対象外 | 既存 |
+| [6](#6-coral_nutrients-が有効化できない) | `CORAL_NUTRIENTS` が有効化できない | 当該機能が使用不能・**規模大** | 既存 |
 
 ---
 
@@ -288,12 +289,7 @@ Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付�
 
 また `mod_macroalgae.F` の `rQC` / `rDIC` が配列宣言なのにスカラーとして使われていた既存バグも解消した（`aC_resp` のエラーに隠れていた）。
 
-### 残っている関連事項（現時点で影響なし）
-
-いずれも `CORAL_NUTRIENTS` 配下で、有効にしている構成がないため表面化しない。
-
-- `mod_coral.F` の 327, 565, 1103, 1373, 1391〜1393 行と `zooxanthellae` 側 2004, 2005, 2073, 2090, 2156, 2157, 2231 行に旧名 `%QC` / `%QN` / `%QP` が残る
-- `mod_coral.F:1364〜1366` の `F_Cgrowth` 代入文が末尾の `&` で次の文と連結されており、有効化すると構文エラーになる
+なお `CORAL_NUTRIENTS` 配下にも同種の取り残しがあるが、規模が大きいため項目6として別建てにした。
 
 ### 再現手順（対応しない2構成）
 
@@ -302,6 +298,90 @@ for P in sedecosys_dev_muto test; do
   ( cd Projects/$P && sh run_win.sh )
 done
 ```
+
+---
+
+## 6. `CORAL_NUTRIENTS` が有効化できない
+
+**状態**: 未対応 / 規模大
+
+サンゴの窒素・リン動態を扱うオプション。**どのプロジェクトも有効にしておらず**、そのため長期間コンパイルされないまま周辺の改修から取り残されている。有効化すると `mod_coral.F` だけで **21件**のエラーが出る。
+
+他のモジュール（`mod_reef_ecosys.F`, `main.F` など）にエラーは波及しないので、修正は `mod_coral.F` に閉じる。
+
+### 再現手順
+
+`Projects/coral/cppdefs.h:55` のコメントを外してビルドする。
+
+```sh
+sed -i 's|^/\*#\( *\)define CORAL_NUTRIENTS\*/|#\1define CORAL_NUTRIENTS|' Projects/coral/cppdefs.h
+cd Projects/coral && sh run_win.sh
+```
+
+### 問題の内訳
+
+4種類に分かれる。上から順に直さないと、後続のエラーが隠れて見えない。
+
+**(1) 構文の破損（2箇所）**
+
+`mod_coral.F:1100〜1101` — 継続行の `&` が無く、2文に分断されている。
+
+```fortran
+    c_SQC=min((Flux_NH4 +Flux_NO3 )*c_CNP(nC)/c_CNP(nN)     ← 末尾に & が必要
+                 ,Flux_PO4 *c_CNP(nC)/c_CNP(nP))
+```
+
+`mod_coral.F:1364〜1366` — 逆に `&` が余分で、次の代入文と連結されている。
+
+```fortran
+    F_Cgrowth(iCt) = g_max(n)*min( 1.0d0 - QC0(n)/CORAL(ng)%QCv(iCt,n,i,j) ,    &
+                          min(1.0d0 - QN0(n)/CORAL(ng)%QNv(iNt,n,i,j),     &
+                              1.0d0 - QP0(n)/CORAL(ng)%QPv(iPt,n,i,j) ) )  &   ← この & が余分
+    F_Cgrowth(iCt) = max(F_Cgrowth(iCt), 0.0d0)
+```
+
+**(2) 炭素プール分割に伴う旧名参照**
+
+項目5と同じく `c0b9c87` の分割に追随できていない。窒素・リン側も `QN` → `QNe`/`QNv`/`QNr`/`QNh`、`QP` → `QPe`/… と分割されている。
+
+| 行 | 内容 |
+|---|---|
+| 1020 | `CORAL(ng)%QN (isp,n,i,j)` |
+| 1103 | `CORAL(ng)%QC(n,i,j)` （添字数も旧形式のまま） |
+| 2004, 2005 | `ZOOX(ng)%QN`, `ZOOX(ng)%QP`, `ZOOX(ng)%QC` |
+| 2231 | `ZOOX(ng)%QN`, `ZOOX(ng)%QP` |
+
+`t_coral` / `t_zoox` のどちらのプールに対応させるかは、項目5と同様に用途から判断する必要がある。
+
+**(3) 未宣言の変数**
+
+宣言が失われている、または一度も書かれていない。
+
+```
+rQN, rQP, rPO4coe, c_SQC, c_SQN, c_SQP, c_CNP, nC, nN, nP, tempb,
+F_Ngrowth, F_Pgrowth
+```
+
+`c_CNP(nC)` / `c_CNP(nN)` / `c_CNP(nP)` は C:N:P 比を引く配列とその添字定数と見られるが、定義が見当たらない。`QN0` と `QP0` は宣言されている。
+
+**(4) 未実装のプレースホルダ**
+
+`CORAL_MUCUS` と併用したときのみ通る箇所（`mod_coral.F:1139` の `#  if defined CORAL_NUTRIENTS` 配下）。
+
+```fortran
+      F_Nmucus(m) = ???
+      F_Pmucus(m) = ???
+```
+
+粘液に含まれる窒素・リンの放出量をどう決めるかが未定。**ここはモデルの定式化そのものが必要**で、機械的な修正では済まない。
+
+`CORAL_MUCUS` を有効にする `coral_exp_T04` で `CORAL_NUTRIENTS` も併せて有効化する場合は、この2行の実装が前提になる。
+
+### 進め方の目安
+
+(1) と (3) は機械的に直せる。(2) は項目5と同じ判断（どのプールを指すか）が要る。(4) はモデルの定式化を決める必要があり、性質が異なる。
+
+そのため「(1)(3) を直して残りのエラーを可視化する」→「(2) をプールごとに判断」→「(4) を検討」の順が現実的。
 
 ---
 
