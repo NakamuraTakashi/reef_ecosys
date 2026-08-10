@@ -9,10 +9,10 @@
 | # | 内容 | 影響 | 起因 |
 |---|---|---|---|
 | ~~[1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない)~~ | ~~`ecosys_his.csv` のヘッダとデータの列数不一致~~ | 対応済み | マージ |
-| [2](#2-reef_flow-構成がコンパイルできない) | `reef_flow` 構成がリンク不可（コンパイルは通るようになった） | 当該構成が使用不能 | 既存 |
+| ~~[2](#2-reef_flow-構成がビルドできない)~~ | ~~`reef_flow` 構成がビルド不可~~ | 対応済み（実行は入力データ待ち） | 既存 |
 | [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
-| [5](#5-他4つのプロジェクト構成がコンパイルできない) | 他4構成がコンパイル不可 | `chamber`・`coral_exp_T04` は対応済み | 既存 |
+| ~~[5](#5-他4つのプロジェクト構成がコンパイルできない)~~ | ~~他4構成がコンパイル不可~~ | `chamber`・`coral_exp_T04` は対応済み。他2つは対象外 | 既存 |
 
 ---
 
@@ -27,7 +27,7 @@
 マージで両ブランチの異なる版が組み合わさったため。
 
 - **ヘッダ行** … `src/mod_reef_ecosys.F:1383`（ecology_dev 由来）。SEAGRASS は `sgrass_Pg`, `sgrass_R`, `sgrass_Pn` の **3列**のみ
-- **データ行** … `src/mod_reef_ecosys.F:1434`（master 由来）。SEAGRASS は `GridPhot` 〜 `PO4stockRatio` の **23列**、加えて `SEDIMENT_ECOSYS` のフラックス **5列**
+- **データ行** … `src/mod_reef_ecosys.F:1448`（master 由来）。SEAGRASS は `GridPhot` 〜 `PO4stockRatio` の **23列**、加えて `SEDIMENT_ECOSYS` のフラックス **5列**
 
 master では対応するヘッダが `mod_output.F` の `write_ecosys_his_lavel` にあり整合していたが、ecology_dev が出力系を再構成した際に同ルーチンと呼び出し側を削除。マージで ecology_dev 側（削除）を採用した結果、master のデータ行だけが残った。
 
@@ -74,11 +74,11 @@ awk -F',' 'NR<=2{print NR": "NF" 列"}' output/01-ecosys_his.csv
 
 ---
 
-## 2. `reef_flow` 構成がコンパイルできない
+## 2. `reef_flow` 構成がビルドできない
 
-**状態**: 2-a・2-b は対応済み。全19ファイルがコンパイルできるようになったが、**リンクが通らない**（2-c）。
+**状態**: 2-a・2-b・2-c とも対応済み。ビルドとリンクが通り、全 namelist も読める。ただし**入力データが未配置のため実行はまだできない**（2-d）。
 
-`Projects/reef_flow/cppdefs.h` を使うと失敗する。独立した原因が3つあった。
+`Projects/reef_flow/cppdefs.h` を使うと失敗していた。独立した原因が3つあった。
 
 ### 2-a. `FLOW_OUTPUT_INTERVAL` が未定義 — 対応済み（`8165c8c`）
 
@@ -90,14 +90,14 @@ Error: Symbol 'flow_output_interval' at (1) has no IMPLICIT type
 
 `Projects/reef_flow/cppdefs.h` だけが、他の全プロジェクトが持つ「出力間隔ブロック」を欠いていた。同じ値のブロックを追加して解消。
 
-`src/mod_reef_flow.F:144` にあるコメントアウトされた `parameter` 定義は旧方式の名残で、`mod_coral.F:1973`、`mod_reef_ecosys.F:513`、`mod_sedecosys.F:782` にも同じものがある。ソース側の変更は不要。
+`src/mod_reef_flow.F:144` にあるコメントアウトされた `parameter` 定義は旧方式の名残で、`mod_coral.F:1974`、`mod_reef_ecosys.F:513`、`mod_sedecosys.F:782` にも同じものがある。ソース側の変更は不要。
 
 これにより `ECOSYS_OUTPUT_INTERVAL` 未定義も併せて解消した。`main.F` が致命的エラーで打ち切られていたため表面化していなかったもの。
 
 ### 2-b. `write_env_vprof` に `USE mod_reef_flow` がない — 対応済み（`c88bb7f`）
 
 ```
-src/mod_output.F:490:22:
+src/mod_output.F:490:22:                        ← 行番号は修正前のもの
   490 |            , REEF(1)%Qrc(1,1), REEF(1)%Qch(1,1), REEF(1)%el (1,1)          &
 Error: Symbol 'reef' at (1) has no IMPLICIT type
 ```
@@ -106,14 +106,14 @@ Error: Symbol 'reef' at (1) has no IMPLICIT type
 
 | サブルーチン | REEF 参照 | `USE mod_reef_flow` |
 |---|---|---|
-| `write_env_data` | 677行 | あり（626行、`#if defined REEF_FLOW` 付き） |
-| `write_env_vprof` | 490行 | **なし** |
+| `write_env_data` | 680行 | あり（629行、`#if defined REEF_FLOW` 付き） |
+| `write_env_vprof` | 493行 | 修正で追加（292行） |
 
 出力行が両者で完全に同一なことから、ブロックをコピーした際に `USE` を持ってこなかったものと見られる。Fortran の `USE` はスコープ単位なので `write_env_data` のものは届かない。`write_env_vprof` に同じガード付き `USE` を追加して解消。
 
 `REEF_FLOW` を define するのは `reef_flow` だけなので、他構成では当該行ごと無効化され表面化しなかった。
 
-### 2-c. `main.F` の `reef_ecosys` 呼び出しにガードがない — 未対応
+### 2-c. `main.F` の `reef_ecosys` 呼び出しにガードがない — 対応済み
 
 ```
 main.F:(.text+0x14a8): undefined reference to `allocate_reef_ecosys_'
@@ -121,29 +121,62 @@ main.F:(.text+0x14d1): undefined reference to `initialize_reef_ecosys_'
 main.F:(.text+0x3081): undefined reference to `reef_ecosys_'
 ```
 
-`mod_reef_ecosys` は本体全体が `#if defined REEF_ECOSYS` で囲まれている（`src/mod_reef_ecosys.F:9`）。一方 `main.F` の3つの呼び出し（267, 275, 474行）は囲まれていない。
+`mod_reef_ecosys` は本体全体が `#if defined REEF_ECOSYS` で囲まれている（`src/mod_reef_ecosys.F:10`）。一方 `main.F` の3つの呼び出し（267, 275, 474行）は囲まれていない。
 
-`reef_flow` は `REEF_ECOSYS` がコメントアウトされた「流動のみ」構成のため、モジュール本体が空になり実体が見つからない。
+`reef_flow` は `REEF_ECOSYS` がコメントアウトされた「流動のみ」構成だったため、モジュール本体が空になり実体が見つからなかった。
 
-```c
-Projects/reef_flow/cppdefs.h:14:  /*#define REEF_ECOSYS*/
-```
+`REEF_ECOSYS` は 2020-12-03 (`a670be2`) 時点では有効だったが、2022-10-27 の改修 (`f462cf1`) でコメントアウトされ、以後 `reef_flow` は更新されていなかった。約4年間ビルドできない状態が続いていたことになる。
 
-`REEF_ECOSYS` は 2020-12-03 (`a670be2`) 時点では有効だったが、2022-10-27 の改修 (`f462cf1`) でコメントアウトされ、以後 `reef_flow` は更新されていない。約4年間ビルドできない状態が続いていたことになる。
-
-対処は方針判断が必要。`reef_flow` を「流動だけを見る構成」とするか「流動＋生態系」とするかで変わる。
+取り得る対処は2つあり、`reef_flow` を「流動だけを見る構成」とするか「流動＋生態系」とするかで変わる。
 
 1. **`main.F` の呼び出しを `#if defined REEF_ECOSYS` で囲む** — 流動のみモードを成立させる。ただし `main.F` はトレーサ配列など生態系側の変数を広く参照しているため、囲む範囲の見極めが要る。未検証
-2. **`reef_flow` で `REEF_ECOSYS` を有効に戻す** — 流動＋生態系のフル構成にする。**こちらは動作確認済み**
+2. **`REEF_ECOSYS` を有効に戻す** — 流動＋生態系のフル構成にする
 
-選択肢2は、項目5で `chamber` を直した結果、成立するようになった。以下の2行を変更すればビルドとリンクが通る。
+**選択肢2を採用した。** 項目5で `chamber` を直した結果、成立するようになったもの。`cppdefs.h` を2行変更した。
 
 ```c
 Projects/reef_flow/cppdefs.h:14   /*#define REEF_ECOSYS*/       -> #define REEF_ECOSYS
-Projects/reef_flow/cppdefs.h:30   #  define SEDIMENT_EMPIRICAL  -> コメントアウト
+Projects/reef_flow/cppdefs.h:34   #  define SEDIMENT_EMPIRICAL  -> コメントアウト
 ```
 
 2行目が必要なのは、`SEDIMENT_EMPIRICAL` が `#if defined REEF_ECOSYS` の内側にあり、1行目だけ変えると死んだ経路（項目5参照）が有効になってしまうため。
+
+これで有効になるのは `CORAL_POLYP`（+`CORAL_ZOOXANTHELLAE`, `CORAL_PHOTOINHIBITION`, `CORAL_SIZE_DYNAMICS`）、`FOODWEB`、`MACROALGAE`、`SEAGRASS`、`SEDIMENT_ECOSYS`、`NUTRIENTS`、`ORGANIC_MATTER`。
+
+### 2-d. `reef_flow_01.in` の更新と入力データ — 入力データは未配置
+
+`reef_flow_01.in` も2022年の改修前の形式のままで、ビルドが通った後も実行時に順に失敗した。
+
+1. `&sedeco_config` が無い → `main.F:159` で停止
+2. `&sgrass_config` が無い → `main.F:163` で停止
+3. `&initial` が旧変数名 → `mod_param.F:337` で `Cannot match namelist object name doc1_0`
+
+`&initial` をスカラー個別指定から配列形式へ移行し、不足の2グループを追加して解消した。
+
+| 旧 | 新 |
+|---|---|
+| `DOC1_0`, `DOC2_0` | `DOC_0`（Ndom=2） |
+| `POC1_0`, `POC2_0` | `POC_0`（Npom=3） |
+| `Phyt1_0`〜`Phyt3_0` | `PhyC_0`（Nphy=4） |
+| `Zoop1_0` | `ZooC_0`（Nzoo=1） |
+| `PIC1_0` | `PIC_0`（Npim=2） |
+| `p_coral1_0`, `p_coral2_0` | `p_coral_0`（Ncl=2） |
+| `DON*_0`, `PON*_0`, `DOP*_0`, `POP*_0` | 削除（現行 namelist はコメントアウトされており受け付けない） |
+
+旧ファイルに対応値が無かった `POC_0` の3要素目（粗大POC）と `PhyC_0` の4要素目（藍藻）は 0.0 とした。`&sedeco_config` は `Projects/seagrass` の値を流用したが、`p_sand_0 = 0.0`、`p_sgrass_0 = 0.0` のため実質不活性。
+
+**残っているのは入力データのみ。** `reef_flow_01.in` が参照する強制データ13ファイルが `input/` に存在しない。
+
+```
+input/Ishigaki_frc_JMAobs_2018_{swrad,lwrad_down,Tair,Pair,wind,rain,Qair,cloud}.nc
+input/PPFD.txt
+input/level2017.txt, input/level2018.txt
+input/temp2017.txt, input/temp2018.txt
+```
+
+データは作成済みとのことで、配置後に実行確認を行う。
+
+> **注意**: このデータが無い状態で実行すると、Fortran の `open` 文が既定で存在しないファイルを作成するため、`input/` に空ファイルが生成される。実行前にデータを配置すること。
 
 ### 再現手順
 
@@ -251,7 +284,7 @@ Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付�
 - `USE mod_sedecosys_empirical` がソース中に存在しない
 - 呼び出し側 `mod_reef_ecosys.F:1188` が rank2 の引数に `NH4(1)` を渡している
 
-選択していたのは失敗中の3構成（`chamber`, `reef_flow`, `test`）だけだった。経験式の堆積物モデルを再び使うなら、モジュールの復活から別途必要になる。
+選択していたのは、当時ビルドできなかった3構成（`chamber`, `reef_flow`, `test`）だけだった。`chamber` と `reef_flow` では無効化済み。経験式の堆積物モデルを再び使うなら、モジュールの復活から別途必要になる。
 
 また `mod_macroalgae.F` の `rQC` / `rDIC` が配列宣言なのにスカラーとして使われていた既存バグも解消した（`aC_resp` のエラーに隠れていた）。
 
@@ -259,14 +292,10 @@ Fortran では宣言時に初期化子を書くと暗黙の `SAVE` 属性が付�
 
 いずれも `CORAL_NUTRIENTS` 配下で、有効にしている構成がないため表面化しない。
 
-- `mod_coral.F` の 1103, 1391〜1393 行と `zooxanthellae` 側 2004, 2005, 2231 行に旧名 `%QC` / `%QN` / `%QP` が残る
-- `mod_coral.F:1364〜1367` の `F_Cgrowth` 代入文が末尾の `&` で次の文と連結されており、有効化すると構文エラーになる
+- `mod_coral.F` の 327, 565, 1103, 1373, 1391〜1393 行と `zooxanthellae` 側 2004, 2005, 2073, 2090, 2156, 2157, 2231 行に旧名 `%QC` / `%QN` / `%QP` が残る
+- `mod_coral.F:1364〜1366` の `F_Cgrowth` 代入文が末尾の `&` で次の文と連結されており、有効化すると構文エラーになる
 
-### `chamber` の実行について
-
-ビルドとリンクまでは確認したが、実行は未確認。`.in` ファイルが無く、`runeco_s*.sh` が `mod_*.F90` や `ecosys_test5.F90` という現存しないファイル名を参照しているため。
-
-### 再現手順（未対応の2構成）
+### 再現手順（対応しない2構成）
 
 ```sh
 for P in sedecosys_dev_muto test; do
@@ -287,8 +316,9 @@ done
 
 | 状態 | 構成 |
 |---|---|
-| コンパイル・リンクとも成功 | `chamber`, `coral`, `coral_d13C`, `coral_exp_T04`, `foodweb`, `oyster`, `pelagic_bentic`, `sedecosys`, `seagrass`, `seagrass_chamber` |
-| コンパイルは成功・リンク不可 | `reef_flow`（項目 2-c） |
+| ビルド・リンクとも成功 | `chamber`, `coral`, `coral_d13C`, `coral_exp_T04`, `foodweb`, `oyster`, `pelagic_bentic`, `reef_flow`, `sedecosys`, `seagrass`, `seagrass_chamber` |
 | 対応しない（使用しないプロジェクト） | `sedecosys_dev_muto`, `test`（項目5） |
 
-`seagrass` 構成では 1 日分の積分完走と出力 CSV の確認まで実施済み。
+実行まで確認した構成は `seagrass` のみ（1日分の積分完走と出力 CSV の照合）。
+
+`reef_flow` は入力データ未配置のため実行未確認（項目 2-d）。`chamber` は `.in` ファイルが無く、`runeco_s*.sh` が `mod_*.F90` や `ecosys_test5.F90` という現存しないファイル名を参照しているため実行未確認。
