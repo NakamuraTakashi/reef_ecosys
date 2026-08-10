@@ -142,7 +142,7 @@ CONTAINS
 
 #if defined REEF_FLOW_TESTMODE
 !    real(8), parameter :: FLOW_OUTPUT_INTERVAL  = 5.0d0    ! Output interval (min)
-    real(8) :: dsec = 0.d0 !sec
+    real(8), save :: dsec = 0.d0 !sec
 #endif
 
     d_o = el_o + REEF(ng)%Drc(i,j)

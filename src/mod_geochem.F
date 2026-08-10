@@ -661,7 +661,7 @@ contains
     real(8), parameter :: OC0 =-0.000000488682d0
     real(8), parameter :: rOxNO3= 8.625d0       ! 138/16
     real(8), parameter :: rOxNH4= 6.625d0       ! 106/16
-    real(8) :: l2mol = 1000.0d0/22.9316d0      ! liter to mol
+    real(8), parameter :: l2mol = 1000.0d0/22.9316d0      ! liter to mol
 
     real(8)  t_oC, TS, AA, S
 
