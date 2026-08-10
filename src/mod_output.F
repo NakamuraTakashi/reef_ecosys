@@ -285,10 +285,13 @@ END SUBROUTINE files_close
 ! **********************************************************************
 
   SUBROUTINE write_env_vprof(OUT_FILE, date, N)
-  
+
     USE mod_param
     USE mod_geochem, ONLY: d13C_fromR13C
-    
+#if defined REEF_FLOW
+    USE mod_reef_flow
+#endif
+
     implicit none
     
     character(len=*), intent( in) :: OUT_FILE
