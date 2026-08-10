@@ -40,6 +40,7 @@
 /*# define MACROALGAE*/   /* USE algae module  */
 # define FOODWEB      /* USE foodweb module */
 # define SEDIMENT_ECOSYS        /* USE sedecosys module  */
+# define BLUE_TIDE    /* Track water-column H2S and S0 as prognostic tracers */
 
 # define AIR_SEA_GAS_EXCHANGE
 

@@ -10,7 +10,7 @@
 |---|---|---|---|
 | ~~[1](#1-ecosys_hiscsv-のヘッダとデータの列数が一致しない)~~ | ~~`ecosys_his.csv` のヘッダとデータの列数不一致~~ | 対応済み | マージ |
 | ~~[2](#2-reef_flow-構成がビルドできない)~~ | ~~`reef_flow` 構成がビルド不可~~ | 対応済み（実行は入力データ待ち） | 既存 |
-| [3](#3-blue_tide-を有効にするとコンパイルできない) | `BLUE_TIDE` 有効時にコンパイル不可 | 当該機能が使用不能 | 既存 |
+| ~~[3](#3-blue_tide-を有効にするとコンパイルできない)~~ | ~~`BLUE_TIDE` 有効時にコンパイル不可~~ | 対応済み | 既存 |
 | [4](#4-mod_inputf-num_header-が暗黙の-save-になっている) | `Num_header` の暗黙 SAVE | なし（整理のみ） | 既存 |
 | ~~[5](#5-他4つのプロジェクト構成がコンパイルできない)~~ | ~~他4構成がコンパイル不可~~ | `chamber`・`coral_exp_T04` は対応済み。他2つは対象外 | 既存 |
 | [6](#6-coral_nutrients-が有効化できない) | `CORAL_NUTRIENTS` が有効化できない | 当該機能が使用不能・**規模大** | 既存 |
@@ -189,42 +189,55 @@ cd Projects/reef_flow && sh run.sh
 
 ## 3. `BLUE_TIDE` を有効にするとコンパイルできない
 
-**状態**: 未対応 / マージ前から存在
+**状態**: 対応済み。`pelagic_bentic` で有効化し、実行まで確認した。
 
-現在 `BLUE_TIDE` を define しているプロジェクトはないため通常のビルドには影響しないが、有効化するとコンパイルが通らない。
+### `BLUE_TIDE` の役割
+
+無効時、`H2S` と `S0` は `mod_reef_ecosys.F` の内部変数で毎回ゼロにされる（1221〜1223行）ため、硫化物は蓄積しない。有効にすると呼び出し側が保持する**予報変数**に昇格する。
+
+| | 無効 | 有効 |
+|---|---|---|
+| `H2S`, `S0` | 内部変数（475〜478行） | `intent(in)` 仮引数（363〜365行） |
+| `dH2S_dt`, `dS0_dt` | なし | `intent(out)` 仮引数（411〜413行） |
+
+データの流れは、`mod_sedecosys.F:1517` が堆積物からの `Flux_H2S` を出し、`mod_reef_ecosys.F:1366` が最下層に適用、`mod_foodweb.F` が水柱の硫酸還元・酸化を加える、というもの。
 
 ### 原因
 
-`src/main.F` に `BLUE_TIDE` の記述が一切ない一方、`src/mod_reef_ecosys.F` は同マクロ下で `reef_ecosys` の引数を4つ追加している。
+`main.F` に `BLUE_TIDE` の記述が一行も無かった。`mod_reef_ecosys.F` は同マクロ下で `reef_ecosys` の引数を4つ追加するため、`CALL` の引数リストが4つぶんずれ、以降が総崩れになって rank mismatch が10件発生していた。`mod_reef_ecosys.F` / `mod_foodweb.F` / `mod_sedecosys.F` 側は実装済みだった。
 
-- 入力: `H2S`, `S0`
-- 出力: `dH2S_dt`, `dS0_dt`
+### 実施した対応
 
-呼び出し側と仮引数リストがずれるため、以降の引数が総崩れになり rank mismatch が10件発生する。
+`COT_STARFISH` と同じく、正式なトレーサとして実装した。
+
+**`mod_param.F`** — `iH2S(N_Ssp)` と `iS0(N_Ssp)` を追加。`iTIC(N_Csp)` と同じ形式で採番し、初期値はゼロ。`Nid` は自動採番なので `t` と `dtrc_dt` の確保にも反映される。
+
+**`main.F`** — 宣言・確保・トレーサからの読み出し・`CALL` 引数・`dtrc_dt` への書き戻しを、`COT_STARFISH` と同じ位置に追加。時間積分は既存ループがそのまま扱う。
+
+### 確認結果
+
+`Projects/pelagic_bentic/cppdefs.h` で `BLUE_TIDE` を有効にした。
+
+- 全19ファイルのコンパイルとリンクが成功
+- トレーサ数 `Nid` が 77 → 81 に増加（H2S・S0 × `N_Ssp`=2）
+- 1日分の積分が完走
+- `BLUE_TIDE` 無効版と出力を比較すると、`ecosys_his.csv` の26行中24行に差異。相対差は `dDO_dt` で約 1.7e-8
+
+差が倍精度の丸め水準（~1e-16）より8桁大きいことから、硫化物が実際に非ゼロになり DO に効いていると判断できる。ただし `pelagic_bentic` の既定設定は貧酸素ではないため、青潮と呼べる規模の蓄積は起きていない。**現象としての妥当性検証には、貧酸素条件での長期積分が別途必要。**
+
+なお H2S / S0 は出力ルーチンの対象外なので、値を直接確認するには出力の追加が要る。
+
+### 副次的に判明した既存バグ（対応済み）
+
+検証中、`pelagic_bentic` が `BLUE_TIDE` の有無にかかわらず実行時に落ちることが判明した。
 
 ```
-Error: Rank mismatch in argument 'h2s' at (1) (rank-2 and scalar)
-Error: Rank mismatch in argument 's0' at (1) (rank-2 and scalar)
-Error: Rank mismatch in argument 'sgd_ta' at (1) (scalar and rank-1)
-...
-Error: Rank mismatch in argument 'wcal' at (1) (rank-1 and scalar)
+mod_input.F, around line 148: Error allocating 521034539008 bytes: Cannot allocate memory
 ```
 
-### 対応方針
+`in_file` は `main.F:120` で20要素宣言されているが、`.in` ファイルは12要素しか与えない。13〜20番目（`isgd`, `iinpH`〜`iinPO4`）が未初期化のまま `allocate` に使われていた。20要素を書いているのは `seagrass_chamber` のみで、他の全プロジェクトが12要素。`seagrass` がこれまで動いていたのは、未初期化領域がたまたま無害な値だっただけ。
 
-`main.F` の `CALL reef_ecosys` に `#if defined BLUE_TIDE` ブロックを追加し、`H2S`, `S0`, `dH2S_dt`, `dS0_dt` を渡す。対応する配列の宣言と初期化も併せて必要。
-
-`mod_reef_ecosys.F` 側の該当箇所は次で確認できる。
-
-```sh
-grep -n "BLUE_TIDE" src/mod_reef_ecosys.F
-```
-
-### 再現手順
-
-任意の `cppdefs.h` に `# define BLUE_TIDE` を追加してビルドする。
-
----
+`main.F` の namelist 読み込み前に `in_file(:) = 0` を追加して解消した。
 
 ## 4. `mod_input.F`: `Num_header` が暗黙の SAVE になっている
 

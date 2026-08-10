@@ -241,6 +241,10 @@ MODULE mod_param
   integer :: iCOTe                  ! Eggs of crown-of-thorns starfish
   integer :: iCOTl                  ! Larvae of crown-of-thorns starfish
 #endif
+#if defined BLUE_TIDE
+  integer :: iH2S(N_Ssp)            ! Hydrogen sulfide
+  integer :: iS0 (N_Ssp)            ! Elemental sulfur
+#endif
 
   real(8), allocatable :: dz(:,:,:)    
   real(8), allocatable :: z_w(:,:,:)      ! Depth at w-point ((meters, negative); z_w(0)=-h, z_w(N)=0.0 
@@ -468,6 +472,16 @@ contains
     i=i+1
     iCOTl=ic+i
 #endif
+#if defined BLUE_TIDE
+    DO isp=1,N_Ssp
+      i=i+1
+      iH2S(isp)=ic+i
+    END DO
+    DO isp=1,N_Ssp
+      i=i+1
+      iS0(isp)=ic+i
+    END DO
+#endif
 
 
 !-----------------------------------------------------------------------
@@ -596,8 +610,12 @@ contains
           t(i,j,k,nstp,iZoop15N(1)) = 0.0d0       !Zooplankton (umol L-1)1.3
 #endif
 #if defined COT_STARFISH
-          t(i,j,k,nstp,iCOTe) =  0.0d0       !COTS eggs (umol L-1) 
-          t(i,j,k,nstp,iCOTl) =  0.0d0       !COTS larvae (umol L-1) 
+          t(i,j,k,nstp,iCOTe) =  0.0d0       !COTS eggs (umol L-1)
+          t(i,j,k,nstp,iCOTl) =  0.0d0       !COTS larvae (umol L-1)
+#endif
+#if defined BLUE_TIDE
+          t(i,j,k,nstp,iH2S(:)) = 0.0d0      !H2S (umol S L-1)
+          t(i,j,k,nstp,iS0 (:)) = 0.0d0      !S0  (umol S L-1)
 #endif
         enddo
           

@@ -64,9 +64,13 @@ PROGRAM main
   real(8), allocatable :: PhyP(:,:,:)     ! phytoplankton P biomass (umol P L-1), dinoflagellate
   real(8), allocatable :: ZooP(:,:,:)     ! zooplankton P biomass (umol P L-1)
   real(8), allocatable :: PIC (:,:,:)     ! Particulate inorganic carbon (PIC: umol L-1), coccolith (CaCO3)
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
   real(8), allocatable :: COTe(:)         ! COT starfish egg (umol L-1)
   real(8), allocatable :: COTl(:)         ! COT starfish larvae (umol L-1)
+#endif
+#if defined BLUE_TIDE
+  real(8), allocatable :: H2S (:,:)       ! H2S(N_Ssp,N): (umol S L-1)
+  real(8), allocatable :: S0  (:,:)       ! S0 (N_Ssp,N): (umol S L-1)
 #endif
 
   real(8), allocatable :: dTemp_dt(:)            ! Tmp(N): Temperature (oC)
@@ -90,9 +94,13 @@ PROGRAM main
   real(8), allocatable :: dPhyP_dt(:,:,:) ! dPhyP/dt  (umolP L-1 s-1)  
   real(8), allocatable :: dZooP_dt(:,:,:) ! dZooP/dt  (umolP L-1 s-1)  
   real(8), allocatable :: dPIC_dt (:,:,:) ! dPIC/dt  (umol L-1 s-1) 
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
   real(8), allocatable :: dCOTe_dt(:)    ! dCOTe/dt (umol L-1 s-1)
   real(8), allocatable :: dCOTl_dt(:)    ! dCOTl/dt (umol L-1 s-1)
+#endif
+#if defined BLUE_TIDE
+  real(8), allocatable :: dH2S_dt(:,:)   ! dH2S_dt(N_Ssp,N): dH2S/dt (umol S L-1 s-1)
+  real(8), allocatable :: dS0_dt (:,:)   ! dS0_dt (N_Ssp,N): dS0/dt  (umol S L-1 s-1)
 #endif
 
 #if defined CARBON_ISOTOPE
@@ -148,6 +156,10 @@ PROGRAM main
   namelist/vprof_config/Diff_w
   namelist/sgrass_config/XI_size_in, ETA_size_in
 
+! Most .in files still list only the first 12 entries of in_file, so clear the
+! whole array first; otherwise the trailing entries are read uninitialised.
+  in_file(:) = 0
+
   read (5, nml=input_info)
   rewind(5)
   read (5, nml=output)
@@ -196,9 +208,13 @@ PROGRAM main
   allocate( PhyP(N_Psp,Nphy,N) )   ! phytoplankton P biomass (umol P L-1), dinoflagellate
   allocate( ZooP(N_Psp,Nzoo,N) )   ! zooplankton P biomass (umol P L-1)
   allocate( PIC (N_Csp,Npim,N) )   ! Particulate inorganic carbon (PIC: umol L-1), coccolith (CaCO3)
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
   allocate( COTe(N)            )   ! COT starfish egg (umol L-1)
   allocate( COTl(N)            )   ! COT starfish larvae (umol L-1)
+#endif
+#if defined BLUE_TIDE
+  allocate( H2S (N_Ssp,N)      )   ! H2S (umol S L-1)
+  allocate( S0  (N_Ssp,N)      )   ! S0  (umol S L-1)
 #endif
 
   allocate( dTemp_dt(N)            ) ! Tmp(N): Temperature (oC)
@@ -222,9 +238,13 @@ PROGRAM main
   allocate( dPhyP_dt(N_Psp,Nphy,N) ) ! dPhyP/dt  (umolP L-1 s-1)  
   allocate( dZooP_dt(N_Psp,Nzoo,N) ) ! dZooP/dt  (umolP L-1 s-1)  
   allocate( dPIC_dt (N_Csp,Npim,N) ) ! dPIC/dt  (umol L-1 s-1) 
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
   allocate( dCOTe_dt(N)            ) ! dCOTe/dt (umol L-1 s-1)
   allocate( dCOTl_dt(N)            ) ! dCOTl/dt (umol L-1 s-1)
+#endif
+#if defined BLUE_TIDE
+  allocate( dH2S_dt(N_Ssp,N)       ) ! dH2S/dt (umol S L-1 s-1)
+  allocate( dS0_dt (N_Ssp,N)       ) ! dS0/dt  (umol S L-1 s-1)
 #endif
 
 !----- Open output files -------------------------
@@ -438,9 +458,15 @@ PROGRAM main
          PIC (isp,m,:) = t(i,j,:,nstp,iPIC(isp,m)) 
       END DO
     END DO 
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
     COTe(:) = t(i,j,:,nstp,iCOTe)     &   ! COTe(N): COT starfish egg (umol L-1)
     COTl(:) = t(i,j,:,nstp,iCOTl)     &   ! COTl(N): COT starfish larvae (umol L-1)
+#endif
+#if defined BLUE_TIDE
+    DO isp=1,N_Ssp
+      H2S(isp,:) = t(i,j,:,nstp,iH2S(isp))   ! H2S(N_Ssp,N): (umol S L-1)
+      S0 (isp,:) = t(i,j,:,nstp,iS0 (isp))   ! S0 (N_Ssp,N): (umol S L-1)
+    END DO
 #endif
 
 #if defined SEDECO_SGD && defined SGD_ON
@@ -517,7 +543,11 @@ PROGRAM main
       , PhyP           &   ! PhyP(N_Psp,Nphy,N): phytoplankton P biomass (umol P L-1)
       , ZooP           &   ! ZooP(N_Psp,Nzoo,N): zooplankton P biomass   (umol P L-1)
       , PIC            &   ! PIC (N_Csp,Npim,N): Particulate inorganic carbon (PIC: umolC L-1), coccolith (CaCO3)
-#if defined COT_STARFISH         
+#if defined BLUE_TIDE
+      , H2S            &   ! H2S (N_Ssp,N)     : (umol S L-1)
+      , S0             &   ! S0  (N_Ssp,N)     : (umol S L-1)
+#endif
+#if defined COT_STARFISH
       , COTe           &   ! COTe(N): COT starfish egg (umol L-1)
       , COTl           &   ! COTl(N): COT starfish larvae (umol L-1)
 #endif
@@ -560,7 +590,11 @@ PROGRAM main
       , dPhyP_dt       &   ! dPhyP_dt(N_Psp,Nphy,N): dPhyP/dt (umol P L-1 s-1)  
       , dZooP_dt       &   ! dZooP_dt(N_Psp,Nzoo,N): dZooP/dt (umol P L-1 s-1)  
       , dPIC_dt        &   ! dPIC_dt (N_Csp,Npim,N): dPIC/dt  (umol C L-1 s-1)
-#if defined COT_STARFISH         
+#if defined BLUE_TIDE
+      , dH2S_dt        &   ! dH2S_dt (N_Ssp,N)     : dH2S/dt  (umol S L-1 s-1)
+      , dS0_dt         &   ! dS0_dt(N_Ssp,N)       : dS0/dt   (umol S L-1 s-1)
+#endif
+#if defined COT_STARFISH
       , dCOTe_dt       &   ! dCOTe/dt(N): (umol L-1 s-1)
       , dCOTl_dt       &   ! dCOTl/dt(N): (umol L-1 s-1)
 #endif
@@ -660,9 +694,15 @@ PROGRAM main
         dtrc_dt(:,iPIC(isp,m)) = dPIC_dt (isp,m,:)  
       END DO
     END DO 
-#if defined COT_STARFISH         
+#if defined COT_STARFISH
     dtrc_dt(:,iCOTe) = dCOTe_d(:)      &   ! COTe(N): COT starfish egg (umol L-1)
     dtrc_dt(:,iCOTl) = dCOTl_d(:)      &   ! COTl(N): COT starfish larvae (umol L-1)
+#endif
+#if defined BLUE_TIDE
+    DO isp=1,N_Ssp
+      dtrc_dt(:,iH2S(isp)) = dH2S_dt(isp,:)   ! dH2S/dt (umol S L-1 s-1)
+      dtrc_dt(:,iS0 (isp)) = dS0_dt (isp,:)   ! dS0/dt  (umol S L-1 s-1)
+    END DO
 #endif
 
     do k=1,N
