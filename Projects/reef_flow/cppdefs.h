@@ -64,6 +64,14 @@
 
 /*** Box model option ***/
 
+/* Set output interval for each model */
+#define ECOSYS_OUTPUT_INTERVAL 60.0d0  /* Output interval (min) */
+#define SEDECO_OUTPUT_INTERVAL 1440.0d0  /* Output interval (min) */
+#define CORAL_OUTPUT_INTERVAL   5.0d0  /* Output interval (min) */
+#define CORAL_AVERAGE_INTERVAL  1.0d0  /* Averaging interval (day) */
+#define FLOW_OUTPUT_INTERVAL    5.0d0  /* Output interval (min) */
+#define SEAGRASS_OUTPUT_INTERVAL 60.0d0  /* Output interval (min) */
+
 #define ECOSYS_TESTMODE
 
 #if defined CORAL_POLYP
