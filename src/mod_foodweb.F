@@ -314,19 +314,19 @@ CONTAINS
     real(8) :: H2S(N_Ssp)           ! H2S (umol L-1) 
     real(8) :: S0(N_Ssp)            ! S (umol L-1) *solid
 # endif
-    real(8) :: SO4(N_Ssp)           = 0.0d0 ! SO42- (umol L-1) 
-    real(8) :: dMn2_dt              = 0.0d0 ! d[Mn2+]/dt (umol L-1 s-1)
-    real(8) :: dMnO2_dt             = 0.0d0 ! d[MnO2]/dt (umol L-1 s-1) *solid
-    real(8) :: dFe2_dt              = 0.0d0 ! d[Fe2+]/dt (umol L-1 s-1)
-    real(8) :: dFeS_dt(N_Ssp)       = 0.0d0 ! d[FeS]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeS2_dt(N_Ssp)      = 0.0d0 ! d[FeS2]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeOOH_dt            = 0.0d0 ! d[FeOOH]/dt (umol L-1 s-1) *solid
-    real(8) :: dFeOOH_PO4_dt(N_Psp) = 0.0d0 ! d[FeOOH=O4]/dt (umol L-1 s-1) *solid
-# ifndef BLUE_TIDE  
-    real(8) :: dH2S_dt(N_Ssp)       = 0.0d0 ! d[H2S]/dt (umol L-1 s-1)
-    real(8) :: dS0_dt(N_Ssp)        = 0.0d0 ! d[S]/dt (umol L-1 s-1) *solid
+    real(8) :: SO4(N_Ssp)           ! SO42- (umol L-1)
+    real(8) :: dMn2_dt              ! d[Mn2+]/dt (umol L-1 s-1)
+    real(8) :: dMnO2_dt             ! d[MnO2]/dt (umol L-1 s-1) *solid
+    real(8) :: dFe2_dt              ! d[Fe2+]/dt (umol L-1 s-1)
+    real(8) :: dFeS_dt(N_Ssp)       ! d[FeS]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeS2_dt(N_Ssp)      ! d[FeS2]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeOOH_dt            ! d[FeOOH]/dt (umol L-1 s-1) *solid
+    real(8) :: dFeOOH_PO4_dt(N_Psp) ! d[FeOOH=O4]/dt (umol L-1 s-1) *solid
+# ifndef BLUE_TIDE
+    real(8) :: dH2S_dt(N_Ssp)       ! d[H2S]/dt (umol L-1 s-1)
+    real(8) :: dS0_dt(N_Ssp)        ! d[S]/dt (umol L-1 s-1) *solid
 # endif
-    real(8) :: dSO4_dt(N_Ssp)       = 0.0d0 ! d[SO42-]/dt (umol L-1 s-1)
+    real(8) :: dSO4_dt(N_Ssp)       ! d[SO42-]/dt (umol L-1 s-1)
 
 # if defined FOODWEB_TESTMODE
 !  Output
@@ -723,9 +723,25 @@ CONTAINS
     H2S(:)       = 0.0d0   ! H2S (umol L-1) 
     S0(:)        = 0.0d0   ! S (umol L-1)) *solid
 # endif
-    SO4(iSt)     = 0.02824d0*Sal/35.0d0*rho_sw *1.0d6   ! SO42- (umol L-1) 
+    SO4(:)       = 0.0d0   ! SO42- (umol L-1)
+    SO4(iSt)     = 0.02824d0*Sal/35.0d0*rho_sw *1.0d6   ! SO42- (umol L-1)
     SO4(iSt)     = MAX( SO4(iSt), 0.0d0 )  !!! Error handling
 !   SO4(iS34) = SO4(iSt)
+
+!   decomposition accumulates into the following rates (intent(inout)),
+!   so they must be zeroed on every call.
+    dMn2_dt          = 0.0d0
+    dMnO2_dt         = 0.0d0
+    dFe2_dt          = 0.0d0
+    dFeS_dt(:)       = 0.0d0
+    dFeS2_dt(:)      = 0.0d0
+    dFeOOH_dt        = 0.0d0
+    dFeOOH_PO4_dt(:) = 0.0d0
+# ifndef BLUE_TIDE
+    dH2S_dt(:)       = 0.0d0
+    dS0_dt(:)        = 0.0d0
+# endif
+    dSO4_dt(:)       = 0.0d0
 
     CALL decomposition  &
     ! input parameters
