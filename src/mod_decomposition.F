@@ -25,8 +25,8 @@ CONTAINS
     , rhos_d         &   ! Dry soil density (g cm-3)
     , poro           &   ! Soil porosity (= Vwater/(Vwater+Vsed) (non-dimensional: 0.0-1.0)
     , O2             &   ! Dissolved oxygen (umol L-1)
-    , TA             &   ! Total alkalinity (TA: umol kg-1)
-    , DIC            &   ! Total dissolved inorganic carbon (DIC: umol kg-1)
+    , TA             &   ! Total alkalinity (TA: umol L-1)
+    , DIC            &   ! Total dissolved inorganic carbon (DIC: umol L-1)
     , NO3            &   ! NO3 (umol L-1)
     , NH4            &   ! NH4 (umol L-1)
     , PO4            &   ! PO4 (umol L-1)
@@ -38,14 +38,14 @@ CONTAINS
     , POP            &   ! Particulate organic phosporius (POP: umol L-1 or nmol g(DW)-1 *solid)
     , PIC            &   ! CaCO3 (umolC L-1 or nmol g(DW)-1 *solid)
     , Mn2            &   ! Mn2+ (umol L-1) 
-    , MnO2           &   ! MnO2 (nmol g-1) *solid
+    , MnO2           &   ! MnO2 (umolC L-1 or nmol g-1) *solid
     , Fe2            &   ! Fe2+ (umol L-1) 
-    , FeS            &   ! FeS (nmol g(DW)-1) *solid
-    , FeS2           &   ! FeS2 (nmol g(DW)-1) *solid
-    , FeOOH          &   ! FeOOH (nmol g(DW)-1) *solid
-    , FeOOH_PO4      &   ! FeOOH=PO4 (nmol g(DW)-1) *solid
+    , FeS            &   ! FeS (umolC L-1 or nmol g(DW)-1) *solid
+    , FeS2           &   ! FeS2 (umolC L-1 or nmol g(DW)-1) *solid
+    , FeOOH          &   ! FeOOH (umolC L-1 or nmol g(DW)-1) *solid
+    , FeOOH_PO4      &   ! FeOOH=PO4 (umolC L-1 or nmol g(DW)-1) *solid
     , H2S            &   ! H2S (umol L-1) 
-    , S0             &   ! S (nmol g(DW)-1) *solid
+    , S0             &   ! S (umolC L-1 or nmol g(DW)-1) *solid
     , SO4            &   ! SO42- (umol L-1) 
     ! input and output parameters
     , R_O2           &   ! d[O2]/dt  (umol L-1 s-1) 
@@ -62,20 +62,22 @@ CONTAINS
     , R_POP          &   ! dPOP/dt (umol L-1 s-1) or (nmol g(DW)-1) *solid
     , R_PIC          &   ! d CaCO3/dt (umol L-1 s-1) or (nmol g(DW)-1) *solid
     , R_Mn2          &   ! d[Mn2+]/dt (umol L-1 s-1)
-    , R_MnO2         &   ! d[MnO2]/dt (nmol g(DW)-1 s-1) *solid
+    , R_MnO2         &   ! d[MnO2]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
     , R_Fe2          &   ! d[Fe2+]/dt (umol L-1 s-1)
-    , R_FeS          &   ! d[FeS]/dt (nmol g(DW)-1 s-1) *solid
-    , R_FeS2         &   ! d[FeS2]/dt (nmol g(DW)-1 s-1) *solid
-    , R_FeOOH        &   ! d[FeOOH]/dt (nmol g(DW)-1 s-1) *solid
-    , R_FeOOH_PO4    &   ! d[FeOOH=PO4]/dt (nmol g(DW)-1 s-1) *solid
+    , R_FeS          &   ! d[FeS]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
+    , R_FeS2         &   ! d[FeS2]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
+    , R_FeOOH        &   ! d[FeOOH]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
+    , R_FeOOH_PO4    &   ! d[FeOOH=PO4]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
     , R_H2S          &   ! d[H2S]/dt (umol L-1 s-1)
-    , R_S0           &   ! d[S]/dt (nmol g(DW)-1 s-1) *solid
+    , R_S0           &   ! d[S]/dt (umol L-1 s-1) or (nmol g(DW)-1 s-1) *solid
     , R_SO4          &   ! d[SO42-]/dt (umol L-1 s-1)
     ! output parameters
     , pH             &   ! pH (total scale)
     , Wcal           &   ! Calcite saturation state
     , Warg           &   ! Aragonite saturation state
     )
+    
+  !$acc routine seq
 
 !-----------------------------------------------------------------------
     USE mod_reef_ecosys_param
@@ -167,7 +169,8 @@ CONTAINS
         ! R13:  H2S + Fe2+ --> FeS + 2H+
         ! R14:  FeS + S0 --> FeS2
         ! R15:  SO42- + 3H2S + 4FeS + 2H+ --> 4FeS2 + 4H2O
-        ! R16:  H2S + 2O2 --> SO42- + 2H+
+        !<R16:  H2S + 2O2 --> SO42- + 2H+ (*unused)>
+        ! R16:  H2S + O2 --> S0 + H2O  (*used)
         ! R17:  FeS + 2O2 --> Fe2+ + SO42-
         ! R18:  2FeS2 + 7O2 + 2H2O --> 2Fe2+ + 4SO42- + 4H+
         ! R19:  4S0 + 4H2O --> 3H2S + SO42- + 2H+
@@ -187,7 +190,7 @@ CONTAINS
 
 !                                    LDOM    RDOM
 !    real(8),parameter :: kdom(2) = [ 1.0d-4, 5.0d-8 ]  ! For  dom (s-1)           
-    real(8),parameter :: kdom(2) = [ 1.0d-6, 1.0d-10 ]  ! For  dom (s-1)           
+    real(8),parameter :: kdom(2) = [ 1.0d-8, 1.0d-10 ]  ! For  dom (s-1)           
 !                                    LPOM    RPOM
 !    real(8),parameter :: kpom(2) = [ 9.6d-6, 1.2d-8 ]  ! For  pom (s-1) Fossing (2004)
     real(8),parameter :: kpom(3) = [ 1.0d-6, 1.0d-11, 2.5d-8 ]  ! For  pom (s-1) Kasih (2009)
@@ -393,8 +396,8 @@ CONTAINS
 !!!! ==== Carbonate dissoution =========================================== !!!
 
     TK   = Tmp + 273.15d0
-    pH   = pH_fromATCT( TA, DIC(iCt),TK, Sal )   ! pH
-    CO3  = cCO3_fromCTpH( DIC(iCt), pH, TK, Sal )  ! CO32- concentration
+    pH   = pH_fromATCT( TA/1.024d0, DIC(iCt)/1.024d0,TK, Sal )   ! TA, DIC (umol/L) -> (umol/kg)
+    CO3  = cCO3_fromCTpH( DIC(iCt)/1.024d0, pH, TK, Sal )  ! CO32- concentration (umol/kg)
     Wcal = Wcal_fromcCO3( CO3, TK, Sal )  ! Calcite saturation state
     Warg = Warg_fromcCO3( CO3, TK, Sal )  ! Calcite saturation state
 
@@ -479,7 +482,7 @@ CONTAINS
         !! ギブスエネルギーで反応が変化するようにするべき
 # else
     !! Redox concentration limit in organic matter degradation (Berg et al.2003)
-    if (O2 > O2lim) then            !! -- Redox of CH2O       (CH2O)  (umol L-1) -- !!   if O2 > O2lim
+    if (cO2 > O2lim) then            !! -- Redox of CH2O       (CH2O)  (umol L-1) -- !!   if O2 > O2lim
       r1 = 1.0d0
       r2 = 0.0d0
       r3 = 0.0d0
@@ -720,12 +723,18 @@ CONTAINS
     R_FeS2(:) = R_FeS2(:) + v15*4.0d0 *(rSO4(:)+rH2S(:)*3.0d0+rFeS(:)*4.0d0)/8.0d0 !!?????????????????????????????????????Check needed!!!
     R_TA      = R_TA      + v15*2.0d0
 
-    ! R16:  H2S + 2O2 --> SO42- + 2H+
+!    ! R16:  H2S + 2O2 --> SO42- + 2H+
+!    v16  = cfdd * k16_Q10 *cH2S*cO2
+!    R_H2S(:) = R_H2S(:) - v16       *rH2S(:)
+!    R_O2     = R_O2     - v16*2.0d0 
+!    R_SO4(:) = R_SO4(:) + v16       *rH2S(:)
+!    R_TA     = R_TA     - v16*2.0d0
+
+    ! R16:  H2S + O2 --> S0 + H2O
     v16  = cfdd * k16_Q10 *cH2S*cO2
     R_H2S(:) = R_H2S(:) - v16       *rH2S(:)
-    R_O2     = R_O2     - v16*2.0d0 
-    R_SO4(:) = R_SO4(:) + v16       *rH2S(:)
-    R_TA     = R_TA     - v16*2.0d0
+    R_O2     = R_O2     - v16 
+    R_S0(:)  = R_S0(:)  + v16       *rH2S(:)
 
     ! R17:  FeS + 2O2 --> Fe2+ + SO42-
     v17  = cfsd * k17_Q10 * cFeS* cO2

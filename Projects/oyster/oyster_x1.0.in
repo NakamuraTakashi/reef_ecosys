@@ -1,8 +1,14 @@
+!!=== Copyright (c) Takashi NAKAMURA  ======!!
+!!    Sedecosys input file                  !!
+!!      edited by Masa Muto (2023)          !!
+!!==========================================!!
 
 &ecosys_config
 ! Simulation period     
-  Tmax = 1.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
-
+!  Tmax = 365.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+  Tmax = 730.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+!  Tmax = 30.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+!  ymax = 1.0d0 !years
 ! Start time
   time0 = 0.0d0 ! day
 
@@ -15,25 +21,27 @@
 !                5: Incubation chamber simulation of Nakamura & Nakamori (2009) experiments
 !                6: Flume simulation of Comeau et al. (2016) experiments   
 !                7: Vertical profile simulation   
-  nSetting = 2
+!  nSetting = 7
+  nSetting = 3
 
-  Im = 1
+  Im = 2  ! Im = 2 for nSetting = 3
   Jm = 1
   N  = 1
 
-  dt = 1.0d0
+  dt = 60.0d0 ! Time step (sec)
 
-  depth = 1.0d0 ! Set depth (m)
+  depth = 9.0d0 ! Set depth (m)
 
-  isplitc   = 20
+  isplitc  = 20
 
 !** For stabilize sediment model ****
 ! isplitsed > 1.0d3 * sgd_flux_in * dt
 !    because  Courant Number: C = v*dt/dz < 1 
 !      -> sgd_flux_in*dt/isplitsed/dz_min < 1 (dz_min = 0.001 m)
-  isplitsed = 5
+  isplitsed = 2
 !  isplitsed = 20  
 /
+
 
 &refdate
   Ryear  = 2000   ! Reference year
@@ -80,17 +88,17 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/01'
+  OUTFILE_prefix = 'output_x1.0/OYSx1.0' ! x1
 /
 
 &sedeco_config
 
   Fdep_sed_in  = 3.0d-8  ! Sedimentation rate (g cm-2 s-1); 2.77d-8 g/cm2/s = 1.0 g/m2/h
                           ! (Positive: sedimentation; Negative: erosion)
-  MnO2_sed_in  = 1.0d2   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
+  MnO2_sed_in  = 1.0d4   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
 !  MnO2_sed_in  = 1.0d4   ! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
-  FeOOH_sed_in = 1.0d3   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
-  FeS2_sed_in  = 1.0d3   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
+  FeOOH_sed_in = 1.0d5   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
+  FeS2_sed_in  = 1.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
 !  FeOOH_sed_in = 5.0d5   ! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
 !  FeS2_sed_in  = 5.0d5   ! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
   LPOC_sed_in = 2.0d3   ! Labile Organic carbon in sediments [nmol/g(DW)]
@@ -114,15 +122,34 @@
 
 /
 
+&vprof_config
+
+  Diff_w = 1.0d-5  ! Vertical diffusion coefficient (m2 s-1)
+/
+
 &sgrass_config  
   XI_size_in  = 50.0d0 ! (m)
   ETA_size_in = 50.0d0 ! (m)
 /
 
+&aquaculture_config
+          !  01 Oyster        
+          !  02 Wakame Seaweed
+          !  03 Sea squirt  
+          !  04 Scallop
+          !  05 Salmon (not used) 
+          !
+          !      01      02        03      04      05
+  dens_aqua0  = 0.055d0, 0.05d0,   0.0d0,  0.0d0,  0.0d0 !x1
+          !     rope/m2 indiv./m2 rope/m2 rope/m2 m2/m2
+
+  f_dens = 1.0d0 ! x1.0 Oyster density adjustment factor
+/
+
 !--- Initial Condition -----------------------------------------------------
 &initial
 
-  T0 = 28.0d0          ! Water temperature (oC)
+  T0 = 20.0d0          ! Water temperature (oC)
   S0 = 34.0d0          ! Salinity (PSU)
   Sed1_0  = 0.0d0      ! Sediment concentration (g m-3)
 
@@ -136,13 +163,13 @@
   PO4_0 = 0.04d0       ! PO4  (umol L-1)  control: 0.04d0, P: 0.2d0
 
   DOC_0 = 10.0d0, 50.0d0         ! DOC (umol C L-1); Labile, Refractory
-!  POC_0 = 0.42d0,  1.0d0, 0.1d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
-  POC_0 = 4.2d0,  10.0d0, 1.0d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
+  POC_0 = 15.0d0,  1.0d0, 0.0d0  ! POC (umol C L-1); Labile, Refractory, Coarse 
 !  DON_0 = 5.0d0, 50.0d0         ! DON (umol N L-1); Labile, Refractory
-!  PON_0 = 0.042d0,  0.1d0, 0.1d0  ! PON (umol N L-1); Labile, Refractory, Coarse 
+!  PON_0 = 1.0d0,  0.1d0, 0.1d0  ! PON (umol N L-1); Labile, Refractory, Coarse 
 !  DOP_0 = 5.0d0, 50.0d0         ! DOP (umol P L-1); Labile, Refractory
 !  POP_0 = 1.0d0,  0.1d0, 0.1d0  ! POP (umol P L-1); Labile, Refractory, Coarse 
- PhyC_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+! PhyC_0 = 2.0d0,  10.0d0, 1.0d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
+ PhyC_0 = 0.1d0,  2.0d0, 0.1d0, 0.1d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
  ZooC_0 = 0.3d0 !0.1d0       ! ZooC (umol L-1)
 ! PhyN_0 = 1.0d0,  2.0d0, 0.1d0, 1.0d0   ! PhyC (umolC L-1): Dinoflagellate, Diatom, Coccolithophorids,  
 ! ZooN_0 = 0.1d0       ! ZooC (umol L-1)
@@ -165,7 +192,7 @@ d15N_PON_0 = -15.0d0,-15.0d0,-15.0d0    ! d15N_POC (permill)
 d15N_PhyN_0 = -15.0d0,-15.0d0,-15.0d0   ! d15N_phytoplankton (permill)
 d15N_ZooN_0 = -20.0d0   ! d15N_zooplankton (permill)
 
-p_coral_0 = 0.5d0, 0.5d0  ! Coral coverage (0-1): inner reef, outer reef 
+p_coral_0 = 0.0d0, 0.0d0  ! Coral coverage (0-1): inner reef, outer reef 
 p_algae_0  = 0.0d0  ! Macro algae coverage (0-1)
 p_sgrass_0 = 0.0d0  ! Seagrass coverage (0-1)
 p_sand_0   = 1.0d0  ! Sand coverage (0-1)

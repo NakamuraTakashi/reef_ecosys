@@ -1,7 +1,7 @@
 
 &ecosys_config
 ! Simulation period     
-  Tmax = 1.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
+  Tmax = 5.0d0 ! days    ! 3years: 1095 / 5years: 1825 / 40years: 14600 / 100years: 36500
 
 ! Start time
   time0 = 0.0d0 ! day
@@ -15,7 +15,7 @@
 !                5: Incubation chamber simulation of Nakamura & Nakamori (2009) experiments
 !                6: Flume simulation of Comeau et al. (2016) experiments   
 !                7: Vertical profile simulation   
-  nSetting = 2
+  nSetting = 1
 
   Im = 1
   Jm = 1
@@ -23,7 +23,7 @@
 
   dt = 1.0d0
 
-  depth = 1.0d0 ! Set depth (m)
+  depth = 5.0d0 ! Set depth (m)
 
   isplitc   = 20
 
@@ -80,7 +80,7 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output/01'
+  OUTFILE_prefix = 'output01/ctrl'
 /
 
 &sedeco_config
@@ -122,7 +122,7 @@
 !--- Initial Condition -----------------------------------------------------
 &initial
 
-  T0 = 28.0d0          ! Water temperature (oC)
+  T0 = 25.0d0          ! Water temperature (oC)
   S0 = 34.0d0          ! Salinity (PSU)
   Sed1_0  = 0.0d0      ! Sediment concentration (g m-3)
 

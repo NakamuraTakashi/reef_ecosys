@@ -243,6 +243,8 @@ MODULE mod_param
 #endif
 
   real(8), allocatable :: dz(:,:,:)    
+  real(8), allocatable :: z_w(:,:,:)      ! Depth at w-point ((meters, negative); z_w(0)=-h, z_w(N)=0.0 
+  real(8), allocatable :: z_r(:,:,:)      ! Depth at r-point ((meters, negative)
   real(8), allocatable :: t(:,:,:,:,:)
   real(8), allocatable :: dtrc_dt(:,:)
   real(8), allocatable :: pH(:,:,:)
@@ -256,6 +258,10 @@ MODULE mod_param
   real(8), allocatable :: p_sgrass(:,:,:)
   real(8), allocatable :: p_algae(:,:,:)
   real(8), allocatable :: p_sand(:,:)
+#if defined AQUACULTURE
+  real(8), allocatable :: dens_aqua(:,:,:)
+  real(8) :: f_dens
+#endif
 
 #if defined SEDECO_SGD && defined SGD_ON
   real(8) :: sgd_flux        ! sumbarine groundwater discharge rate of grid (cm s-1)  
@@ -285,6 +291,7 @@ contains
 
     USE mod_reef_ecosys_param
     use mod_geochem
+    Use mod_aquaculture
    
     implicit none
 ! input parameters
@@ -307,7 +314,9 @@ contains
     real(8) :: d15N_NO3_0, d15N_NH4_0, d15N_DON_0(Ndom), d15N_PON_0(Npom)
     real(8) :: d15N_PhyN_0(Nphy), d15N_ZooN_0(Nzoo)
     real(8) :: p_coral_0(Ncl), p_algae_0(Nag), p_sgrass_0(Nsg), p_sand_0
-
+#ifdef AQUACULTURE
+    real(8) :: dens_aqua0(5)
+#endif
     namelist/initial/T0, S0, Sed1_0
     namelist/initial/TAlk0, TIC_0, Oxyg0
     namelist/initial/NO3_0, NH4_0, PO4_0
@@ -319,10 +328,17 @@ contains
     namelist/initial/d15N_NO3_0, d15N_NH4_0, d15N_DON_0, d15N_PON_0
     namelist/initial/d15N_PhyN_0, d15N_ZooN_0
     namelist/initial/p_coral_0, p_algae_0, p_sgrass_0, p_sand_0
- 
-    read (5, nml=initial)
-    rewind(5)
+#ifdef AQUACULTURE
+    namelist/aquaculture_config/dens_aqua0
+    namelist/aquaculture_config/f_dens
+#endif
 
+    rewind(5)
+    read (5, nml=initial)
+#ifdef AQUACULTURE
+    rewind(5)
+    read (5, nml=aquaculture_config)
+#endif
 
     inpH_index = 1
     inDO_index = 1
@@ -331,7 +347,6 @@ contains
     inNH4_index = 1
     inNOx_index = 1
     inPO4_index = 1
-  
 
 !
 !-----------------------------------------------------------------------
@@ -463,7 +478,9 @@ contains
 !---------------------------------------------------------------------
 
 
-   allocate( dz(LBi:UBi,LBj:UBj,N) )
+   allocate( dz (LBi:UBi,LBj:UBj,N) )
+   allocate( z_w(LBi:UBi,LBj:UBj,0:N) )
+   allocate( z_r(LBi:UBi,LBj:UBj,1:N) )
 
    allocate( t(LBi:UBi, LBj:UBj, N, 1, Nid) , &
              dtrc_dt(N, Nid)   )
@@ -479,6 +496,9 @@ contains
              p_sand  (LBi:UBi, LBj:UBj) ,   &
              p_algae (1,LBi:UBi, LBj:UBj)   )  !!! To be updated... !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 
+#if defined AQUACULTURE
+   allocate( dens_aqua(Naq,LBi:UBi, LBj:UBj) )
+#endif
 
 !-----------------------------------------------------------------------
 !  Set initial conditions
@@ -497,8 +517,8 @@ contains
 
 !          t(i,j,k,nstp,iOxyg) = Oxyg0      !DO  (umol L-1)
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
-          t(i,j,k,nstp,iTAlk) = TAlk0      !TA  (umol kg-1)  2232.0d0 2275.0d0, 2500.0d0, 2150.0d0, 2000.0d0, 1800.0d0, 1700.0d0, 1600.0d0 
-          t(i,j,k,nstp,iTIC(iCt)) = TIC_0     !DIC  (umol kg-1) 1915.0d0 1930.0d0, 1700.0d0, 2100.0d0, 2300.0d0, 2500.0d0, 2700.0d0, 3000.0d0 
+          t(i,j,k,nstp,iTAlk) = TAlk0 *1.024d0      !TA  (umol L-1) 2232.0d0 2275.0d0, 2500.0d0, 2150.0d0, 2000.0d0, 1800.0d0, 1700.0d0, 1600.0d0 
+          t(i,j,k,nstp,iTIC(iCt)) = TIC_0 *1.024d0  !DIC (umol L-1) 1915.0d0 1930.0d0, 1700.0d0, 2100.0d0, 2300.0d0, 2500.0d0, 2700.0d0, 3000.0d0 
           t(i,j,k,nstp,iNO3(iNt)) = NO3_0      !NO3  (umol L-1)  0.5d0, 10.0d0 control0.2d0 N1.8d0 N*2 3.5d0
           t(i,j,k,nstp,iNH4(iNt)) = NH4_0      !NH4  (umol L-1) 
           t(i,j,k,nstp,iPO4(iPt)) = PO4_0      !PO4  (umol L-1) 0.03d0 0.05d0, 2.0d0 control0.04d0 P0.2d0
@@ -543,26 +563,22 @@ contains
           t(i,j,k,nstp,iPIC (iCt,iLive)) = PhyC_0(iCcl)*rCaCp(iCcl)     !Particulated inorganic carbon (umol L-1)
 
 #if defined CARBON_ISOTOPE
-          R13C=R13C_fromd13C(d13C_TIC0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
-          R13C=R13C_fromd13C(d13C_DOC1_0)
-          t(i,j,k,nstp,iDO13C(1)) = R13C*t(i,j,k,nstp,iDO13C(1))       !DOC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_DOC2_0)
-          t(i,j,k,nstp,iDO13C(2)) = R13C*t(i,j,k,nstp,iDO13C(2))      !DOC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_POC1_0)
-          t(i,j,k,nstp,iPO13C(1)) = R13C*t(i,j,k,nstp,iPO13C(1))        !POC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_POC2_0)
-          t(i,j,k,nstp,iPO13C(2)) = R13C*t(i,j,k,nstp,iPO13C(2))        !POC  (umol L-1) 
-          R13C=R13C_fromd13C(d13C_Phyt1_0)
-          t(i,j,k,nstp,iPhyt13C(1)) = R13C*t(i,j,k,nstp,iPhyt13C(1))     !Phytoplankton1 0.3(umolC L-1) all0.561 0.746-gC/gchla-1h 2.23-gC/gchla-30 4.47-gC/gchla-60	others
-          R13C=R13C_fromd13C(d13C_Phyt2_0)
-          t(i,j,k,nstp,iPhyt13C(2)) = R13C*t(i,j,k,nstp,iPhyt13C(2))       !Phytoplankton2 0.3(umolC L-1) 							diatom
-          R13C=R13C_fromd13C(d13C_Phyt3_0)
-          t(i,j,k,nstp,iPhyt13C(3)) = R13C*t(i,j,k,nstp,iPhyt13C(3))       !Phytoplankton3 0.3(umolC L-1) 							diatom
-          R13C=R13C_fromd13C(d13C_Zoop1_0)
-          t(i,j,k,nstp,iZoop13C(1)) = R13C*t(i,j,k,nstp,iZoop13C(1))       !Zooplankton (umol L-1)1.3
-          R13C=R13C_fromd13C(d13C_PIC1_0)
-          t(i,j,k,nstp,iPI13C(1)) = R13C*t(i,j,k,nstp,iPI13C(1))       !Particulated inorganic carbon (umol L-1)1.3
+          t(i,j,k,nstp,iTIC(iC13)) = Ci_from_Ct_delta(t(i,j,k,nstp,iTIC(iCt)), d13C_TIC0, R13C_VPDB) !DI13C (umol L-1)
+          DO m=1,Ndom
+            t(i,j,k,nstp,iDOC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iDOC(iCt,m)), d13C_DOC_0(m), R13C_VPDB)       !DOC  (umol L-1) 
+          END DO
+          DO m=1,Npom
+            t(i,j,k,nstp,iPOC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPOC(iCt,m)), d13C_POC_0(m), R13C_VPDB)       !POC  (umol L-1) 
+          END DO
+          DO m=1,Nphy
+            t(i,j,k,nstp,iPhyC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPhyC(iCt,m)), d13C_PhyC_0(m), R13C_VPDB)       !Phytoplankton  (umol L-1) 
+          END DO
+          DO m=1,Nzoo
+            t(i,j,k,nstp,iZooC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iZooC(iCt,m)), d13C_ZooC_0(m), R13C_VPDB)       !Zooplankton  (umol L-1) 
+          END DO
+          DO m=1,Npim
+            t(i,j,k,nstp,iPIC(iC13,m)) = Ci_from_Ct_delta(t(i,j,k,nstp,iPIC(iCt,m)), d13C_PIC_0(m), R13C_VPDB)       !PIC  (umol L-1) 
+          END DO
 #endif
 !!!!!!!!!!!!
 #if defined NITROGEN_ISOTOPE            
@@ -617,7 +633,14 @@ contains
 #endif
         p_algae(1,i,j) = p_algae_0(1)
         p_sgrass(1,i,j)= p_sgrass_0(1)
-        
+
+#if defined AQUACULTURE
+        dens_aqua(1,i,j)= dens_aqua0(1)
+        dens_aqua(2,i,j)= dens_aqua0(2)
+        dens_aqua(3,i,j)= dens_aqua0(3)
+        dens_aqua(4,i,j)= dens_aqua0(4)
+#endif
+
         
       enddo
     enddo

@@ -36,11 +36,17 @@ PROGRAM main
   integer :: inight = 1 ! Timer for setting 6
   integer :: iflag = 1 ! Timer for setting 6
   integer :: iclose = 0 ! Timer for setting 6
+#if defined SAKAMAKI_ET_AL_2025
+  real(8), parameter :: dx = 40.0d0  ! grid size in x-direction (m)
+  real(8), parameter :: vel = 0.01d0 ! constant flow velocity (m s-1)
+  real(8), parameter :: mgC2umolC = 1.0d3/12.0d0 ! conversion factor from mgC to umolC
+
+#endif
 
   real(8), allocatable :: Tmp(:)               ! Temperature (oC)
   real(8), allocatable :: Sal(:)               ! Salinity (PSU)
   real(8), allocatable :: DOx(:)               ! Dissolved oxygen (umol L-1)
-  real(8), allocatable :: TA (:)               ! Total alkalinity (TA: umol kg-1)
+  real(8), allocatable :: TA (:)               ! Total alkalinity (TA: umol L-1)
   real(8), allocatable :: DIC(:,:)           ! Total dissolved inorganic carbon (DIC: umol kg-1)
   real(8), allocatable :: NO3(:,:)           ! NO3 (umol L-1)
   real(8), allocatable :: NH4(:,:)           ! NH4 (umol L-1)
@@ -66,8 +72,8 @@ PROGRAM main
   real(8), allocatable :: dTemp_dt(:)            ! Tmp(N): Temperature (oC)
   real(8), allocatable :: dSalt_dt(:)            ! Sal(N): Salinity (PSU)
   real(8), allocatable :: dDOx_dt(:)             ! dDOx/dt  (umol L-1 s-1) 
-  real(8), allocatable :: dTA_dt (:)             ! dTA/dt   (umol kg-1 s-1) 
-  real(8), allocatable :: dDIC_dt(:,:)       ! dDIC/dt  (umol kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+  real(8), allocatable :: dTA_dt (:)             ! dTA/dt   (umol L-1 s-1) 
+  real(8), allocatable :: dDIC_dt(:,:)       ! dDIC/dt  (umol L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
   real(8), allocatable :: dNO3_dt(:,:)       ! dNO3/dt (umol L-1 s-1)
   real(8), allocatable :: dNH4_dt(:,:)       ! dNH4/dt (umol L-1 s-1)
   real(8), allocatable :: dPO4_dt(:,:)       ! dPO4/dt (umol L-1 s-1)
@@ -114,7 +120,7 @@ PROGRAM main
 
   real(8) :: Fdep_sed_in
   real(8) :: MnO2_sed_in, FeOOH_sed_in, FeS2_sed_in
-  real(8) :: rCaCO3_sed_in, OrgC_sed_in
+  real(8) :: rCaCO3_sed_in, LPOC_sed_in, RPOC_sed_in
   real(8) :: sgd_flux_in, sgd_Tmp_in, sgd_Sal_in, sgd_DOx_in 
   real(8) :: sgd_TA_in, sgd_DIC_in, sgd_NO3_in, sgd_NH4_in 
   real(8) :: sgd_PO4_in
@@ -134,7 +140,7 @@ PROGRAM main
 
   namelist/sedeco_config/Fdep_sed_in
   namelist/sedeco_config/MnO2_sed_in, FeOOH_sed_in, FeS2_sed_in
-  namelist/sedeco_config/rCaCO3_sed_in, OrgC_sed_in
+  namelist/sedeco_config/rCaCO3_sed_in, LPOC_sed_in, RPOC_sed_in
   namelist/sedeco_config/sgd_flux_in, sgd_Tmp_in, sgd_Sal_in, sgd_DOx_in
   namelist/sedeco_config/sgd_TA_in, sgd_DIC_in, sgd_NO3_in, sgd_NH4_in
   namelist/sedeco_config/sgd_PO4_in
@@ -230,6 +236,11 @@ PROGRAM main
   CALL initialize_params(1, Im, 1, Jm, N, Nid)
 
   dz(:,:,:)=depth/dble(N) !(m)
+  z_w(:,:,0)= -depth ! (m, negative)
+  do k=1,N
+    z_w(:,:,k)= z_w(:,:,k-1) + dz(:,:,k) ! (m, negative)
+    z_r(:,:,k)= 0.5d0 * ( z_w(:,:,k-1) + z_w(:,:,k) ) ! (m, negative)
+  end do
 
 !----- Import data -----------------------------------
 
@@ -243,7 +254,8 @@ PROGRAM main
   MnO2_sed  = MnO2_sed_in   !! Manganese oxide (MnO2) concentration in sediments [nmol/g(DW)]
   FeOOH_sed = FeOOH_sed_in  !! Iron hydroxide (FeOOH) concentration in sediments [nmol/g(DW)]
   FeS2_sed  = FeS2_sed_in   !! Iron sulfide (FeS2) concentration in sediments [nmol/g(DW)]
-  OrgC_sed  = OrgC_sed_in   ! Organic carbon in sediments [nmol/g(DW)]
+  LPOC_sed  = LPOC_sed_in   !! Labile Organic carbon in sediments [nmol/g(DW)]
+  RPOC_sed  = RPOC_sed_in   !! Refractory Organic carbon in sediments [nmol/g(DW)]
   rCaCO3_sed = rCaCO3_sed_in ! Fraction of Calcium carbonate (CaCO3) in sediments [g/g(DW)]
 
 #if defined USE_HEAT
@@ -252,7 +264,7 @@ PROGRAM main
 #if defined REEF_FLOW
   CALL initialize_reef_flow(1, Ngrids, 1, Im, 1, Jm)
 #endif
-  CALL allocate_reef_ecosys(1, Ngrids, 1, Im, 1, Jm)
+  CALL allocate_reef_ecosys(1, Ngrids, N, 1, Im, 1, Jm)
 
 #ifdef SEAGRASS
   allocate( XI_size (1:Im,1:Jm) ) ! grid size XI-direction (meters)
@@ -260,12 +272,17 @@ PROGRAM main
   XI_size (:,:) = XI_size_in
   ETA_size(:,:) = ETA_size_in
 #endif
-  CALL initialize_reef_ecosys(1, 1, Im, 1, Jm      &
+  CALL initialize_reef_ecosys(1, N, dz, 1, Im, 1, Jm      &
       , start_of_new_run    &   ! TRUE = initialize coral, seagass, macroalgae, sediment from start; FALSE = continue from previous run
 #ifdef SEAGRASS
+      , 1, Im, 1, Jm        &   ! grid size info
       , XI_size, ETA_size   &   ! grid size XI-direction (meters); grid size ETA-direction (meters)
       , p_sgrass            &   ! seagrass coverage (habitat area in grid / grid area)
 #endif
+# ifdef BIVALVE
+      , dens_aqua           &   ! Aquaculture density
+      , f_dens              &   ! Factor to adjust oyster density (default = 1.0)
+# endif
 )
 !  call Coral_iniSizeDis
 !  call Coral_Size2Cover
@@ -274,21 +291,6 @@ PROGRAM main
     
 !----- Write data labels -------------------------
   CALL write_env_lavel(10)        
-#if defined CORAL_TESTMODE
-  CALL write_crl_his_lavel(11)
-  CALL write_crl_his_lavel(12)
-  CALL write_crl_ave_lavel(21)
-  CALL write_crl_ave_lavel(22)
-# if defined CORAL_ZOOXANTHELLAE
-  CALL write_zox_his_lavel(31)
-  CALL write_zox_his_lavel(32)
-  CALL write_zphot_his_lavel(41)
-  CALL write_zphot_his_lavel(42)
-# endif
-#endif
-#if defined ECOSYS_TESTMODE
-  CALL write_ecosys_his_lavel(40)
-#endif
 #if defined REEF_FLOW_TESTMODE
   CALL write_flow_lavel(45)
 #endif
@@ -497,8 +499,8 @@ PROGRAM main
       , Tmp            &   ! Tmp(N): Temperature (oC)
       , Sal            &   ! Sal(N): Salinity (PSU)
       , DOx            &   ! DOx(N): Dissolved oxygen (umol O2 L-1)
-      , TA             &   ! TA(N) : Total alkalinity (umol kg-1)
-      , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C kg-1)
+      , TA             &   ! TA(N) : Total alkalinity (umol L-1)
+      , DIC            &   ! DIC(N_Csp,N): Total dissolved inorganic carbon (umol C L-1)
       , NO3            &   ! NO3(N_Nsp,N): (umol N L-1)
       , NH4            &   ! NH4(N_Nsp,N): (umol N L-1)
       , PO4            &   ! PO4(N_Psp,N): (umol P L-1)
@@ -540,8 +542,8 @@ PROGRAM main
       , dTemp_dt       &   ! dTemp_dt(N)           : Temperature (oC s-1)
       , dSalt_dt       &   ! dSalt_dt(N)           : Salinity (PSU s-1)
       , dDOx_dt        &   ! dDOx_dt(N)            : dDOx/dt  (umol O2 L-1 s-1) 
-      , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol kg-1 s-1) 
-      , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C kg-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
+      , dTA_dt         &   ! dTA_dt(N)             : dTA/dt   (umol L-1 s-1) 
+      , dDIC_dt        &   ! dDIC_dt(N_Csp,N)      : dDIC/dt  (umol C L-1 s-1)  1 mmol m-3 = 1 umol L-1 = 1/1.024 umol kg-1
       , dNO3_dt        &   ! dNO3_dt(N_Nsp,N)      : dNO3/dt  (umol N L-1 s-1)
       , dNH4_dt        &   ! dNH4_dt(N_Nsp,N)      : dNH4/dt  (umol N L-1 s-1)
       , dPO4_dt        &   ! dPO4_dt(N_Psp,N)      : dPO4/dt  (umol P L-1 s-1)
@@ -694,6 +696,29 @@ PROGRAM main
 
       else if (nSetting .eq. 3) then
 
+#if defined SAKAMAKI_ET_AL_2025
+        t(2,j,k,nstp,iTemp) = 15.0d0+7.0d0*cos(2.0d0*PI*(time-30.0d0)/365.0d0)
+        t(i,j,k,nstp,iTemp) = t(2,j,k,nstp,iTemp)
+
+!        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*time/365.0d0) )
+        t(2,j,k,nstp,iPhyC(iCt,iDtm)) = mgC2umolC*(0.15d0+0.05* cos(2.0d0*PI*(time+30.0d0)/365.0d0) )*0.1d0 !10% of the POC assumed to be phytoplankton
+        t(2,j,k,nstp,iPhyN(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rNCp(iDtm)
+        t(2,j,k,nstp,iPhyP(iCt,iDtm)) = t(2,j,k,nstp,iPhyC(iCt,iDtm))*rPCp(iDtm)
+#endif
+        do id=1,Nid
+
+#if defined SAKAMAKI_ET_AL_2025
+          t(i,j,k,nstp,id)=t(i,j,k,nstp,id)           &
+                           + ( dtrc_dt(k,id)          &
+                              -vel*t(i,j,k,nstp,id)/dx  &
+                              +vel*t(2,j,k,nstp,id)/dx )*dt
+#endif
+#if defined SEDECO_SGD && defined SGD_ON
+          ! Overflowing of the SGD volume flux is assumed 
+          dtrc_dt_sgd = -0.01d0*sgd_flux *t(i,j,k,nstp,id)/dz(i,j,1)/dble(N)
+          t(i,j,k,nstp,id)=t(i,j,k,nstp,id) + dtrc_dt_sgd*dt
+#endif
+        end do
 
 
 !---------- Reef condition ------------------------------------
@@ -723,7 +748,7 @@ PROGRAM main
 !          t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           ipcl = 2
         end if
@@ -739,7 +764,7 @@ PROGRAM main
 !            t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
             R13C=R13C_fromd13C(0.7d0)
-            t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+            t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           else if (time*24.0d0 >= WQ_time(ipcl)  ) then
             ipcl = ipcl +1
@@ -797,30 +822,30 @@ PROGRAM main
         
         if( inight == 1 .and. iflag == 1 ) then  ! Night treatment ~pH -0.1 (18:00-06:00)
 #if defined FLUME_AMBIENT
-          t(i,j,k,nstp,iTIC_) = 2090.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2090.0d0
 #elif defined FLUME_HPCO2
-          t(i,j,k,nstp,iTIC_) = 2269.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2269.0d0
 #endif
           t(i,j,k,nstp,iTAlk) = 2340.0d0
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           iflag = 0
         end if
         
         if( inight == 0 .and. iflag == 1 ) then
 #if defined FLUME_AMBIENT
-          t(i,j,k,nstp,iTIC_) = 2033.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2033.0d0
 #elif defined FLUME_HPCO2
-          t(i,j,k,nstp,iTIC_) = 2243.0d0
+          t(i,j,k,nstp,iTIC(iCt)) = 2243.0d0
 #endif
           t(i,j,k,nstp,iTAlk) = 2340.0d0
           t(i,j,k,nstp,iOxyg) = O2satu(t(i,j,k,nstp,iTemp)+273.15d0, t(i,j,k,nstp,iSalt))
 #if defined CARBON_ISOTOPE
           R13C=R13C_fromd13C(0.7d0)
-          t(i,j,k,nstp,iT13C) =R13C*t(i,j,k,nstp,iTIC_) !DI13C (umol kg-1) 
+          t(i,j,k,nstp,iTIC(iC13)) =R13C*t(i,j,k,nstp,iTIC(iCt)) !DI13C (umol kg-1) 
 #endif
           iflag = 0
         end if
@@ -928,6 +953,10 @@ PROGRAM main
       if (nSetting .eq. 7) then
         OUTFILE=trim(OUTFILE_prefix)//'-env_vprof_'//sFNUM//'.csv'
         CALL write_env_vprof(OUTFILE, time, N)
+#if defined BIVALVE_TESTMODE
+        OUTFILE=trim(OUTFILE_prefix)//'-bivalve_vprof_'//sFNUM//'.csv'
+        CALL write_bivalve_vprof(OUTFILE, time, N)
+#endif
       endif
 
       ifnum = ifnum + 1

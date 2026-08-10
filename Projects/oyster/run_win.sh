@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 rm *.exe
 #
@@ -32,7 +32,14 @@ gfortran ${FFLAGS} \
 
 rm *.mod
 #
-mkdir -p output
+mkdir -p output_x1.0
+mkdir -p output_x3.0
 #
-./ecosys_test.exe < reef_flow_01.in
+./ecosys_test.exe < oyster_x1.0.in
+./ecosys_test.exe < oyster_x3.0.in
 #
+# Plot time series CSV files
+uv run ../../postproc/python/plot_csv_timeseries.py -o output_x1.0 -p output_x1.0/plots
+uv run ../../postproc/python/plot_csv_timeseries.py -o output_x3.0 -p output_x3.0/plots
+
+#mv output/ output_x3.0/

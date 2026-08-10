@@ -1,5 +1,5 @@
 
-!!!=== Copyright (c) 2017-2025 Takashi NAKAMURA  =====
+!!!=== Copyright (c) 2017-2026 Takashi NAKAMURA  =====
 !!!  edited by Masa Muto 2023
 
 !--------------------------------------------------------------------------------
@@ -18,23 +18,25 @@ contains
 !  Open files
 ! **********************************************************************
   SUBROUTINE files_open(OUTFILE_prefix)
+    USE mod_reef_ecosys_param
   
     implicit none
 
+    integer :: i
     character(len=*), intent( in) :: OUTFILE_prefix
+    character(2) :: NUM
   
     open(10,file=trim(OUTFILE_prefix)//'-env_his.csv')
 #if defined CORAL_TESTMODE
-    open(11,file=trim(OUTFILE_prefix)//'-crl1_his.csv')
-    open(12,file=trim(OUTFILE_prefix)//'-crl2_his.csv')
-    open(21,file=trim(OUTFILE_prefix)//'-crl1_ave.csv')
-    open(22,file=trim(OUTFILE_prefix)//'-crl2_ave.csv')
+    do i=1,Ncl
+      write (NUM, "(I2.2)") i
+      open(10+i,file=trim(OUTFILE_prefix)//'-crl'//NUM//'_his.csv')
+      open(20+i,file=trim(OUTFILE_prefix)//'-crl'//NUM//'_ave.csv')
 # if defined CORAL_ZOOXANTHELLAE
-    open(31,file=trim(OUTFILE_prefix)//'-zoo1_his.csv')
-    open(32,file=trim(OUTFILE_prefix)//'-zoo2_his.csv')
-    open(41,file=trim(OUTFILE_prefix)//'-zphot1_his.csv')
-    open(42,file=trim(OUTFILE_prefix)//'-zphot2_his.csv')
+      open(30+i,file=trim(OUTFILE_prefix)//'-zoo'//NUM//'_his.csv')
+      open(40+i,file=trim(OUTFILE_prefix)//'-zphot'//NUM//'_his.csv')
 # endif
+    enddo
 #endif
 #if defined ECOSYS_TESTMODE
     open(40,file=trim(OUTFILE_prefix)//'-ecosys_his.csv')
@@ -61,6 +63,12 @@ contains
     open(71,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy2.csv',status='replace')!!!!!!!!!for debug
     open(72,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy3.csv',status='replace')!!!!!!!!!for debug
     open(73,file=trim(OUTFILE_prefix)//'-foodweb_calcheck_Phy4.csv',status='replace')!!!!!!!!!for debug
+#endif
+#if defined BIVALVE_TESTMODE
+    do i=1,Nbv
+      write (NUM, "(I2.2)") i
+      open(80+i,file=trim(OUTFILE_prefix)//'-bivalve'//NUM//'.csv',status='replace')!!!!!!!!!for debug
+    enddo
 #endif
 
     RETURN
@@ -109,6 +117,13 @@ END SUBROUTINE files_open
     close(71)
     close(72)
     close(73)
+#endif
+#if defined BIVALVE_TESTMODE
+    close(80)
+!    close(81)
+!    close(82)
+!    close(83)
+!    close(84)
 #endif
 
     RETURN
@@ -272,6 +287,7 @@ END SUBROUTINE files_close
   SUBROUTINE write_env_vprof(OUT_FILE, date, N)
   
     USE mod_param
+    USE mod_geochem, ONLY: d13C_fromR13C
     
     implicit none
     
@@ -482,6 +498,86 @@ END SUBROUTINE files_close
     RETURN
 
   END SUBROUTINE write_env_vprof
+! **********************************************************************
+!  Write vertical profile of bivalve data
+! **********************************************************************
+#if defined BIVALVE_TESTMODE
+  SUBROUTINE write_bivalve_vprof(OUT_FILE, date, N)
+  
+    USE mod_param
+    Use mod_bivalve
+    
+    implicit none
+    
+    character(len=*), intent( in) :: OUT_FILE
+    real(8), intent( in) :: date
+    integer, intent(in) :: N
+
+    integer,parameter :: fid = 85
+
+    real(8) :: depth_r
+    integer :: i,j,k,nstp
+    integer :: ng
+
+    ng=1
+
+    i=1
+    j=1
+!    k=1
+    nstp=1
+    
+    open(fid,file=OUT_FILE)
+    write(fid,'(*(g0:,", "))') 'Time=', date
+
+    write(fid,'(*(g0:,", "))') 'Depth'  &
+        , 'dens','L','V','Ww','Wd','Wt' &
+        , 'QCe','QCv','QCr','QCh'       &
+        , 'QNe','QNv','QNr','QNh'       &
+        , 'QPe','QPv','QPr','QPh'       &
+        , 'CaCO3','Dead_CaCO3'
+
+!-----------------------------------------------------------------------
+
+!    depth = 0.0d0
+    Do k=N,1,-1
+
+      if (k==N) then
+        depth_r = dz(i,j,k)*0.5d0
+      else
+        depth_r = depth_r + dz(i,j,k)
+      endif
+
+      write(fid,'(*(g0:,", "))') depth_r           &
+       , BVLV(ng)%dens(1,k,i,j)    &
+       , BVLV(ng)%L (1,k,i,j)      &
+       , BVLV(ng)%V (1,k,i,j)      &
+       , BVLV(ng)%Ww(1,k,i,j)      &
+       , BVLV(ng)%Wd(1,k,i,j)      &
+       , BVLV(ng)%Wt(1,k,i,j)      &
+       , BVLV(ng)%QCe(:,1,k,i,j)   &
+       , BVLV(ng)%QCv(:,1,k,i,j)   &
+       , BVLV(ng)%QCr(:,1,k,i,j)   &
+       , BVLV(ng)%QCh(:,1,k,i,j)   &
+       , BVLV(ng)%QNe(:,1,k,i,j)   &
+       , BVLV(ng)%QNv(:,1,k,i,j)   &
+       , BVLV(ng)%QNr(:,1,k,i,j)   &
+       , BVLV(ng)%QNh(:,1,k,i,j)   &
+       , BVLV(ng)%QPe(:,1,k,i,j)   &
+       , BVLV(ng)%QPv(:,1,k,i,j)   &
+       , BVLV(ng)%QPr(:,1,k,i,j)   &
+       , BVLV(ng)%QPh(:,1,k,i,j)   &
+       , BVLV(ng)%CaCO3(:,1,k,i,j) &
+       , BVLV(ng)%Dead_CaCO3(:,1,k,i,j)
+
+      END DO
+
+      close(fid)
+
+    RETURN
+
+  END SUBROUTINE write_bivalve_vprof
+#endif
+
 
 ! **********************************************************************
 !  Write lavel of reef_flow data
@@ -534,6 +630,7 @@ END SUBROUTINE files_close
       
     integer, intent(in) :: fid
 #if defined CARBON_ISOTOPE
+    real(8) :: R13C
     real(8) :: d13C_DIC
 #endif
     integer :: i,j,k,nstp
@@ -541,10 +638,11 @@ END SUBROUTINE files_close
     i=1
     j=1
     k=1
+!    k=20
     nstp=1
 
 #if defined CARBON_ISOTOPE
-    d13C_DIC=d13C_fromR13C(t(i,j,k,nstp,iTIC(iC13))/t(i,j,k,nstp,iTIC(iCt)))
+    d13C_DIC=delta_from_Ci_Ct( t(i,j,k,nstp,iTIC(iC13)), t(i,j,k,nstp,iTIC(iCt)), R13C_VPDB )
 #endif
         
     write(fid,'(*(g0:,", "))') time, PFDsurf           &
@@ -585,189 +683,6 @@ END SUBROUTINE files_close
 
   END SUBROUTINE write_env_data
     
-#if defined CORAL_TESTMODE
-! **********************************************************************
-!  Write lavel of coral internal conditions
-! **********************************************************************
-
-  SUBROUTINE write_crl_his_lavel(fid)
-  
-    USE mod_param
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-    write(fid,'(*(g0:,", "))') 'time', 'PFD'                  &
-       ,'Pg', 'R', 'Pn', 'G','QC'                            &
-       ,'TAcal',  'TAcoe',  'TAamb'                          &
-       ,'DICcal', 'DICcoe', 'DICamb'                         &
-       ,'DOcoe', 'DOamb'                                     &
-       ,'pHcal','pHcoe','pHamb','Wacal','Waamb'              &
-       ,'fCO2cal','fCO2coe','fCO2amb'                        &
-       ,'CO2aqcal','HCO3cal','CO3cal'                        &
-       ,'CO2aqcoe','HCO3coe','CO3coe'                        &
-# if defined CORAL_CARBON_ISOTOPE
-       ,'d13C_DICamb','d13C_DICcoe','d13C_QC','d13C_DICcal'  &
-       ,'d13C_arg','d13C_argxGn'                             &
-       ,'d13C_CO2aqcal','d13C_HCO3cal','d13C_CO3cal'         &
-       ,'d13C_CO2aqcoe','d13C_HCO3coe','d13C_CO3coe'         &
-       ,'c13CO2aqcal','cH13CO3cal','c13CO3cal'               &
-       ,'c13CO2aqcoe','cH13CO3coe','c13CO3coe'               &
-# endif
-# if defined CORAL_ZOOXANTHELLAE
-       ,'ROS','Rz', 'F_Csec', 'F_ROS','F_detox','F_dam'      &
-# endif
-# if defined CORAL_BORON_ISOTOPE
-       ,'d11Barg'                                            &
-# endif
-       ,'DOCuptake'                                          &
-# if defined CORAL_INGESTION
-       ,'ZOOuptake'                                          &
-# endif
-# if defined CORAL_SIZE_DYNAMICS
-       ,'growth','mort','Damage','F_Cgrowth'                 &
-# endif
-       ,'E_ca','F_Cgrowth','Si_DIC','Si_DIC'
-
-    RETURN
-
-  END SUBROUTINE write_crl_his_lavel
-    
-    
-  SUBROUTINE write_crl_ave_lavel(fid)
-  
-    USE mod_param
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-      write(fid,'(*(g0:,", "))') 'day'  &
-       ,'S_PFD_dt'                     &   ! Photon flux density (mol m-2 d-1)
-# if defined CORAL_CARBON_ISOTOPE
-!       ,'S_d13CargxGn_dt'              &
-       ,'d13Carg'                      &   ! d13C
-       ,'S_d13C_QC_dt'                 &   ! 1 day avaraged value of d13C_QC
-# endif
-# if defined CORAL_BORON_ISOTOPE
-       ,'d11Barg'                      & 
-# endif
-       ,'S_Gn_dt'                      &   ! Calcification rate (umol cm-2 d-1)
-       ,'S_Pg_dt'                      &   ! Gross photosynthesis rate (umol cm-2 d-1)
-       ,'S_R_dt'                       &   ! Respiration rate (umol cm-2 d-1)
-       ,'S_QC_dt'                      &   ! 1 day avaraged value of QC
-       ,'S_Pn_dt'                          ! Net photosynthesis rate (umol cm-2 d-1)
-
-    RETURN
-
-END SUBROUTINE write_crl_ave_lavel
-
-# if defined CORAL_ZOOXANTHELLAE
-  SUBROUTINE write_zox_his_lavel(fid)
-  
-    USE mod_param
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-    write(fid,'(*(g0:,", "))')                &
-       'time', 'PFD'                          &
-       ,'Pg','R','Pn','dens'                  &
-       ,'QC', 'Chl'                           &
-       ,'Cg_bio','Cn_bio','Repro','Morta','F_zROS','F_Csec' &
-       ,'F_Zelm','Repro*dens','Morta*dens'    &
-#  if defined CORAL_NUTRIENTS
-       ,'QN','QP'                             &
-       ,'N_repro','P_repro'                   &
-       ,'NO3'                                 &
-       ,'NH4','F_ONOO'                        &
-       ,'NO3_trans','NH4_trans'               &
-       ,'NO3_reduc'                           &
-       ,'N_assim','N_dissim'                  &
-       ,'PO4','PO4_trans','P_assim'           &
-#  endif
-       ,'ROS','ROS_pmol_cell-1'               &
-       ,'Chl_ug_cm-2'
-
-    RETURN
-
-  END SUBROUTINE write_zox_his_lavel
-    
-  SUBROUTINE write_zphot_his_lavel(fid)
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-    write(fid,'(*(g0:,", "))')                                  &
-        'time','PFD','Tamb'                                     &
-       ,'QAo','QAr','QAi'                                       &
-       ,'QAt','QAa','Fv/Fm','Y(II)','J_ep_in'                   &
-       ,'Ji2a','Ja2i','kr','s_ab','F_zSOx','SOx'                &
-       ,'Pg','Pgcal','Vc','Vo','phi','F_zDO'                    &
-       ,'Chl','CO2','DO','F_QAp','NADPH','RuBP','F_zROS','ROS'
-     
-    RETURN
-
-  END SUBROUTINE write_zphot_his_lavel
-
-# endif
-#endif
-#if defined ECOSYS_TESTMODE
-! **********************************************************************
-!  Write lavel of coral internal conditions
-! **********************************************************************
-
-  SUBROUTINE write_ecosys_his_lavel(fid)
-  
-    USE mod_param
-    
-    implicit none
-    
-    integer, intent(in) :: fid
-    
-    write(fid,'(*(g0:,", "))') 'time', 'PFDbott'              &
-# ifdef CORAL_POLYP
-        ,'coral1_Pg', 'coral1_R', 'coral1_Pn', 'coral1_G'    &
-        ,'coral2_Pg', 'coral2_R', 'coral2_Pn', 'coral2_G'    &
-# endif
-# ifdef SEAGRASS
-        , 'sgrass_GrossPhot', 'sgrass_Grow'                  &
-        , 'sgrass_Phot_lim', 'sgrass_Grow_lim'               &
-        , 'sgrass_Resp', 'sgrass_NetPhot', 'sgrass_Dieoff'   &
-        , 'sgrass_Wt', 'sgrass_LfWt', 'sgrass_RtWt'          &
-        , 'sgrass_LAI', 'sgrass_ELAP'                        &
-        , 'sgrass_ocean_flux_DIC', 'sgrass_ocean_flux_DO'    &
-        , 'sgrass_ocean_flux_NH4', 'sgrass_ocean_flux_NO3', 'sgrass_ocean_flux_PO4'    &
-        , 'sgrass_DOstockRatio', 'sgrass_DICstockRatio', 'sgrass_CH2OstockRatio'  &
-        , 'sgrass_NH4stockRatio', 'sgrass_NO3stockRatio', 'sgrass_PO4stockRatio'  &
-# endif
-# ifdef MACROALGAE
-        ,'algae_Pg' , 'algae_R' , 'algae_Pn'                 &
-# endif
-# ifdef SEDIMENT_ECOSYS
-!        ,'sedeco_Pg', 'sedeco_R', 'sedeco_Pn', 'sedeco_G'    &
-        , 'sedeco_fluxDIC', 'sedeco_fluxDO'                  &
-        , 'sedeco_fluxNO3', 'sedeco_fluxNH4', 'sedeco_fluxPO4' &
-# endif
-        ,'dDIC_dt','dTA_dt','dDO_dt'                         &
-        ,'dDOC_dt','dPOC_dt'                                 &
-# if defined CARBON_ISOTOPE
-        ,'dDI13C_dt'                                         &
-# endif
-        ,'dNO3_dt','dNH4_dt'                                 &
-        ,'dPO4_dt'                                           &
-        ,'dDON_dt','dPON_dt','dDOP_dt','dPOP_dt'             &
-        ,'pH', 'fCO2', 'Warg', 'Wcal'                        &
-        ,'U10', 'CO2flux' , 'O2flux'
-
-    RETURN
-
-  END SUBROUTINE write_ecosys_his_lavel
-#endif
-
 #if defined SEDIMENT_TESTMODE
 ! **********************************************************************
 !  Write lavel of sedecosys
@@ -798,6 +713,7 @@ END SUBROUTINE write_crl_ave_lavel
   SUBROUTINE write_sedeco_his_data(OUT_FILE, date)
   
     USE mod_reef_ecosys_param
+    USE mod_geochem, ONLY: d13C_fromR13C
     USE mod_sedecosys
       
     implicit none
@@ -808,6 +724,7 @@ END SUBROUTINE write_crl_ave_lavel
     integer,parameter :: fid = 51
 
     real(8) :: zr(0:Nsed)
+    real(8) :: Ratio
     integer :: i,j,k,ng
 
     i=1

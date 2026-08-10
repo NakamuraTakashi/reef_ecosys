@@ -59,8 +59,8 @@ contains
                  , pH_FILE, DO_FILE, DIC_FILE, TA_FILE            &
                  , NH4_FILE, NOx_FILE, PO4_FILE
 
-    read (5, nml=refdate)
     rewind(5)
+    read (5, nml=refdate)
 
     if ( in_file(iswrad) == 0 ) then
       allocate( SWRad_FILE(1) )
@@ -163,8 +163,8 @@ contains
       allocate( PO4_FILE(in_file(iinPO4)) )
     endif
 
-    read (5, nml=input)
     rewind(5)
+    read (5, nml=input)
 
 ! ==== READ swrad data =============================================
     if ( in_file(iswrad) > 0 ) then

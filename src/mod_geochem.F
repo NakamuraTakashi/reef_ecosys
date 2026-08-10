@@ -1,5 +1,7 @@
 
-!!!=== Copyright (c) 2012-2025 Takashi NAKAMURA  =====
+!!!=== Copyright (c) 2012-2026 Takashi NAKAMURA  =====
+
+#include "cppdefs.h"
 
 module mod_geochem
 
@@ -91,11 +93,11 @@ contains
 
 ! Density of seawater (g/cm^3) or (kg/l)
   real(8) function densSW(temp0, S0)
+  !$acc routine seq
     real(8), intent(in) :: temp0    ! Temperature (oC)
     real(8), intent(in) :: S0       ! Salinity (psu)
     real(8) :: dSMOW               ! Density of SMOW (kg/m^3)
     real(8) :: temp, S
-
     temp = max( temp0, 0.0d0 )  !!! Error handling
     S    = max( S0   , 0.0d0 )  !!! Error handling
 
@@ -118,9 +120,9 @@ contains
 
 !  Density of water (g/cm^3) or (kg/l)
   real(8) function densW(temp0)
+  !$acc routine seq
     real(8), intent(in) :: temp0    ! Temperature (oC)
     real(8) :: temp
-
     temp = max( temp0, 0.0d0 )  !!! Error handling
 
     densW = 999.84847d0 + 6.337563d-2*temp - 8.523829d-3*temp**2.0d0 &
@@ -135,6 +137,7 @@ contains
 !!!*********************************************************************** 
 
   real(8)  function pH_fromATCT(AT2, CT2, T, S ) ! pH (total scale)
+  !$acc routine seq
 
     implicit none
 
@@ -175,6 +178,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8)  function Ac_fromATpH(AT, pH, T, S) ! Carbonate alkalinity (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -209,6 +213,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cCO2aq_fromATpH(AT, pH, T, S) ! [CO2*] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -232,6 +237,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cHCO3_fromATpH(AT, pH, T, S) ! [HCO3-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -255,6 +261,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cCO3_fromATpH(AT, pH, T, S) ! [CO3^2-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -278,6 +285,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function fCO2_fromATpH(AT, pH, T, S) ! fugacity of CO2 (fCO2) (uatm)
+  !$acc routine seq
 
     implicit none
 
@@ -299,6 +307,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function fCO2_fromcCO2aq(cCO2aq, T, S) ! fugacity of CO2 (fCO2) (uatm)
+  !$acc routine seq
 
     implicit none
 
@@ -319,6 +328,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function AT_fromCTpH(CT, pH, T, S) ! Total alkalinity (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -365,6 +375,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cCO2aq_fromCTpH(CT, pH, T, S) ! [CO2*] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -391,6 +402,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cHCO3_fromCTpH(CT, pH, T, S) ! [HCO3-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -415,6 +427,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function cCO3_fromCTpH(CT, pH, T, S) ! [CO3^2-] (umol kg-1)
+  !$acc routine seq
     implicit none
 
     real(8), intent(in) :: CT  ! Total dissolved inorganic carbon (umol kg-1)
@@ -440,6 +453,7 @@ contains
 ! **********************************************************************
 
   real(8)  function Warg_fromcCO3(cCO3, T, S) ! Aragonite saturation state
+  !$acc routine seq
 
     implicit none
 
@@ -461,6 +475,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function Warg_fromcCO3cCa(cCO3,cCa, T, S) ! Aragonite saturation state
+  !$acc routine seq
 
     implicit none
 
@@ -486,6 +501,7 @@ contains
 ! ********************************************************************
 
   real(8)  function Wcal_fromcCO3(cCO3, T, S) ! Calcite saturation state
+  !$acc routine seq
 
     implicit none
 
@@ -507,6 +523,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function Wcal_fromcCO3cCa(cCO3,cCa, T, S)
+  !$acc routine seq
 
     implicit none
 
@@ -532,6 +549,7 @@ contains
 ! **********************************************************************
 
   real(8)  function Flux_CO2(fCO2w, fCO2a, u10, T, S) ! (mmol m-2 s-1)
+  !$acc routine seq
 
     implicit none
 
@@ -583,6 +601,7 @@ contains
 ! **********************************************************************
 
   real(8) function Flux_O2(DOw, DOsatu, u10, T, S) ! (mmol m-2 s-1)
+  !$acc routine seq
 
     implicit none
 
@@ -622,6 +641,7 @@ contains
 ! **********************************************************************
 
   real(8) function O2satu(T, S0) ! O2 saturation concentration  (umol L-1)
+  !$acc routine seq
 
     implicit none
 
@@ -670,6 +690,7 @@ contains
 
 ! Weiss (1974) Mar. Chem. 2: 203-215
   real(8)  function K0_Weiss1974(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -685,6 +706,7 @@ contains
 ! Dissociation constant of carbonic acid by Lueker et al. (2000)
 ! Total hydrogen ion concentration scale
   real(8)  function K1_Lueker2000(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -700,6 +722,7 @@ contains
 ! Dissociation constant of carbonic acid by Lueker et al. (2000)
 ! Total hydrogen ion concentration scale
   real(8)  function K2_Lueker2000(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -714,6 +737,7 @@ contains
 !-----------------------------------------------------------------------
 ! Uppstrom (1974) Deep-Sea Res. 21: 161-162
   real(8)  function BT_Uppstrom1974(S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: S0     ! Salinity (psu)
     real(8) :: S
@@ -726,6 +750,7 @@ contains
 !-----------------------------------------------------------------------
 ! Dickson (1990) Deep-Sea Res. 37: 755-766
   real(8)  function KB_Dickson1990(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -743,6 +768,7 @@ contains
 !-----------------------------------------------------------------------
 ! Millero (1995) Geochim.Cosmochim Acta 59: 661-677
   real(8)  function Kw_Millero1995(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -758,6 +784,7 @@ contains
 !-----------------------------------------------------------------------
 ! Morris & Riley (1966) Deep-Sea Res. 13: 699-705
   real(8)  function ST_MorrisRiley1966(S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: S0     ! Salinity (psu)
     real(8) :: S
@@ -771,6 +798,7 @@ contains
 ! Dickson (1990) J. Chem. Thermodynamics 22: 113-127
 !   -- free hydrogen ion scale
   real(8)  function KS_Dickson1990(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -790,6 +818,7 @@ contains
 !-----------------------------------------------------------------------
 ! Weiss (1974) Mar. Chem. 2: 203-215
   real(8)  function FT_Weiss1974(S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: S0     ! Salinity (psu)
     real(8) :: S
@@ -804,6 +833,7 @@ contains
 ! Dickson & Riley (1979) Mar. Chem. 7: 89-99
 !   -- change pH scale to total
   real(8)  function KF_DicksonRiley1979(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -825,6 +855,7 @@ contains
 !-----------------------------------------------------------------------
 ! Perez & Fraga (1987) Mar. Chem. 21: 161-168
   real(8)  function KF_PerezFraga1987(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -838,6 +869,7 @@ contains
 !-----------------------------------------------------------------------
 ! Mucci (1983) Amer. J. Sci. 282: 780
   real(8)  function Kcal_Mucci1983(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -854,6 +886,7 @@ contains
 !-----------------------------------------------------------------------
 ! Mucci (1983) Amer. J. Sci. 282: 780
   real(8)  function Karg_Mucci1983(T, S0)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S0     ! Salinity (psu)
@@ -875,6 +908,7 @@ contains
 
 ! Johnson (1982) Limnol. Oceanogr. 27(5): 849-855
   real(8)  function kp1_Johnson1982(T, S)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S      ! Salinity (psu)
@@ -884,6 +918,7 @@ contains
   end function kp1_Johnson1982
 !-----------------------------------------------------------------------
   real(8)  function km1_Johnson1982(T, S)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S      ! Salinity (psu)
@@ -896,6 +931,7 @@ contains
   end function km1_Johnson1982
 !-----------------------------------------------------------------------
   real(8)  function kp4_Johnson1982(T, S)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S      ! Salinity (psu)
@@ -906,6 +942,7 @@ contains
   end function kp4_Johnson1982
 !-----------------------------------------------------------------------
   real(8)  function km4_Johnson1982(T, S)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T      ! Temperature (K)
     real(8), intent(in) :: S      ! Salinity (psu)
@@ -925,6 +962,7 @@ contains
 ! **********************************************************************
 
   real(8)  function pH_fromATCTcCO2aq(AT2, CT2, cCO2aq2, T, S ) ! pH (total scale)
+  !$acc routine seq
 
     implicit none
 
@@ -967,6 +1005,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8)  function cHCO3_noneq(CT, cCO2aq, pH, T, S) ! [HCO3-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
     
@@ -991,6 +1030,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8)  function cCO3_noneq(CT, cCO2aq, pH, T, S) ! [CO3^2-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
     
@@ -1020,6 +1060,7 @@ contains
 
   real(8)  function func(cH,AT,CT,BT,ST,FT &
                            ,K1,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1049,6 +1090,7 @@ contains
 
   real(8)  function dfunc(cH,AT,CT,BT,ST,FT &
                          ,K1,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1069,6 +1111,7 @@ contains
 
   real(8)  function Newton_Raphson(x0,x1,AT,CT,BT,ST,FT, &
    &                       K1,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1104,6 +1147,7 @@ contains
 
   real(8)  function Newton_Raphson2(x0,AT,CT,BT,ST,FT, &
                                     K1,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1155,6 +1199,7 @@ contains
 
   real(8)  function func_noneq(cH,AT,CT,cCO2aq,BT,ST,FT &
                               ,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1184,6 +1229,7 @@ contains
 
   real(8)  function dfunc_noneq(cH,AT,CT,cCO2aq,BT,ST,FT &
                                ,K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1204,6 +1250,7 @@ contains
 
   real(8)  function Newton_Raphson3(x0,AT,CT,cCO2aq,BT,ST,FT, &
    &                       K2,Kw,KB,KS,KF)
+  !$acc routine seq
 
     implicit none
 
@@ -1260,10 +1307,11 @@ contains
 ! **********************************************************************
 
   real(8) function Iso_ratio(Ci,Ct) ! isotope ratio Ci/Ct
-
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: Ci  ! Isotope concentration (e.g., umol/L) 
     real(8), intent(in) :: Ct  ! Total concentration   (e.g., umol/L)
+
     if(Ct>0.0d0) then
       Iso_ratio = max(Ci,0.0d0)/Ct
     else
@@ -1279,6 +1327,7 @@ contains
 ! **********************************************************************
 
   real(8) function R_from_delta(delta,Rstd)  ! e.g., R13C = 13C/12C; R15N = 15N/14N
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: delta ! Isotope ratio (delta value; per mill vs standard)
@@ -1295,6 +1344,7 @@ contains
 ! **********************************************************************
 
   real(8) function delta_from_R(Rsample,Rstd)  ! e.g., R13C = 13C/12C; R15N = 15N/14N
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: Rsample ! Isotope ratio of sample
@@ -1311,6 +1361,7 @@ contains
 ! **********************************************************************
 
   real(8) function delta_from_Ci_Ct(Ci,Ct,Rstd)  ! e.g., R13C = 13C/12C; R15N = 15N/14N
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: Ci    ! Isotope concentration
@@ -1332,6 +1383,7 @@ contains
 ! **********************************************************************
 
   real(8) function Ci_from_Ct_delta(Ct,delta,Rstd)  ! e.g., R13C = 13C/12C; R15N = 15N/14N
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: Ct    ! Total concentration
@@ -1352,6 +1404,7 @@ contains
 ! **********************************************************************
 
   real(8) function d13C_fromR13C(R13C) ! Carbon isotope ratio (per mill VPDB)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: R13C  ! R13C = 13C/12C
@@ -1367,6 +1420,7 @@ contains
 ! **********************************************************************
 
   real(8) function R13C_fromd13C(d13C)  ! R13C = 13C/12C
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: d13C ! Carbon isotope ratio (per mill VPDB)
@@ -1381,6 +1435,7 @@ contains
 ! **********************************************************************
 
   real(8) function R15N_fromd15N(d15N)  ! R15N = 15N/14N
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: d15N ! Nitrogen isotope ratio (per mill air)
@@ -1395,6 +1450,7 @@ contains
 ! **********************************************************************
 
   real(8) function concH13CO3(DI13C,c12CO2aq,cH12CO3,c12CO3,T) ! 13C concentration in HCO3- (umol kg-1)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: DI13C     ! 13C concentration in DIC  (umol kg-1)
@@ -1420,6 +1476,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8) function conc13CO2aq(DI13C,c12CO2aq,cH12CO3,c12CO3,T) ! 13C concentration in CO2* (umol kg-1)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: DI13C     ! 13C concentration in DIC (umol kg-1)
@@ -1445,6 +1502,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8) function conc13CO3(DI13C,c12CO2aq,cH12CO3,c12CO3,T) ! 13C concentration in CO3^2- (umol kg-1)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: DI13C     ! 13C concentration in DIC (umol kg-1)
@@ -1474,6 +1532,7 @@ contains
 ! **********************************************************************
 
   real(8)  function cH13CO3_noneq(DI13C, c13CO2aq, pH, T, S) ! 13C concentration in HCO3- (umol kg-1)
+  !$acc routine seq
 
     implicit none
     
@@ -1499,6 +1558,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8)  function c13CO3_noneq(DI13C, c13CO2aq, pH, T, S) ! 13C concentration in CO2* (umol kg-1)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: DI13C     ! 13C concentration in DIC (umol kg-1)
@@ -1522,6 +1582,7 @@ contains
 !-----------------------------------------------------------------------
 
   real(8)  function cH13CO3_noneq2(DI13C, c13CO2aq, cH12CO3, c12CO3, T) ! 13C concentration in HCO3- (umol kg-1)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: DI13C     ! 13C concentration in DIC (umol kg-1)
@@ -1547,6 +1608,7 @@ contains
 !---------------------------------------------------------------------
 
   real(8)  function c13CO3_noneq2(DI13C, c13CO2aq, cH12CO3, c12CO3, T) ! 13C concentration in CO3^2- (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -1577,6 +1639,7 @@ contains
 ! Mook (Mook) Netherlands J. Sea Res. 20: 211-223
 
   real(8) function a_gb_Mook1986(T)  ! a(CO2(g)-HCO3-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     a_gb_Mook1986=(-9483./T+23.89)*1.d-3 +1.d0
@@ -1584,6 +1647,7 @@ contains
   end function a_gb_Mook1986
 
   real(8) function a_dg_Mook1986(T)  ! a(CO2(aq)-CO2(g))
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     a_dg_Mook1986=(-373./T+0.19)*1.d-3 +1.d0
@@ -1591,6 +1655,7 @@ contains
   end function a_dg_Mook1986
 
   real(8) function a_db_Mook1986(T)  ! a(CO2(aq)-HCO3-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     a_db_Mook1986=(-9866./T+24.12)*1.d-3 +1.d0
@@ -1598,6 +1663,7 @@ contains
   end function a_db_Mook1986
 
   real(8) function a_cb_Mook1986(T)  ! a(CO32- -HCO3-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     a_cb_Mook1986=(-867./T+2.52)*1.d-3 +1.d0
@@ -1608,6 +1674,7 @@ contains
 ! Zhang et al. (1995) Geochim. Cosmochim. Acta 59: 107-114
 
   real(8) function a_bg_Zhang1995(t)  ! a(HCO3--CO2(g))
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: t   ! Temperatureture (oC)
     a_bg_Zhang1995=(-0.1141*t+10.78)*1.d-3 +1.d0
@@ -1615,6 +1682,7 @@ contains
   end function a_bg_Zhang1995
 
   real(8) function a_dg_Zhang1995(t)  ! a(CO2(aq)-CO2(g))
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: t   ! Temperatureture (oC)
     a_dg_Zhang1995=(0.0049*t-1.31)*1.d-3 +1.d0
@@ -1622,6 +1690,7 @@ contains
   end function a_dg_Zhang1995
 
   real(8) function a_cg_Zhang1995(t)  ! a(CO32--CO2(g))
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: t   ! Temperatureture (oC)
     a_cg_Zhang1995=(-0.052*t+7.22)*1.d-3 +1.d0
@@ -1629,6 +1698,7 @@ contains
   end function a_cg_Zhang1995
 
   real(8) function a_cb_Zhang1995(t)  ! a(CO32--HCO3-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: t   ! Temperatureture (oC)
     real a_cg, a_bg
@@ -1639,6 +1709,7 @@ contains
   end function a_cb_Zhang1995
 
   real(8) function a_db_Zhang1995(t)  ! a(CO2aq-HCO3-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: t   ! Temperatureture (oC)
     real a_dg, a_bg
@@ -1653,6 +1724,7 @@ contains
 ! **********************************************************************
 
   real(8)  function cBOH4_frompH(pH, T, S) ! [B(OH)4-] (umol kg-1)
+  !$acc routine seq
 
     implicit none
 
@@ -1677,6 +1749,7 @@ contains
 !----------------------------------------------------------------------
 
   real(8)  function d11B_BOH4_frompHd11BT(pH,d11BT, T, S) ! Boron isotope ratio of B(OH)4- (per mill)
+  !$acc routine seq
 
     implicit none
 
@@ -1711,6 +1784,7 @@ contains
 !  d11B NIST SRM951 from R11B value.
 
   real(8) function d11B_fromR11B(R11B) ! Boron isotope ratio (per mill)
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: R11B  ! R11B = 11B/10B
@@ -1724,6 +1798,7 @@ contains
 !  R11B from R11B NIST SRM951 value.
 
   real(8) function R11B_fromd11B(d11B)  ! R11B = 11B/10B
+  !$acc routine seq
 
     implicit none
     real(8), intent(in) :: d11B  ! Boron isotope ratio (per mill)
@@ -1739,6 +1814,7 @@ contains
 ! Kakihana et al. (1977)
 
   real(8) function aB_Kakihana1977(T)  ! a(B(OH)3-B(OH)4^-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     real(8) t_oC ! Temperature (oC)
@@ -1750,6 +1826,7 @@ contains
 ! Palmer et al. (1987)
 
   real(8) function aB_Palmer1987(T)  ! a(B(OH)3-B(OH)4^-)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Temperatureture (K)
     real(8) t_oC ! Temperature (oC)
@@ -1766,6 +1843,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function DIC_Profile(T, S, d)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -1773,20 +1851,40 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [ 2003.9,  -11.77, 0.88016,  50.077, -20.498,   45.24,  8.1948,  6.8363 ]
+    [ 2.007d3, -1.103d1, 8.029d-1, 5.370d1,  9.696d0,  9.124d1,  8.111d0,  8.774d0 ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [ 2004.8, 0.17266,  1.2439,  18.668, -46.533,   443.0,    2.24,  25.275 ]
+    [ 2.009d3,  3.488d0, 9.748d-1, 2.390d1, -1.309d1,  6.951d2, -1.732d1,  3.108d1 ]
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [ 1980.7, -6.4484,  1.2021, -22.521, -100.78,  141.42,  7.1261,  11.649 ]
+    [ 2.002d3, -1.043d1, 7.908d-1, 3.965d1, -3.804d0,  1.635d2,  6.672d0,  1.203d1 ]
 #elif defined BIO_VPROFILE_PALAU
-    [ 2088.6, -15.218,  0.1884,   78.14,  12.431, -36.077,-0.077502,-0.58378 ]
+    [ 2.080d3, -1.409d1, 2.725d-1, 6.200d1, -1.019d1, -5.377d1,  2.378d0, -1.039d0 ]
 #elif defined BIO_VPROFILE_JAPAN
-    [ 2004.7,  -11.57, 0.93413,  45.795, -46.885,  60.398,  7.9545,  7.77   ]
+    [ 1.997d3, -1.053d1, 6.797d-1, 6.403d1, -4.851d0,  1.955d2,  1.084d0,  1.177d1 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 1.979d3, -8.542d0, 4.749d-1, 4.705d1, -1.605d-1, 3.206d2, -8.712d0,  1.464d1 ]
 #else
-    [ 2004.7,  -11.57, 0.93413,  45.795, -46.885,  60.398,  7.9545,  7.77   ]
+    [ 1.997d3, -1.053d1, 6.797d-1, 6.403d1, -4.851d0,  1.955d2,  1.084d0,  1.177d1 ]
+#endif
+
+  real(8), parameter :: as(0:5)  = &
+#if defined BIO_VPROFILE_YAEYAMA
+    [ 1.993d3, -7.097d0, 4.383d-1, 2.318d1, 2.035d0,  2.045d0  ]
+#elif defined BIO_VPROFILE_SHIZUGAWA
+    [ 1.993d3, -6.429d0, 1.149d0 , 3.807d1, 2.469d1, -9.990d0  ]
+#elif defined BIO_VPROFILE_TOKYOBAY
+    [ 2.001d3, -7.191d0, 8.247d-1, 6.991d1, 3.951d1,  5.203d0  ]
+#elif defined BIO_VPROFILE_PALAU
+    [ 2.118d3, -3.514d1, 2.216d0 , 9.692d0, 4.023d0,  8.289d0  ]
+#elif defined BIO_VPROFILE_JAPAN
+    [ 2.004d3, -6.663d0, 1.223d-1, 4.656d1, 8.660d0,  1.011d0  ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 2.000d3, -6.390d0, 1.118d-1, 4.192d1, 1.002d1,  1.642d-1 ]
+#else
+    [ 2.004d3, -6.663d0, 1.223d-1, 4.656d1, 8.660d0,  1.011d0  ]
 #endif
   
   real(8) :: Tm20, Sm35, Dp1000
+  real(8) :: DIC_ProfileS
 
   Tm20 = T-20.0d0
   Sm35 = S-35.0d0
@@ -1794,7 +1892,9 @@ contains
 
   DIC_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
                      + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
-  DIC_Profile = max( DIC_Profile, 0.0d0 )
+  DIC_ProfileS= as(0) + as(1)*Tm20 + as(2)*Tm20*Tm20 + as(3)*Sm35 + as(4)*Sm35*Sm35  &
+                      + as(5)*Tm20*Sm35
+  DIC_Profile = max( DIC_Profile, DIC_ProfileS )
 
   end function DIC_Profile
 
@@ -1802,6 +1902,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function TA_Profile(T, S, d)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: T   ! Potential temperatureture (oC)
     real(8), intent(in) :: S   ! Salinity (PSU)
@@ -1809,20 +1910,40 @@ contains
 
     real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-      [ 2301.1, -2.1405, 0.32678,  70.044, -29.691, -28.614,  -1.161, -1.5422 ]
+    [ 2.307d3, -1.918d0 ,  2.205d-1, 7.441d1, 1.403d1, -5.749d1, -2.726d0, -3.941d0  ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-      [ 2315.3,  1.8002, 0.36142,  88.544,  9.9163,  48.886, -4.4386,  1.0972 ]
+    [ 2.311d3, -1.963d0 , -4.433d-2, 7.873d1, 1.528d1, -1.533d0, -1.430d1, -5.478d0  ]
 #elif defined BIO_VPROFILE_TOKYOBAY
-      [ 2294.8, 0.16538, 0.38731,  46.311, -32.931, -4.3979,  -2.356,-0.86631 ]
+    [ 2.302d3, -9.010d-1,  2.861d-1, 7.795d1, 1.246d1, -2.137d1, -5.095d0, -2.425d0  ]
 #elif defined BIO_VPROFILE_PALAU
-      [ 2295.9,-0.51979, 0.21917,  84.811,  7.8105,  38.435, -8.1414,-0.48131 ]
+    [ 2.302d3, -7.912d-1,  2.131d-1, 9.929d1, 1.825d1,  3.087d1, -7.132d0, -6.071d-1 ]
 #elif defined BIO_VPROFILE_JAPAN
-      [ 2297.4, -1.0691, 0.30873,  68.021, -13.129, -22.406, -3.9028, -2.2066 ]
+    [ 2.299d3, -1.034d0 ,  2.147d-1, 9.433d1, 1.676d1,  3.711d1, -5.374d0,  8.546d-2 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 2.293d3, -6.713d-1,  1.639d-1, 1.090d2, 2.492d1,  1.272d2, -6.411d0,  4.269d0  ]
 #else
-      [ 2297.4, -1.0691, 0.30873,  68.021, -13.129, -22.406, -3.9028, -2.2066 ]
+    [ 2.299d3, -1.034d0 ,  2.147d-1, 9.433d1, 1.676d1,  3.711d1, -5.374d0,  8.546d-2 ]
 #endif
 
+  real(8), parameter :: as(0:5)  = &
+#if defined BIO_VPROFILE_YAEYAMA
+    [ 2.487d3, -3.638d1 ,  1.915d0 , 1.561d2,  3.375d1, -4.095d0 ]
+#elif defined BIO_VPROFILE_SHIZUGAWA
+    [ 2.294d3,  1.095d0 , -1.049d-1, 3.103d1, -2.767d0,  2.174d0 ]
+#elif defined BIO_VPROFILE_TOKYOBAY
+    [ 2.298d3,  9.481d-1,  7.033d-2, 6.270d1,  1.369d1,  3.171d0 ]
+#elif defined BIO_VPROFILE_PALAU
+    [ 2.487d3, -3.638d1 ,  1.915d0 , 1.561d2,  3.375d1, -4.095d0 ]
+#elif defined BIO_VPROFILE_JAPAN
+    [ 2.295d3,  6.491d-1, -6.974d-2, 4.748d1,  6.403d0,  2.181d0 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 2.293d3,  7.694d-1, -8.261d-2, 4.271d1,  5.810d0,  1.955d0 ]
+#else
+    [ 2.295d3,  6.491d-1, -6.974d-2, 4.748d1,  6.403d0,  2.181d0 ]
+#endif
+  
   real(8) :: Tm20, Sm35, Dp1000
+  real(8) :: TA_ProfileS
 
   Tm20 = T-20.0d0
   Sm35 = S-35.0d0
@@ -1830,7 +1951,9 @@ contains
 
   TA_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
                     + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
-  TA_Profile = max( TA_Profile, 0.0d0 )
+  TA_ProfileS= as(0) + as(1)*Tm20 + as(2)*Tm20*Tm20 + as(3)*Sm35 + as(4)*Sm35*Sm35  &
+                      + as(5)*Tm20*Sm35
+  TA_Profile = max( TA_Profile, TA_ProfileS )
 
   end function TA_Profile
 
@@ -1838,6 +1961,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function DO_Profile(T, S, d)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -1845,18 +1969,37 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [ 218.07,    3.27, -0.79919,  -5.157,  34.434, -19.565, -13.597, -7.7349 ]
+    [ 2.072d2,  3.011d0 , -6.450d-1, -1.319d1,  2.402d0, -4.065d1, -1.214d1 , -7.883d0 ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [ 218.46, -14.017,  -1.3884, -21.657,  37.863, -706.28, -4.7566, -40.368 ]
+    [ 2.102d2, -1.435d1 , -9.573d-1, -5.411d0,  2.391d1, -1.034d3,  1.264d1 , -5.162d1 ]
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [ 247.64, -3.2328,  -1.2391,  57.067,  121.26, -168.22, -11.935,  -15.31 ]
+    [ 2.325d2,  7.121d-1, -6.509d-1,  3.333d1,  2.923d1, -1.317d2, -2.071d0 , -1.001d1 ]
 #elif defined BIO_VPROFILE_PALAU
-    [ 140.64,  7.4234, -0.14649, -7.5404,  -5.715,  82.358, -8.8514,-0.38958 ]
+    [ 1.504d2,  6.169d0 , -1.266d-1, -7.345d0, -5.712d0,  3.998d1, -8.364d0 , -1.864d0 ]
 #elif defined BIO_VPROFILE_JAPAN
-    [ 223.65,  2.5876, -0.95841,  6.3665,   79.41, -71.675, -15.363, -11.386 ]
+    [ 2.360d2,  7.591d-1, -4.747d-1,  2.125d1,  3.800d1, -2.282d2, -8.667d-1, -1.358d1 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 2.556d2, -1.459d0 , -2.503d-1,  4.094d1,  3.543d1, -3.431d2,  1.209d1 , -1.506d1 ]
 #else
-    [ 223.65,  2.5876, -0.95841,  6.3665,   79.41, -71.675, -15.363, -11.386 ]
+    [ 2.360d2,  7.591d-1, -4.747d-1,  2.125d1,  3.800d1, -2.282d2, -8.667d-1, -1.358d1 ]
 #endif
+
+!  real(8), parameter :: as(0:5)  = &
+!#if defined BIO_VPROFILE_YAEYAMA
+!    [ 2.216d2, -3.472d0, 1.008d-1, -4.275d0, -7.918d-1, 2.164d-1 ]
+!#elif defined BIO_VPROFILE_SHIZUGAWA
+!    [ 2.331d2, -2.532d0, -2.088d-1, -3.245d0, -3.367d0, 4.001d0 ]
+!#elif defined BIO_VPROFILE_TOKYOBAY
+!    [ 2.226d2, -2.726d0, -1.003d-1, 4.669d0, 2.215d0, -1.760d0 ]
+!#elif defined BIO_VPROFILE_PALAU
+!    [ 1.530d2, 1.240d1, -8.342d-1, 5.506d0, -5.926d-1, -7.529d-1 ]
+!#elif defined BIO_VPROFILE_JAPAN
+!    [ 2.241d2, -3.699d0, 1.076d-1, -5.114d0, -5.175d-1, 7.316d-1 ]
+!#elif defined BIO_VPROFILE_SOUTH_JAPAN
+!    [ 2.215d2, -3.307d0, 1.169d-1, -8.838d0, -1.658d0, 1.209d0 ]
+!#else
+!    [ 2.241d2, -3.699d0, 1.076d-1, -5.114d0, -5.175d-1, 7.316d-1 ]
+!#endif
 
   real(8) :: Tm20, Sm35, Dp1000
   real(8) :: DOsat
@@ -1869,7 +2012,7 @@ contains
                     + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
   DOsat = O2satu(T+273.15d0, S)          
   DO_Profile = max( DO_Profile, 0.0d0 )
-  DO_Profile = min( DO_Profile, DOsat )
+!  DO_Profile = min( DO_Profile, DOsat )
 
   end function DO_Profile
 
@@ -1877,6 +2020,7 @@ contains
 !     TN test
 
   real(8) function DO_Profile2(SST, SSS, SSDIC, DIC, SSTA, TA)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: SST   ! Sea Surface Temperatureture (oC)
     real(8), intent(in) :: SSS   ! Sea Surface Salinity (psu)
@@ -1905,6 +2049,7 @@ contains
 !     developed by Faisal AMRI
 
   real(8) function PHY1_Profile(d)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: d   ! elevation (m) = -depth
 
@@ -1920,6 +2065,7 @@ contains
 !     developed by Faisal AMRI
 
   real(8) function PHY2_Profile(d)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: d   ! elevation (m) = -depth  
  
@@ -1935,42 +2081,19 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function PhyC_Profile(T, S, d, m)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T    ! Potential temperatureture (oC)
   real(8), intent(in) :: S    ! Salinity (PSU)
   real(8), intent(in) :: d    ! Depth (m)
   integer, intent(in) :: m    ! Index of Phytoplankton functional group 
 
-  real(8), parameter :: a(0:8)  = &
-#if defined BIO_VPROFILE_YAEYAMA
-    [ 0.22899, -0.044904, 0.0023059,-0.032198,-0.0085123, 0.57808, -16.399,  42.786,   0.279 ]
-#elif defined BIO_VPROFILE_SHIZUGAWA
-    [ 0.8377 , -0.092857, 0.001421 ,  0.62685,   0.20414,  -15.15,  94.699, -117.52, 0.67562 ]
-#elif defined BIO_VPROFILE_TOKYOBAY
-    [ 0.58184, -0.07835 , 0.0025208,  0.2612 ,   0.17559, -4.4179,  3.1193,  39.441, 0.55383 ]
-#elif defined BIO_VPROFILE_PALAU
-    [ 0.19481, -0.015131,0.00021533,  0.03188, 0.0063201, 0.87858,  -16.46,  47.271, 0.13102 ]
-#elif defined BIO_VPROFILE_JAPAN
-    [ 0.26379, -0.036883,0.00098696,-0.0067455,-0.010478,-0.51103, -11.061,  43.275, 0.27491 ]
-#else
-    [ 0.26379, -0.036883,0.00098696,-0.0067455,-0.010478,-0.51103, -11.061,  43.275, 0.27491 ]
-#endif
                                       !  Dnfl   Dtm    Ccl    Cya
-  real(8), parameter :: r(4)        = [ 0.4d0, 0.3d0, 0.1d0, 0.2d0 ]
+  real(8), parameter :: r(4)        = [ 0.4d0, 0.39d0, 0.01d0, 0.2d0 ]
   real(8), parameter :: Chl2PhyC(4) = [ 0.2d0, 0.2d0, 0.2d0, 0.2d0 ] !Conversion ratio from Chl-a to phyC (umolC/L)/(ug/L)
-
-  real(8) :: Tm20, Sm35, Dp1000
-
-  Tm20 = T-20.0d0
-  Sm35 = S-35.0d0
-  Dp1000 = max(d,0.0d0)*0.001d0
-
-  ! Chl-a concentration (ug/L)
-  PhyC_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35           &
-                      + a(5)*Dp1000 + a(6)*Dp1000*Dp1000  + a(7)*Dp1000*Dp1000*Dp1000     &
-                      + a(7)*Tm20*Dp1000 
-  ! PhyC density (umolC/L)
-  PhyC_Profile = PhyC_Profile * r(m) * Chl2PhyC(m)              
+         
+!  PhyC_Profile = ( 2.7d0-PO4_Profile(T, S, d) )*106.0d0/1.0d0*0.1d0*r(m)
+  PhyC_Profile = 0.5d0*Chl2PhyC(m)*r(m) ! Uniform 0.05 ug/L Chl-a was assumed
   PhyC_Profile = max( PhyC_Profile, 0.0d0 )
 
   end function PhyC_Profile
@@ -1979,6 +2102,7 @@ contains
 !     developed by Shinya AMANO, Takashi NAKAMURA
 
   real(8) function PHY_Profile2(iphy, SSPhyC, d)
+  !$acc routine seq
     implicit none
     integer, intent(in) :: iphy   ! Phytoplankton functional group num 
     real(8), intent(in) :: SSphyC ! Sea surface phytoplankton density (umolC L-1) 
@@ -2021,6 +2145,7 @@ contains
 !     developed by Faisal AMRI
 
   real(8) function ZOO_Profile(d)
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: d   ! elevation (m) = -depth  
  
@@ -2036,6 +2161,7 @@ contains
 !     TN test
 
   real(8) function ZOO_Profile2(izoo, SSzooC, d)
+  !$acc routine seq
     implicit none
     integer, intent(in) :: izoo ! Zooplankton functional group num 
     real(8), intent(in) :: SSzooC ! Sea surface zooplankton density (umolC L-1) 
@@ -2053,43 +2179,16 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function ZooC_Profile(T, S, d, m)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T    ! Potential temperatureture (oC)
   real(8), intent(in) :: S    ! Salinity (PSU)
   real(8), intent(in) :: d    ! Depth (m)
   integer, intent(in) :: m    ! Index of Phytoplankton functional group 
 
-  real(8), parameter :: a(0:8)  = &
-#if defined BIO_VPROFILE_YAEYAMA
-    [ 0.22899, -0.044904, 0.0023059,-0.032198,-0.0085123, 0.57808, -16.399,  42.786,   0.279 ]
-#elif defined BIO_VPROFILE_SHIZUGAWA
-    [ 0.8377 , -0.092857, 0.001421 ,  0.62685,   0.20414,  -15.15,  94.699, -117.52, 0.67562 ]
-#elif defined BIO_VPROFILE_TOKYOBAY
-    [ 0.58184, -0.07835 , 0.0025208,  0.2612 ,   0.17559, -4.4179,  3.1193,  39.441, 0.55383 ]
-#elif defined BIO_VPROFILE_PALAU
-    [ 0.19481, -0.015131,0.00021533,  0.03188, 0.0063201, 0.87858,  -16.46,  47.271, 0.13102 ]
-#elif defined BIO_VPROFILE_JAPAN
-    [ 0.26379, -0.036883,0.00098696,-0.0067455,-0.010478,-0.51103, -11.061,  43.275, 0.27491 ]
-#else
-    [ 0.26379, -0.036883,0.00098696,-0.0067455,-0.010478,-0.51103, -11.061,  43.275, 0.27491 ]
-#endif
-                                      !  Dnfl   Dtm    Ccl    Cya
-  real(8), parameter :: r(4)        = [ 0.4d0, 0.3d0, 0.1d0, 0.2d0 ]
-  real(8), parameter :: Chl2PhyC(4) = [ 0.2d0, 0.2d0, 0.2d0, 0.2d0 ] !Conversion ratio from Chl-a to phyC (umolC/L)/(ug/L)
-
-  real(8) :: Tm20, Sm35, Dp1000
-
-  Tm20 = T-20.0d0
-  Sm35 = S-35.0d0
-  Dp1000 = max(d,0.0d0)*0.001d0
-
-  ! Chl-a concentration (ug/L)
-  ZooC_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35           &
-                      + a(5)*Dp1000 + a(6)*Dp1000*Dp1000  + a(7)*Dp1000*Dp1000*Dp1000     &
-                      + a(7)*Tm20*Dp1000 
-  ! PhyC density (umolC/L)
-  ZooC_Profile = ZooC_Profile * Chl2PhyC(m) *0.1d0             
+  ZooC_Profile = PhyC_Profile(T, S, d, 2) *0.1d0             
   ZooC_Profile = max( ZooC_Profile, 0.0d0 )
+!  ZooC_Profile = max( ZooC_Profile, 0.2d0 )
 
   end function ZooC_Profile
 
@@ -2097,6 +2196,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function NO3_Profile(T, S, d)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -2104,20 +2204,40 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [ 0.57862, -0.98093, 0.11813,  0.4974,  0.6834,   5.121,  1.2865, 0.89172 ]
+    [  2.208d0, -1.137d0 , 1.001d-1, -5.227d-1,  3.034d-1,  2.623d0,  1.286d0 , 7.374d-1 ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [ -0.67507, 0.37257, 0.15954, -3.0303, -5.3351,  67.176, 0.58408,  3.8603 ]
+    [  4.088d0,  1.561d0 , 1.855d-1, -1.271d0 , -3.409d0 ,  1.131d2, -5.355d-1, 5.905d0  ]
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [ -2.8824, -0.52928, 0.14487, -10.635, -12.349,  16.949,  1.1114,  1.4678 ]
+    [ -1.257d0, -9.759d-1, 9.293d-2, -9.219d0 , -5.306d0 ,  1.279d1,  7.003d-1, 1.061d0  ]
 #elif defined BIO_VPROFILE_PALAU
-    [  8.0235,  -1.6272,0.069239, -1.2926,-0.38817, -4.7416,  1.5917,  0.4794 ]
+    [  7.059d0, -1.538d0 , 6.149d-2, -2.690d0 , -9.674d-1, -1.112d0,  1.415d0 , 5.571d-1 ]
 #elif defined BIO_VPROFILE_JAPAN
-    [ 0.81133,  -1.0881, 0.13916,-0.46799, -7.1662,  9.4007,  1.9147,  1.3848 ]
+    [ -1.447d0, -8.447d-1, 8.370d-2, -3.811d0 , -4.265d0 ,  3.089d1,  1.750d-1, 1.793d0  ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ -4.288d0, -5.084d-1, 5.955d-2, -5.185d0 , -3.196d0 ,  4.910d1, -1.338d0 , 2.204d0  ]
 #else
-    [ 0.81133,  -1.0881, 0.13916,-0.46799, -7.1662,  9.4007,  1.9147,  1.3848 ]
+    [ -1.447d0, -8.447d-1, 8.370d-2, -3.811d0 , -4.265d0 ,  3.089d1,  1.750d-1, 1.793d0  ]
+#endif
+
+  real(8), parameter :: as(0:5)  = &
+#if defined BIO_VPROFILE_YAEYAMA
+    [ 9.032d-1, -3.844d-1, 3.951d-2, -8.172d-1,  5.009d-1,  2.258d-1 ]
+#elif defined BIO_VPROFILE_SHIZUGAWA
+    [ 5.200d-1, -5.865d-1, 8.589d-2,  2.190d0 ,  1.815d0 , -8.454d-1 ]
+#elif defined BIO_VPROFILE_TOKYOBAY
+    [ 7.313d-1, -6.208d-1, 6.290d-2, -2.212d0 , -7.390d-1,  1.325d-1 ]
+#elif defined BIO_VPROFILE_PALAU
+    [ 3.293d0 , -8.412d-1, 5.174d-2, -8.735d-1, -3.583d-2,  8.459d-2 ]
+#elif defined BIO_VPROFILE_JAPAN
+    [ 1.179d0 , -3.838d-1, 3.009d-2,  1.546d0 ,  8.115d-1, -7.434d-2 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 1.561d0 , -3.742d-1, 2.604d-2,  2.988d0 ,  1.464d0 , -1.642d-1 ]
+#else
+    [ 1.179d0 , -3.838d-1, 3.009d-2,  1.546d0 ,  8.115d-1, -7.434d-2 ]
 #endif
 
   real(8) :: Tm20, Sm35, Dp1000
+  real(8) :: NO3_ProfileS
   
   Tm20 = min(T,27.0d0)-20.0d0
   Sm35 = S-35.0d0
@@ -2125,6 +2245,9 @@ contains
 
   NO3_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
                      + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
+  NO3_ProfileS= as(0) + as(1)*Tm20 + as(2)*Tm20*Tm20 + as(3)*Sm35 + as(4)*Sm35*Sm35  &
+                      + as(5)*Tm20*Sm35
+  NO3_Profile = max( NO3_Profile, NO3_ProfileS )
   NO3_Profile = max( NO3_Profile, 0.2d0 )
 
   end function NO3_Profile
@@ -2133,6 +2256,7 @@ contains
 !     developed by Shinya AMANO
 
   real(8) function NO3_Profile2( d )
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: d   ! elevation (m) = -depth  
     real(8), parameter :: c_NO3_s=-0.0508d0
@@ -2154,6 +2278,7 @@ contains
 !     TN test 
 
   real(8) function NO3_Profile3( SSNO3, SSDO, DO )
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: SSNO3 ! Sea surface NO3 (umol L-1)
     real(8), intent(in) :: SSDO  ! Sea Surface DO (umol L-1)
@@ -2172,6 +2297,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function PO4_Profile(T, S, d)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -2179,20 +2305,40 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [ 0.081546, -0.073089, 0.0085317, 0.074849, 0.098112, 0.11621,  0.10087, 0.054868 ]
+    [  1.826d-1, -8.207d-2, 7.395d-3, -7.733d-2, -3.363d-2, 5.292d-2,  1.027d-1, 5.057d-2 ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [ 0.010694,  0.027332,  0.011494, -0.14294, -0.29705,  4.4996, 0.044849,  0.26221 ]
+    [  4.005d-1,  1.109d-1, 1.362d-2,  7.927d-2, -1.441d-1, 7.608d0 , -2.802d-2, 4.025d-1 ]
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [ -0.16553, -0.037279,  0.010517, -0.66991, -0.78668,  1.0741,  0.08311,  0.10011 ]
+    [ -8.995d-2, -6.702d-2, 7.062d-3, -6.973d-1, -4.271d-1, 8.137d-1,  5.524d-2, 7.413d-2 ]
 #elif defined BIO_VPROFILE_PALAU
-    [  0.66644, -0.11061 , 0.0047956,-0.043324,-0.053875,-0.13164,   0.1098, 0.044095 ]
+    [  5.739d-1, -1.047d-1, 4.408d-3, -6.078d-2, -3.111d-2, 2.040d-1,  1.004d-1, 5.465d-2 ]
 #elif defined BIO_VPROFILE_JAPAN
-    [ 0.080835, -0.074531,  0.010308, -0.08938, -0.57938, 0.66142,  0.14611,  0.10271 ]
+    [ -6.903d-2, -6.035d-2, 6.247d-3, -2.620d-1, -2.924d-1, 2.013d0 ,  2.113d-2, 1.221d-1 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ -2.791d-1, -3.745d-2, 4.330d-3, -4.121d-1, -2.369d-1, 3.209d0 , -9.455d-2, 1.436d-1 ]
 #else
-    [ 0.080835, -0.074531,  0.010308, -0.08938, -0.57938, 0.66142,  0.14611,  0.10271 ]
+    [ -6.903d-2, -6.035d-2, 6.247d-3, -2.620d-1, -2.924d-1, 2.013d0 ,  2.113d-2, 1.221d-1 ]
+#endif
+
+  real(8), parameter :: as(0:5)  = &
+#if defined BIO_VPROFILE_YAEYAMA
+    [ 1.096d-1, -3.178d-2, 2.530d-3, -4.185d-2,  5.948d-3,  6.234d-3 ]
+#elif defined BIO_VPROFILE_SHIZUGAWA
+    [ 1.887d-1, -2.347d-2, 6.930d-3,  2.783d-1,  1.652d-1, -4.782d-2 ]
+#elif defined BIO_VPROFILE_TOKYOBAY
+    [ 7.185d-2, -4.182d-2, 3.981d-3, -1.950d-1, -7.760d-2,  1.183d-2 ]
+#elif defined BIO_VPROFILE_PALAU
+    [ 5.215d-1, -1.011d-1, 6.138d-3,  2.676d-2,  4.451d-2,  1.089d-2 ]
+#elif defined BIO_VPROFILE_JAPAN
+    [ 9.015d-2, -3.022d-2, 2.612d-3,  2.672d-2,  1.036d-2, -2.594d-3 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 1.144d-1, -2.857d-2, 2.109d-3,  1.264d-1,  5.276d-2, -7.881d-3 ]
+#else
+    [ 9.015d-2, -3.022d-2, 2.612d-3,  2.672d-2,  1.036d-2, -2.594d-3 ]
 #endif
 
   real(8) :: Tm20, Sm35, Dp1000
+  real(8) :: PO4_ProfileS
   
   Tm20 = min(T,27.0d0)-20.0d0
   Sm35 = S-35.0d0
@@ -2200,7 +2346,10 @@ contains
 
   PO4_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
                      + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
-  PO4_Profile = max( PO4_Profile, 0.04d0 )
+  PO4_ProfileS= as(0) + as(1)*Tm20 + as(2)*Tm20*Tm20 + as(3)*Sm35 + as(4)*Sm35*Sm35  &
+                      + as(5)*Tm20*Sm35
+  PO4_Profile = max( PO4_Profile, PO4_ProfileS )
+  PO4_Profile = max( PO4_Profile, 0.03d0 )
 
   end function PO4_Profile
 
@@ -2208,6 +2357,7 @@ contains
 !     developed by Shinya AMANO
 
   real(8) function PO4_Profile2( d )
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: d   ! elevation (m) = -depth  
     real(8), parameter :: c_PO4_s=-0.0037d0
@@ -2229,6 +2379,7 @@ contains
 !     TN test
 
   real(8) function PO4_Profile3( SSPO4, SSDO, DO )
+  !$acc routine seq
     implicit none
     real(8), intent(in) :: SSPO4 ! Sea surface PO4 (umol L-1)
     real(8), intent(in) :: SSDO ! Sea Surface DO (umol L-1)
@@ -2246,6 +2397,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function DOC_Profile(T, S, d, m)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -2254,20 +2406,24 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [  62.599,   1.872,  0.048378,  4.6167,  6.7483, -8.4206,  0.37596,-0.30665 ]
+    [ 7.508d1, 1.771d-1, -7.876d-2, -5.447d1 , -5.423d1, -9.065d1,  6.655d-1, -4.560d0  ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [  56.171, 0.91687, -0.019579, -26.166,  -9.841,  -55.44, -0.24788, -3.0331 ]
+    [ 6.443d1, 1.544d0 ,  3.699d-2,  5.138d0 ,  5.104d0, -2.380d1,  4.623d-1, -1.065d0  ] ! BIO_VPROFILE_JAPAN data was used
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [  63.563,  1.0345, -0.012349, -22.643, -14.282, -32.301,-0.026612, -1.7206 ]
+    [ 6.443d1, 1.544d0 ,  3.699d-2,  5.138d0 ,  5.104d0, -2.380d1,  4.623d-1, -1.065d0  ] ! BIO_VPROFILE_JAPAN data was used
 #elif defined BIO_VPROFILE_PALAU
-    [  50.837,   1.889,  0.030908, -10.907, -9.1075,  21.078,  -1.6244, 0.61922 ]
+    [ 5.184d1, 1.846d0 ,  4.738d-2, -1.389d1 , -1.953d1, -3.084d1, -1.121d1 , -2.361d0  ]
 #elif defined BIO_VPROFILE_JAPAN
-    [  64.282,   1.303,  0.008285,  7.5523,  12.042, -33.224, 0.036558, -1.7053 ]
+    [ 6.443d1, 1.544d0 ,  3.699d-2,  5.138d0 ,  5.104d0, -2.380d1,  4.623d-1, -1.065d0  ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 6.268d1, 1.767d0 ,  2.947d-2,  3.806d-2,  3.781d0, -1.878d1, -2.338d-2, -9.997d-1 ]
 #else
-    [  64.282,   1.303,  0.008285,  7.5523,  12.042, -33.224, 0.036558, -1.7053 ]
+    [ 6.443d1, 1.544d0 ,  3.699d-2,  5.138d0 ,  5.104d0, -2.380d1,  4.623d-1, -1.065d0  ]
 #endif
-                                       ! LDOM    RDOM
-  real(8), parameter :: r(2)        = [ 0.42d0, 0.58d0 ]
+                                 ! LDOM    RDOM
+!  real(8), parameter :: r(2)  = [ 0.42d0, 0.58d0 ]
+  real(8), parameter :: r(2)  = [ 0.01d0, 0.99d0 ]
+  real(8), parameter :: RDOC0 = 0.35d0 ! Baseline value of Reflactory DOC (umolC/L) 
 
   real(8) :: Tm20, Sm35, Dp1000
  
@@ -2276,8 +2432,12 @@ contains
   Dp1000 = max(d,0.0d0)*0.001d0
 
   DOC_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
-                     + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
-  DOC_Profile = max( DOC_Profile, 0.0d0 )*r(m)
+                     + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000
+  if ( DOC_Profile > RDOC0 ) then
+    DOC_Profile = RDOC0 + ( DOC_Profile - RDOC0 )*r(m)
+  end if
+  DOC_Profile = min( DOC_Profile, 200.0d0*r(m) )
+  DOC_Profile = max( DOC_Profile, 20.0d0*r(m) )
 
   end function DOC_Profile
 
@@ -2285,38 +2445,24 @@ contains
 !     Based on ?????????????てきとう。要修正 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   real(8) function POC_Profile(T, S, d, m)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
   real(8), intent(in) :: d   ! Depth (m)
   Integer, intent(in) :: m   ! Index of POM category
 
-  real(8), parameter :: a(0:7)  = &
-#if defined BIO_VPROFILE_YAEYAMA
-    [  62.599,   1.872,  0.048378,  4.6167,  6.7483, -8.4206,  0.37596,-0.30665 ]
-#elif defined BIO_VPROFILE_SHIZUGAWA
-    [  56.171, 0.91687, -0.019579, -26.166,  -9.841,  -55.44, -0.24788, -3.0331 ]
-#elif defined BIO_VPROFILE_TOKYOBAY
-    [  63.563,  1.0345, -0.012349, -22.643, -14.282, -32.301,-0.026612, -1.7206 ]
-#elif defined BIO_VPROFILE_PALAU
-    [  50.837,   1.889,  0.030908, -10.907, -9.1075,  21.078,  -1.6244, 0.61922 ]
-#elif defined BIO_VPROFILE_JAPAN
-    [  64.282,   1.303,  0.008285,  7.5523,  12.042, -33.224, 0.036558, -1.7053 ]
-#else
-    [  64.282,   1.303,  0.008285,  7.5523,  12.042, -33.224, 0.036558, -1.7053 ]
-#endif
-                                       ! LPOM    RPOM    CPOM
-  real(8), parameter :: r(3)        = [ 0.42d0, 0.58d0, 0.0d0 ]
+                                 ! LPOM    RPOM    CPOM
+  real(8), parameter :: r(3)  = [ 0.42d0, 0.58d0, 0.0d0 ]
+  real(8), parameter :: RDOC0 = 0.35d0 ! Baseline value of Reflactory DOC (umolC/L) 
 
-  real(8) :: Tm20, Sm35, Dp1000
-  
-  Tm20 = T-20.0d0
-  Sm35 = S-35.0d0
-  Dp1000 = max(d,0.0d0)*0.001d0
+  POC_Profile = PO4_Profile(T, S, d) * 106.0d0/1.0d0  ! C/P ratio = 106 for POM
 
-  POC_Profile = a(0) + a(1)*Tm20 + a(2)*Tm20*Tm20 + a(3)*Sm35 + a(4)*Sm35*Sm35  &
-                     + a(5)*Dp1000 + a(6)*Dp1000*Dp1000 + a(7)*Tm20*Dp1000 
-  POC_Profile = max( POC_Profile, 0.0d0 )*0.1d0*r(m)  ! 10% of DOC
+  if ( POC_Profile > RDOC0 ) then
+    POC_Profile = RDOC0 + ( POC_Profile - RDOC0 )*r(m)
+  end if
+  POC_Profile = min( POC_Profile, 200.0d0*r(m) )*0.1d0  ! 10% of DOC
+  POC_Profile = max( POC_Profile, 0.0d0 )
 
   end function POC_Profile
 
@@ -2324,6 +2470,7 @@ contains
 !     Based on GLODAPv2.2022
 
   real(8) function d13C_DIC_Profile(T, S, d)
+  !$acc routine seq
   implicit none
   real(8), intent(in) :: T   ! Potential temperatureture (oC)
   real(8), intent(in) :: S   ! Salinity (PSU)
@@ -2331,17 +2478,19 @@ contains
 
   real(8), parameter :: a(0:7)  = &
 #if defined BIO_VPROFILE_YAEYAMA
-    [  0.96915, 0.056565, -0.0033155,  0.14265, 0.30931,-0.22066, -0.063338, -0.0452   ]
+    [ 5.945d-1, 8.812d-2, -8.214d-4, -2.949d-1,  1.242d-1,  3.770d-1, -2.554d-1, -2.798d-2 ]
 #elif defined BIO_VPROFILE_SHIZUGAWA
-    [  1.3615, 0.0041151, -0.0076296,   0.8062, 0.92911, -1.0461, -0.084518, -0.096642 ]
+    [ 9.557d-1, 5.620d-2, -1.996d-3,  3.414d-1,  3.810d-1, -2.912d-1, -3.516d-2, -3.689d-2 ] ! BIO_VPROFILE_JAPAN data was used
 #elif defined BIO_VPROFILE_TOKYOBAY
-    [ 0.99782, 0.053674 , -0.0040557,-0.068709,  0.2929, -0.4597, -0.051394, -0.055209 ]
+    [ 7.723d-1, 8.465d-2,  3.162d-3, -6.280d-1, -4.075d-1,  4.817d-1,  1.297d0 ,  1.647d-1 ]
 #elif defined BIO_VPROFILE_PALAU
-    [ 0.71132, 0.074679 ,   0.002164, 0.075444,-0.0042372, 0.44914, 0.028641, 0.028598 ]
+    [ 5.945d-1, 8.812d-2, -8.214d-4, -2.949d-1,  1.242d-1,  3.770d-1, -2.554d-1, -2.798d-2 ] ! BIO_VPROFILE_YAEYAMA data was used
 #elif defined BIO_VPROFILE_JAPAN
-    [ 0.91762,  0.075141, -0.002297, -0.14969,  0.035444, 0.37965,-0.049614,-0.0097213 ]
+    [ 9.557d-1, 5.620d-2, -1.996d-3,  3.414d-1,  3.810d-1, -2.912d-1, -3.516d-2, -3.689d-2 ]
+#elif defined BIO_VPROFILE_SOUTH_JAPAN
+    [ 9.531d-1, 4.960d-2, -3.153d-3,  4.418d-1,  6.432d-1, -6.239d-1, -6.162d-2, -6.516d-2 ]
 #else
-    [ 0.91762,  0.075141, -0.002297, -0.14969,  0.035444, 0.37965,-0.049614,-0.0097213 ]
+    [ 9.557d-1, 5.620d-2, -1.996d-3,  3.414d-1,  3.810d-1, -2.912d-1, -3.516d-2, -3.689d-2 ]
 #endif
 
   real(8) :: Tm20, Sm35, Dp1000
