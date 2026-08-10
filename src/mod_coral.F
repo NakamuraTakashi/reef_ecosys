@@ -1132,7 +1132,7 @@ CONTAINS
 !
     DO m=1,Ndom
       F_Cmucus(m) = ForgC(n,m)  !!!! constant value is assumed
-      Flux_DOC(:,m) = -F_Cmucus(m) *rQC(:)
+      Flux_DOC(:,m) = -F_Cmucus(m) *rQCe(:)
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
       F_QCe(:)  = F_QCe(:) - Flux_DOC(:,m)
 #  if defined CORAL_NUTRIENTS
