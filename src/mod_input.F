@@ -841,8 +841,8 @@ contains
 !      swrad=light_and_dark4(time, 105.0d0, 3.0d0/24.0d0)   !light and dark method 1 hour interval
       swrad=light_and_dark4(time, 0.0d0, 3.0d0/24.0d0)   !light and dark method 1 hour interval
 #elif defined ANA_SWRAD_ZILLMAN
-!      swrad=short_radi(time, 0.0d0, 1.0d0, 24.0d0, 25.0d0, 50.0d0, 1) !shortwave radiation by Zillman equation
-      swrad=short_radi(time, 0.0d0, 77.0d0, 24.0d0, 27.0d0, 50.0d0, 2) !shortwave radiation around 3/21 by Zillman equation
+      swrad=short_radi(time, 0.0d0, 1.0d0, 24.0d0, 25.0d0, 50.0d0, 1) !shortwave radiation by Zillman equation
+!      swrad=short_radi(time, 0.0d0, 77.0d0, 24.0d0, 27.0d0, 50.0d0, 2) !shortwave radiation around 3/21 by Zillman equation
 !      swrad=short_radi(time, 0.0d0, 77.0d0, 24.0d0, 27.0d0, 50.0d0, 2)*0.25d0 !shortwave radiation around 3/21 by Zillman equation
 !      swrad=short_radi(time, 0.0d0, 77.0d0, 24.0d0, 27.0d0, 50.0d0, 2)*0.5d0 !shortwave radiation around 3/21 by Zillman equation
 #endif    

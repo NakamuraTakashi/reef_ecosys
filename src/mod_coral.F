@@ -250,13 +250,13 @@ CONTAINS
 
 # if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE
             CORAL(ng)%QCe   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -17.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -14.d0, R13C_VPDB )
             CORAL(ng)%QCv   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -17.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -14.d0, R13C_VPDB )
             CORAL(ng)%QCr   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -17.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -14.d0, R13C_VPDB )
             CORAL(ng)%QCh   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -17.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -14.d0, R13C_VPDB )
             CORAL(ng)%DICcoe(iC13,n,i,j)   &
                       = Ci_from_Ct_delta( CORAL(ng)%DICcoe(iCt,n,i,j),  0.0d0, R13C_VPDB )
             CORAL(ng)%DICcal(iC13,n,i,j)   &
@@ -579,22 +579,31 @@ CONTAINS
     real(8), parameter :: Eact(2)   = [ 5.117d4, 5.117d4 ] !Activation energy (J mol-1)) *Tuned
 
 ! ---- OC turnover ---------------------
-    real(8), parameter :: C_dec(2) = [ 0.02d0, 0.02d0 ] ! (nmol cm-2 s-1) ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
-    real(8), parameter :: p2r = 0.5d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
-    real(8), parameter :: Ebs = 5.29d5   ! (J molC-1), Energy content of reserves (Ren & Schiel, 2008)
+!    real(8), parameter :: C_dec(2) = [ 0.02d0, 0.02d0 ] ! (nmol cm-2 s-1) ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
+!   k_decay: Tissue decay rate constant (s-1)
+!    ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
+!    k_decay ~ 0.1/QCv ~ 0.1/(290*1d3) ~ 3.4d-7 (s-1)
+    real(8), parameter :: k_decay(2) = [ 3.4d-7, 3.4d-7 ] ! (s-1)
+    real(8), parameter :: p2r = 0.25d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
+!    real(8), parameter :: Ebs = 5.29d5   ! (J molC-1), Energy content of reserves (Ren & Schiel, 2008)
+!  C6H12O6 + 6 O2 + 30 ADP + 30 Pi -> 6 CO2 + 6 H2O + 30 ATP
+!  ATP + H2O -> ADP + Pi  dG=-7.3kcal/mol=-30.5kJ/mol
+    real(8), parameter :: E_rsp = 30.5d3 * 30.0d0/6.0d0   ! J/molC; Energy produced by respiration 
+    real(8), parameter :: E_bio = p2r * E_rsp  ! = 38125 J/molC; ATP energy required for 1 molC biosynthesis. (p2r=0.25)
 
 !----- for calcification ------------------------
 
 !    real(8), parameter :: eeff(2)  = [ 0.12d0, 0.12d0 ]   !!! 0.01d0** !0.3d0*!Energy efficency of calcification (<12%, 4~7%?; Lervik et al., 2012)
-    real(8), parameter :: eeff(2)  = [ 0.8d0, 0.8d0 ]   !!! 100% Energy efficency (Trevorroe and Haynes, 1983)
+!    real(8), parameter :: eeff(2)  = [ 0.8d0, 0.8d0 ]   !!! 100% Energy efficency (Trevorroe and Haynes, 1983)
+    real(8), parameter :: eeff(2)  = [ 0.3d0, 0.12d0 ]   !!! 30% energy efficiency, which is representative of ~12% energy efficiency (Lervik et al., 2012) considering F_pp leakages.
 !    real(8), parameter :: E_m(2)=[ 2.0d4, 2.0d4 ]   !!! 1.0d4** ! 5.0d3* Energy flux for maintenance (nJ cm-2 s-1)
     real(8) :: E_m
 
-    real(8), parameter :: k_CO2i(2) =[ 1.0d-4, 1.5d-3 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
+    real(8), parameter :: k_CO2i(2) =[ 1.0d-4, 1.0d-4 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
     real(8), parameter :: k_TA(2)   =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of TA through the leak pass (cm s-1) *Tuned
     real(8), parameter :: k_DIC(2)  =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of DIC through the leak pass (cm s-1) *Tuned
 
-    real(8), parameter :: c2g(2) = [ 6.6d0, 6.6d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension)!!!!!!!! Tuning parameter
+    real(8), parameter :: c2g(2) = [ 3.0d0, 3.0d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension)!!!!!!!! Tuning parameter
 
 # if defined CORAL_MUCUS
     !                  ForgC(Ncl,Ndom)      Coral1        Coral2     
@@ -608,6 +617,12 @@ CONTAINS
     !   1 mmol m-2 d-1 = 100/24/60/60/P2R(n) nmol cm-2 s-1 ~ 1.16d-3/P2R(n),
     !   Thus: 200*1.16d-3/P2R =  0.232/P2R nmol cm-2 s-1 for inner reef corals
     !!!       -63*1.16d-3/P2R = -0.073/P2R nmol cm-2 s-1 for reef slope corals  ****** To Be Confirmed
+
+    !            k_mucus(Ncl,Ndom)    Coral1   Coral2 
+    real(8), parameter :: k_mucus(2,2)  = reshape(                          &
+                                     [ 1.0d-7, 1.0d-7    & ! LDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned
+                                     , 1.0d-8, 1.0d-8 ]  & ! RDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned
+                                     , [2,2] ) !
 # endif
 # if defined CORAL_INGESTION
     real(8), parameter :: r_assim = 0.1d0 ! Assimilation ratio with ingesting zooplankton
@@ -729,12 +744,23 @@ CONTAINS
 !     Temperature related factor
     real(8) :: f_temp
     real(8) :: f_min
+!----- for respiration -------------------
+    real(8) :: QCe_tmp, DOcoe_tmp
 !----- for calcification ------------------------
     real(8) :: E_tot,E_ca,F_H
     real(8) :: E_rq_H_transport
     real(8) :: E_g  !!! Energy flux for growth (nJ cm-2 s-1)
+    real(8) :: E_req  !!! Energy flux required for repair and growth (nJ cm-2 s-1)
     real(8) :: Fpm_CO2(N_Csp),Fpp_TA,Fpp_DIC(N_Csp)
 !    real(8) :: Fpp_CO2,Fpp_HCO3,Fpp_CO3
+    real(8), save :: E0_cal(Ncl) = 0.d0 ! Eneryg required for 1 mol CaCO3 production (J molC-1)
+
+!----- for tissue decay ------------------------
+    real(8) :: F_Cdec
+# if defined CORAL_NUTRIENTS
+    real(8) :: F_Ndec
+    real(8) :: F_Pdec
+# endif
 
 !----- for nutrients dynamics -------------------
 
@@ -762,28 +788,28 @@ CONTAINS
 # endif
 
 # if defined CORAL_MUCUS
-    real(8) :: F_Cmucus(N_Csp)
+    real(8) :: F_Cmucus
 #  if defined CORAL_NUTRIENTS
-    real(8) :: F_Nmucus(N_Nsp)
-    real(8) :: F_Pmucus(N_Psp)
+    real(8) :: F_Nmucus
+    real(8) :: F_Pmucus
 #  endif
 # endif
 # if defined CORAL_INGESTION
-    real(8) :: F_Cingest(N_Csp)
+    real(8) :: F_Cingest
 #  if defined CORAL_NUTRIENTS
-    real(8) :: F_Ningest(N_Nsp)
-    real(8) :: F_Pingest(N_Psp)
+    real(8) :: F_Ningest
+    real(8) :: F_Pingest
 #  endif
 # endif
-    real(8) :: F_Cgrowth(N_Csp)
+    real(8) :: F_Crepair, F_Cgrowth
 # if defined CORAL_SIZE_DYNAMICS
 
     real(8) :: netCgrowth
     real(8) :: g2c_tmp   ! (net growth rate)/(calcification rate)
     real(8) :: mort_es
 #  if defined CORAL_NUTRIENTS
-    real(8) :: F_Ngrowth(N_Nsp)
-    real(8) :: F_Pgrowth(N_Psp)
+    real(8) :: F_Nrepair, F_Ngrowth
+    real(8) :: F_Prepair, F_Pgrowth
 #  endif
 # endif
 
@@ -983,7 +1009,7 @@ CONTAINS
 #  endif
 #  if defined CORAL_TESTMODE
 !--------- CO2 system in ambient seawater ------------------- !! for output
-    pHamb        = pH_fromATCT(TAamb,DICamb(iCt)/1.024d0,TKamb, Samb)
+    pHamb        = pH_fromATCT(TAamb/1.024d0,DICamb(iCt)/1.024d0,TKamb, Samb)
     CO2amb (iCt) = cCO2aq_fromCTpH(DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
     HCO3amb(iCt) = cHCO3_fromCTpH (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
     CO3amb (iCt) = cCO3_fromCTpH  (DICamb(iCt)/1.024d0,pHamb,TKamb, Samb) ! umol/kg
@@ -1004,7 +1030,7 @@ CONTAINS
       rDICcal(isp) = Iso_ratio( CORAL(ng)%DICcal(isp,n,i,j), CORAL(ng)%DICcal(iCt,n,i,j) ) !DIC in calcifying fluid
       rCO2cal(isp) = Iso_ratio( CORAL(ng)%CO2cal(isp,n,i,j), CORAL(ng)%CO2cal(iCt,n,i,j) )
       rDICcoe(isp) = Iso_ratio( CORAL(ng)%DICcoe(isp,n,i,j), CORAL(ng)%DICcoe(iCt,n,i,j) ) !DIC in coelenteron
-      rCO2coe(isp) = Iso_ratio( CORAL(ng)%CO2cal(isp,n,i,j), CORAL(ng)%CO2cal(iCt,n,i,j) )
+      rCO2coe(isp) = Iso_ratio( CORAL(ng)%CO2coe(isp,n,i,j), CORAL(ng)%CO2coe(iCt,n,i,j) )
       rDICamb(isp) = Iso_ratio( DICamb(isp), DICamb(iCt) )!!!!!  DIC in ambient seawater  
       rCO2amb(isp) = Iso_ratio( CO2amb(isp), CO2amb(iCt) )
 !      rHCO3cal(isp) = Iso_ratio( cH13CO3cal(isp), HCO3cal(isp) )  !!!!!!!!!!!!!????????
@@ -1132,18 +1158,19 @@ CONTAINS
 # if defined CORAL_MUCUS
 !
     DO m=1,Ndom
-      F_Cmucus(m) = ForgC(n,m)  !!!! constant value is assumed
-      Flux_DOC(:,m) = -F_Cmucus(m) *rQCe(:)
+!      F_Cmucus = ForgC(n,m)  !!!! constant value is assumed
+      F_Cmucus = k_mucus(n,m) * CORAL(ng)%QCe(iCt,n,i,j)*1.d3
+      Flux_DOC(:,m) = Flux_DOC(:,m) - F_Cmucus *rQCe(:) ! Ocean to coral is positive, coral to ocean is negative
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-      F_QCe(:)  = F_QCe(:) - Flux_DOC(:,m)
+      F_QCe(:)  = F_QCe(:) - F_Cmucus *rQCe(:)
 #  if defined CORAL_NUTRIENTS
-      F_Nmucus(m) = ???
-      F_Pmucus(m) = ???
-      Flux_DON(:,m) = -F_Nmucus(m) *rQN(:)
-      Flux_DOP(:,m) = -F_Pmucus(m) *rQP(:)
+      F_Nmucus = k_mucus(n,m) * CORAL(ng)%QNe(iNt,n,i,j)*1.d3
+      F_Pmucus = k_mucus(n,m) * CORAL(ng)%QPe(iPt,n,i,j)*1.d3
+      Flux_DON(:,m) = Flux_DON(:,m) - F_Nmucus *rQN(:)
+      Flux_DOP(:,m) = Flux_DOP(:,m) - F_Pmucus *rQP(:)
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-      F_QNe(:)  = F_QNe(:) - Flux_DON(:,m)
-      F_QPe(:)  = F_QPe(:) - Flux_DOP(:,m)
+      F_QNe(:)  = F_QNe(:) - F_Nmucus *rQN(:)
+      F_QPe(:)  = F_QPe(:) - F_Pmucus *rQP(:)
 #  endif
     END DO
 # endif
@@ -1153,17 +1180,17 @@ CONTAINS
 !
     DO m=1,Nzoo
       Flux_ZooC(:,m) = Si_ZOO * ZooC(:,m) *rZooC(:,m)
-      Flux_POC(:,iLPOM)  = Flux_ZooC(:,m)*(1.0d0 - r_assim) *0.9d0
-      Flux_POC(:,iRPOM)  = Flux_ZooC(:,m)*(1.0d0 - r_assim) *0.1d0
+      Flux_POC(:,iLPOM) = Flux_POC(:,iLPOM) + Flux_ZooC(:,m)*(1.0d0 - r_assim) *0.9d0
+      Flux_POC(:,iRPOM) = Flux_POC(:,iRPOM) + Flux_ZooC(:,m)*(1.0d0 - r_assim) *0.1d0
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
       F_QCe(:)  = F_QCe(:) + Flux_ZooC(:,m) * r_assim
 #  if defined CORAL_NUTRIENTS
       Flux_ZooN(:) = Si_ZOO * ZooN(:)
-      Flux_PON(:,iLPOM)  = Flux_ZooN(:,m)*(1.0d0 - r_assim) *0.9d0
-      Flux_PON(:,iRPOM)  = Flux_ZooN(:,m)*(1.0d0 - r_assim) *0.1d0
+      Flux_PON(:,iLPOM)  = Flux_PON(:,iLPOM) + Flux_ZooN(:,m)*(1.0d0 - r_assim) *0.9d0
+      Flux_PON(:,iRPOM)  = Flux_PON(:,iRPOM) + Flux_ZooN(:,m)*(1.0d0 - r_assim) *0.1d0
       Flux_ZooP(:) = Si_ZOO * ZooP(:)
-      Flux_POP(:,iLPOM)  = Flux_ZooP(:,m)*(1.0d0 - r_assim) *0.9d0
-      Flux_POP(:,iRPOM)  = Flux_ZooP(:,m)*(1.0d0 - r_assim) *0.1d0
+      Flux_POP(:,iLPOM)  = Flux_POP(:,iLPOM) + Flux_ZooP(:,m)*(1.0d0 - r_assim) *0.9d0
+      Flux_POP(:,iRPOM)  = Flux_POP(:,iRPOM) + Flux_ZooP(:,m)*(1.0d0 - r_assim) *0.1d0
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
       F_QNe(:)  = F_QNe(:) + Flux_ZooN(:,m) * r_assim
       F_QPe(:)  = F_QPe(:) + Flux_ZooP(:,m) * r_assim
@@ -1274,6 +1301,37 @@ CONTAINS
 # endif
 
 !======================================================================
+!     Tissue decay rate (nmol cm-2 s-1)
+!======================================================================
+
+!  Tissue decay rate (nmol cm-2 s-1)
+!   Temperature dependent decay term
+    f_temp=1.d0
+!    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
+
+!   QCv: Coral tissue carbon content (umolC cm-2)
+!   k_decay: Tissue decay rate constant (s-1)
+    F_Cdec = k_decay(n) * f_temp * CORAL(ng)%QCv(iCt,n,i,j)*1.d3 ! umolC cm-2 -> nmolC cm-2
+
+!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
+    F_QCv(:)    = F_QCv(:)    - F_Cdec *rQCv(:)
+    Flux_POC(:,iLPOM) = Flux_POC(:,iLPOM) - F_Cdec *rQCv(:)*0.9d0
+    Flux_POC(:,iRPOM) = Flux_POC(:,iRPOM) - F_Cdec *rQCv(:)*0.1d0
+
+# if defined CORAL_NUTRIENTS
+    F_Ndec = k_decay(n) * f_temp * CORAL(ng)%QNv(iNt,n,i,j)*1.d3 ! umolN cm-2 -> nmolN cm-2
+    F_Pdec = k_decay(n) * f_temp * CORAL(ng)%QPv(iPt,n,i,j)*1.d3 ! umolP cm-2 -> nmolP cm-2
+!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
+    F_QNv(:)    = F_QNv(:)    - F_Ndec *rQNv(:)
+    F_QPv(:)    = F_QPv(:)    - F_Pdec *rQPv(:)
+    Flux_PON(:,iLPOM) = Flux_PON(:,iLPOM) - F_Ndec *rQNv(:)*0.9d0
+    Flux_PON(:,iRPOM) = Flux_PON(:,iRPOM) - F_Ndec *rQNv(:)*0.1d0
+    Flux_POP(:,iLPOM) = Flux_POP(:,iLPOM) - F_Pdec *rQPv(:)*0.9d0
+    Flux_POP(:,iRPOM) = Flux_POP(:,iRPOM) - F_Pdec *rQPv(:)*0.1d0
+# endif
+
+
+!======================================================================
 !     Respilation rate (nmol cm-2 s-1)
 !======================================================================
 
@@ -1282,9 +1340,10 @@ CONTAINS
 !    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
 !    Rc = Rmax(n) * f_temp * CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j))   &
 !               * CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j))
-
-    f_min = min( CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j)),                      &
-                 CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j)) )  !  Michaelis-Menten equation
+    QCe_tmp   = max(CORAL(ng)%QCe(iCt,n,i,j), 0.0d0) !! Error handling
+    DOcoe_tmp = max(CORAL(ng)%DOcoe(n,i,j),   0.0d0) !! Error handling
+    f_min = min( QCe_tmp/(K_QC(n)+QCe_tmp),                      &
+                 DOcoe_tmp/(K_DO(n)+DOcoe_tmp) )  !  Michaelis-Menten equation
 !
     Rc = Rmax(n) * f_temp * f_min
 
@@ -1306,54 +1365,56 @@ CONTAINS
 !     Allocaion of energy produced by respiration (nJ cm-2 s-1)
 !======================================================================
 
-!   energy Flux (nJ cm-2 s-1) partition
+!   Total energy Flux supplied by respiration (nJ cm-2 s-1) 
 
-!  C6H12O6 + 6 O2 + 30 ADP + 30 Pi -> 6 CO2 + 6 H2O + 30 ATP
-!  ATP + H2O -> ADP + Pi  dG=-7.3kcal/mol=-30.5kJ/mol
+    E_tot = E_rsp * Rc  !nJ cm-2 s-1
 
-    E_tot=30.5d3 * 30.0d0/6.0d0 * Rc  !nJ cm-2 s-1
+!  Required energy for tissue repair and growth (nJ cm-2 s-1) 
+!    F_Cdec: tissue decay rate (nmol cm-2 s-1)
+!    G: calciification rate (nmol CaCO3 cm-2 s-1)
+!    c2g: (calcification rate)/(net tissue growth rate) (no dimension)
+!    E_bio: energy required for 1 molC biosynthesis (nJ mol-1)
+!        
+    E_req = ( F_Cdec + CORAL(ng)%G(n,i,j)/c2g(n) ) * E_bio ! nJ cm-2 s-1
 
-!  C6H12O6 + 6 O2 -> 6 CO2 + 6 H2O  dG=-2850 kJ/mol (dG=-475 kJ/molC)
-!    E_tot= 475.0d3 * Rc  !nJ cm-2 s-1
+!  Energy flux for biosynthesis (nJ cm-2 s-1)
+    E_g  = min( E_req, E_tot )
 
-    E_m = C_dec(n)*Ebs
-
-!  Energy for 1 mol H+ transport from coe. to cal.: E_rq_H_transport                        
-    E_rq_H_transport = (2.3d0*8.31d0*(Tamb+273.15d0)                &
-                       *max((pHcal-pHcoe)+0.01d0, 0.01d0)) / eeff(n)
-!  Minimum energy for Ca2+ transport. ATP:Ca2+:H+ = 1:2:4
-    E_rq_H_transport = max(E_rq_H_transport, 7.625d3) ! 30.5d3 J/mol /4.0d0 = 7.625d0 J/mol
-
-    if (E_tot > E_m ) then
-# if defined CORAL_SIZE_DYNAMICS
-      netCgrowth = ( CORAL(ng)%growth(n,i,j)-CORAL(ng)%mort(n,i,j) )  &
-                   *CORAL(ng)%QCv(iCt,n,i,j)*1.0d3    ! growth rate (nmol cm-2 s-1)=(cm2 cm-2 s-1)*(umol cm-2)*1.d3
-      g2c_tmp = netCgrowth/CORAL(ng)%G(n,i,j)
-      E_g = (E_tot - E_m)*g2c_tmp
-      E_ca = E_tot - E_m - E_g
-# else
-!      E_ca = E_tot-E_m
-!    Energy for 1 mol CaCO3 production:           2*E_rq_H_transport                        
-!    Energy for 1 mol proton (tisuue) production: Ebs
-      E_ca = (E_tot-E_m) !* 2.0d0*E_rq_H_transport*c2g(n)/(2.0d0*E_rq_H_transport*c2g(n) + Ebs)
-      E_g  = E_tot - E_m - E_ca
-
-# endif
-    else
-      E_ca = 0.0d0
-      E_g  = 0.0d0
-# if defined CORAL_SIZE_DYNAMICS
-      mort_es = km_es(n)*( E_m - E_tot ) ! Mortality due to energy shortage
-# endif
-    endif
+!  Energy flux for CaCO3 production (nJ cm-2 s-1)
+    E_ca = max( 0.0d0, E_tot - E_req )
 
 !======================================================================
 !     Mass fluxes related to growth (nmol cm-2 s-1)
 !======================================================================
 
-    F_Cgrowth(iCt) = E_g/Ebs
+    F_Crepair = F_Cdec
+    F_Cgrowth = max( 0.0d0, ( E_g - F_Cdec*E_bio )/E_bio )
+
+!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
+    F_QCe(:) = F_QCe(:) - F_Crepair*rQCe(:)
+    F_QCv(:) = F_QCv(:) + F_Crepair*rQCe(:)
+    F_QCe(:) = F_QCe(:) - F_Cgrowth*rQCe(:)
+
+# if defined CORAL_NUTRIENTS
+    F_Nrepair = F_Ndec
+    F_Ngrowth = max( 0.0d0, ( E_g - F_Ndec*E_bio )/E_bio )
+    F_Prepair = F_Pdec
+    F_Pgrowth = max( 0.0d0, ( E_g - F_Pdec*E_bio )/E_bio )
+
+!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
+    F_QNe(:) = F_QNe(:) - F_Nrepair*rQNe(:)
+    F_QNv(:) = F_QNv(:) + F_Nrepair*rQNe(:)
+    F_QNe(:) = F_QNe(:) - F_Ngrowth*rQNe(:)
+    F_QPe(:) = F_QPe(:) - F_Prepair*rQPe(:)
+    F_QPv(:) = F_QPv(:) + F_Prepair*rQPe(:)
+    F_QPe(:) = F_QPe(:) - F_Pgrowth*rQPe(:)
+# endif
 
 # if defined CORAL_SIZE_DYNAMICS
+    netCgrowth = ( CORAL(ng)%growth(n,i,j)-CORAL(ng)%mort(n,i,j) )  &
+                   *CORAL(ng)%QCv(iCt,n,i,j)*1.0d3    ! growth rate (nmol cm-2 s-1)=(cm2 cm-2 s-1)*(umol cm-2)*1.d3
+    g2c_tmp = netCgrowth/CORAL(ng)%G(n,i,j)
+    mort_es = km_es(n)*( E_m - E_tot ) ! Mortality due to energy shortage
 !
 !---------- Coral growth (nmol cm-2 s-1) ------------
 !
@@ -1405,18 +1466,18 @@ CONTAINS
 #  endif
 # endif
 
-!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-    F_QCe(:) = F_QCe(:) - F_Cgrowth(iCt)*rQCe(:)
-# if defined CORAL_NUTRIENTS
-    F_QNe(:) = F_QNe(:) - F_Ngrowth(iNt)*rQNe(:)
-    F_QPe(:) = F_QPe(:) - F_Pgrowth(iPt)*rQPe(:)
-# endif
 
 
 !======================================================================
 !     H+ flux through Ca2+ ATPase  (nmol cm-2 s-1)
 !     (TA flux from coelenteron to calcifying fluid (nmol cm-2 s-1) )
 !======================================================================
+
+!  Energy for 1 mol H+ transport from coe. to cal.: E_rq_H_transport                        
+    E_rq_H_transport = (2.3d0*8.31d0*(Tamb+273.15d0)                &
+                       *max((pHcal-pHcoe)+0.01d0, 0.01d0)) / eeff(n)
+!  Minimum energy for Ca2+ transport. ATP:Ca2+:H+ = 1:2:4
+    E_rq_H_transport = max(E_rq_H_transport, 7.625d3) ! 30.5d3 J/mol /4.0d0 = 7.625d0 J/mol
 
 !  H+ flux (nmol cm-2 s-1)
     F_H = E_ca / E_rq_H_transport
@@ -1614,6 +1675,22 @@ CONTAINS
     d11Barg = d11B_BOH4_frompHd11BT(pHcal, 39.5d0, TKamb, Samb)
 #  endif
 
+! Coral record calculation section
+!   Must precede the print sections below, which output d13C_arg (and d11Barg)
+!   as assigned here. With the accumulation placed after the prints, d13C_arg
+!   was undefined on the first call and one substep stale on later ones.
+
+    S_PFD_dt(n)  = S_PFD_dt(n)+PFD*dt
+    S_Gn_dt(:,n) = S_Gn_dt(:,n)+CORAL(ng)%G (n,i,j)*aC_calc(1:N_Csp)*rDICcal(:) *dt
+    S_Pg_dt(n)   = S_Pg_dt(n)+CORAL(ng)%Pg(n,i,j)*dt
+    S_R_dt(n)    = S_R_dt(n) +CORAL(ng)%R(n,i,j) *dt
+#  if defined CARBON_ISOTOPE
+    d13C_arg = delta_from_Ci_Ct( S_Gn_dt(iC13,n), S_Gn_dt(iCt,n), R13C_VPDB)
+#  endif
+#  if defined CORAL_BORON_ISOTOPE
+    S_d11BargxGn_dt(n)=S_d11BargxGn_dt(n)+d11Barg*CORAL(ng)%G (n,i,j)*dt
+#  endif
+
     IF( date*86400.0d0 >= dsec(n) ) THEN
       if(dsec(n) == 0.0d0) then
         dsec(n)=date*86400.0d0+CORAL_OUTPUT_INTERVAL*60.0d0
@@ -1644,9 +1721,9 @@ CONTAINS
           ,'ZOOuptake'                                          &
 # endif
 # if defined CORAL_SIZE_DYNAMICS
-          ,'growth','mort','Damage','F_Cgrowth'                 &
+          ,'growth','mort','Damage'                             &
 # endif
-          ,'E_ca','F_Cgrowth','Si_DIC','Si_DO', 'F_H'
+          ,'E_ca','F_Cgrowth','F_Crepair','Si_DIC','Si_DO', 'F_H'
 
       else
         dsec(n)=dsec(n)+CORAL_OUTPUT_INTERVAL*60.0d0
@@ -1682,24 +1759,10 @@ CONTAINS
        , Flux_ZooC(iCt,:)                                                        &
 #  endif
 #  if defined CORAL_SIZE_DYNAMICS
-       , CORAL(ng)%growth(n,i,j), CORAL(ng)%mort(n,i,j)                          &
-       , Damage,F_Cgrowth(iCt)                                                   &
+       , CORAL(ng)%growth(n,i,j), CORAL(ng)%mort(n,i,j) , Damage                 &
 #  endif
-       , E_ca, F_Cgrowth(iCt), Si_DIC(iCt), Si_DO, F_H
+       , E_ca, F_Cgrowth, F_Crepair, Si_DIC(iCt), Si_DO, F_H
     END IF
-
-! Coral record calculation section
-
-    S_PFD_dt(n)  = S_PFD_dt(n)+PFD*dt
-    S_Gn_dt(:,n) = S_Gn_dt(:,n)+CORAL(ng)%G (n,i,j)*aC_calc(1:N_Csp)*rDICcal(:) *dt
-    S_Pg_dt(n)   = S_Pg_dt(n)+CORAL(ng)%Pg(n,i,j)*dt
-    S_R_dt(n)    = S_R_dt(n) +CORAL(ng)%R(n,i,j) *dt
-#  if defined CARBON_ISOTOPE
-    d13C_arg = delta_from_Ci_Ct( S_Gn_dt(iC13,n), S_Gn_dt(iCt,n), R13C_VPDB)
-#  endif
-#  if defined CORAL_BORON_ISOTOPE
-    S_d11BargxGn_dt(n)=S_d11BargxGn_dt(n)+d11Barg*CORAL(ng)%G (n,i,j)*dt
-#  endif
 
 !    IF(mod(int(date*86400.0d0), int(CORAL_AVERAGE_INTERVAL*86400.0d0))==0) THEN
     IF( date >= dday(n) ) THEN   
@@ -1892,7 +1955,7 @@ CONTAINS
     real(8), parameter :: K_zQCe = 50.0d0   ! (pmolC cell-1) (Asssumed)
     real(8), parameter :: K_DO   = 5.d0    ! ca. 10 (umolO2 L-1) Shick et al. (1990) *Tuned value
 
-    real(8), parameter :: p2r   = 0.5d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
+    real(8), parameter :: p2r   = 0.25d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
     real(8), parameter :: C_dec = 1.0d-6   ! (pmol cell-1 s-1) Decay rate 
 
 !----- C translocation constants ---------------------------

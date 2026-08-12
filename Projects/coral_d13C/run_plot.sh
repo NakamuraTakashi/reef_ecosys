@@ -5,48 +5,11 @@
 #   ZOOM_START : first day of that window.  Empty = middle of the run,
 #                taken from Tmax in coral_01.in.
 #   Both can be overridden from the shell, e.g.
-#       ZOOM_START=180 ZOOM_DAYS=5 ./run_win.sh
+#       ZOOM_START=180 ZOOM_DAYS=5 ./run_plot.sh
 #ZOOM_DAYS=${ZOOM_DAYS:-3}
 #ZOOM_START=${ZOOM_START:-}
 ZOOM_DAYS=5
-ZOOM_START=180
-
-#
-rm *.exe
-#
-SRC_DIR=../../src
-INCLUDE="-I${PWD}"
-FFLAGS="-fbounds-check -ffree-form -O3"
-#FFLAGS="-fbounds-check -ffree-form -O0 -g -fcheck=array-temps,bounds,do,mem,pointer,recursion"
-
-gfortran ${FFLAGS} \
-  ${SRC_DIR}/mod_calendar.f90 \
-  ${SRC_DIR}/mod_geochem.F  \
-  ${SRC_DIR}/mod_reef_ecosys_param.F \
-  ${SRC_DIR}/mod_aquaculture.F \
-  ${SRC_DIR}/mod_param.F \
-  ${SRC_DIR}/mod_reef_flow.F \
-  ${SRC_DIR}/mod_heat.F \
-  ${SRC_DIR}/mod_decomposition.F \
-  ${SRC_DIR}/mod_foodweb.F \
-  ${SRC_DIR}/mod_sedecosys.F \
-  ${SRC_DIR}/mod_deb_model.F \
-  ${SRC_DIR}/mod_bivalve.F \
-  ${SRC_DIR}/mod_coral.F \
-  ${SRC_DIR}/mod_macroalgae.F \
-  ${SRC_DIR}/mod_seagrass.F \
-  ${SRC_DIR}/mod_reef_ecosys.F \
-  ${SRC_DIR}/mod_input.F \
-  ${SRC_DIR}/mod_output.F \
-  ${SRC_DIR}/main.F \
-  ${INCLUDE} -I/usr/include -L/usr/lib -lnetcdff \
-  -o ecosys_test.exe
-
-rm *.mod
-#
-mkdir -p output01
-#
-./ecosys_test.exe < coral_01.in
+ZOOM_START=50
 #
 # Plot time series CSV files (full period)
 uv run ../../postproc/python/plot_csv_timeseries.py -o output01 -p output01/plots
