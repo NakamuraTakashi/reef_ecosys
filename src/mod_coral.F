@@ -257,13 +257,13 @@ CONTAINS
 
 # if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE
             CORAL(ng)%QCe   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -14.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -16.5d0, R13C_VPDB )
             CORAL(ng)%QCv   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -14.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -16.5d0, R13C_VPDB )
             CORAL(ng)%QCr   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -14.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -16.5d0, R13C_VPDB )
             CORAL(ng)%QCh   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -14.d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -16.5d0, R13C_VPDB )
             CORAL(ng)%DICcoe(iC13,n,i,j)   &
                       = Ci_from_Ct_delta( CORAL(ng)%DICcoe(iCt,n,i,j),  0.0d0, R13C_VPDB )
             CORAL(ng)%DICcal(iC13,n,i,j)   &
@@ -476,6 +476,7 @@ CONTAINS
 
     USE mod_reef_ecosys_param
     USE mod_geochem
+    USE mod_deb_model
     
     implicit none
 
@@ -565,12 +566,13 @@ CONTAINS
     real(8), parameter :: K_CO2(2)=[ 5.d0, 5.d0 ]     !uM
     real(8), parameter :: V_CO2(2)=[ 2.d0, 2.d0 ]     !nmol O2 (ug Chl a)-1 min-1
 
-!   Temperature dependency parameters (Hikosaka et al. 2006) 
-!      - Parameters estimated from data by Al-Horani (2005)
-
-    real(8), parameter :: Hact(2) = [ 1.855d5, 1.855d5 ] !Activation energy (J mol-1)) *tuned
-    real(8), parameter :: Hdeact(2)=[ 3.055d5, 3.055d5 ] !Deactivation energy (J mol-1) *tuned
-    real(8), parameter :: Entr(2)=  [ 1028.d0, 1028.d0 ] !Entropy term (J K-1) *tuned
+!   Temperature dependency parameters
+    real(8), parameter :: Tref_pht(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
+    real(8), parameter :: T_A_pht(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
+    real(8), parameter :: T_H_pht(2)  = [  298.0d0,  298.0d0 ] ! (K) Upper boundary tolerance range
+    real(8), parameter :: T_AH_pht(2) = [30000.0d0, 30000.0d0] ! (K) Arrhenius temp. for upper boundary
+    real(8), parameter :: T_L_pht(2)  = [  276.0d0,  276.0d0 ] ! (K) Lower boundary tolerance range
+    real(8), parameter :: T_AL_pht(2) = [75000.0d0, 75000.0d0] ! (K) Arrhenius temp. for lower boundary
 
 !----- for respiration --------------------------
 
@@ -606,10 +608,17 @@ CONTAINS
 !   7.09 across 0.85 -> 0.72).
     real(8), parameter :: Rratio(2) = [ 0.72d0, 0.72d0 ] !!!0.85d0 0.9d0** 0.8d0  !1.0d0* !!!
 
-!   Temperature dependency parameters (Hikosaka et al. 2006) 
+!   Temperature dependency parameters
 !      - Parameters estimated from data by Fujimura et al. (2008)
 
-    real(8), parameter :: Eact(2)   = [ 5.117d4, 5.117d4 ] !Activation energy (J mol-1)) *Tuned
+!    real(8), parameter :: Eact(2)   = [ 5.117d4, 5.117d4 ] !Activation energy (J mol-1)) *Tuned
+!   Temperature dependency parameters
+    real(8), parameter :: Tref_rsp(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
+    real(8), parameter :: T_A_rsp(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
+    real(8), parameter :: T_H_rsp(2)  = [  298.0d0,  298.0d0 ] ! (K) Upper boundary tolerance range
+    real(8), parameter :: T_AH_rsp(2) = [30000.0d0, 30000.0d0] ! (K) Arrhenius temp. for upper boundary
+    real(8), parameter :: T_L_rsp(2)  = [  276.0d0,  276.0d0 ] ! (K) Lower boundary tolerance range
+    real(8), parameter :: T_AL_rsp(2) = [75000.0d0, 75000.0d0] ! (K) Arrhenius temp. for lower boundary
 
 ! ---- OC turnover ---------------------
 !    real(8), parameter :: C_dec(2) = [ 0.02d0, 0.02d0 ] ! (nmol cm-2 s-1) ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
@@ -617,6 +626,11 @@ CONTAINS
 !    ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
 !    k_decay ~ 0.1/QCv ~ 0.1/(290*1d3) ~ 3.4d-7 (s-1)
     real(8), parameter :: k_decay(2) = [ 3.4d-7, 3.4d-7 ] ! (s-1)
+
+!   Temperature dependency parameters
+    real(8), parameter :: Tref_dec(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
+    real(8), parameter :: T_A_dec(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
+
 !   QCv_max: target areal tissue carbon (umolC cm-2); 290 from Tanaka et al., 2018
 !   QCv_min: structural floor that cannot be catabolised (umolC cm-2)
 !   k_rest : rate constant for restoring QCv towards QCv_max (s-1)
@@ -624,6 +638,7 @@ CONTAINS
 !   k_mob  : rate constant for mobilising structural C into the reserve when
 !            the reserve runs short (s-1)
     real(8), parameter :: QC_eps = 1.0d-8   ! (umolC cm-2) guard for quota-ratio denominators
+    real(8), parameter :: C_eps  = 1.0d-8   ! (umolC L-1)  guard for speciation-ratio denominators
     real(8), parameter :: QCv_max(2) = [ 290.0d0, 290.0d0 ] ! (umolC cm-2)
     real(8), parameter :: QCv_min(2) = [ 100.0d0, 100.0d0 ] ! (umolC cm-2)
 !   k_rest is deliberately fast (1/k_rest = 5.8 d) so that the instantaneous
@@ -671,7 +686,32 @@ CONTAINS
 !    real(8), parameter :: E_m(2)=[ 2.0d4, 2.0d4 ]   !!! 1.0d4** ! 5.0d3* Energy flux for maintenance (nJ cm-2 s-1)
     real(8) :: E_m
 
-    real(8), parameter :: k_CO2i(2) =[ 1.0d-4, 1.0d-4 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
+!   k_CO2i: CO2* permeability from the coelenteron to the calcifying fluid (cm s-1).
+!
+!   WEAKLY CONSTRAINED - treat as a tuning parameter, not as a measured value.
+!     - The source, Sueltemeyer & Rinast (1996) Planta 200:358-368, measured the
+!       plasma membrane of the green alga Chlamydomonas reinhardtii, not a coral.
+!     - That paper does not report one number: 0.76, 1.21, 1.49 and 1.8d-3
+!       depending on pH and CO2 acclimation.  1.49d-3 is the pH 7.8, high-CO2 case.
+!     - Measured PCO2 across biological membranes spans 200-fold, from 0.0015
+!       (guinea-pig colon apical) to 0.3 cm s-1 (human erythrocyte), controlled
+!       mainly by membrane cholesterol and by protein gas channels (aquaporins,
+!       RhAG).  This value sits at the very low end of that range.
+!     - Whether low permeabilities are real or an unstirred-layer artefact is
+!       still disputed (Missner et al. 2008 vs Endeward & Gros).
+!     - Structurally this coefficient crosses the calicoblastic EPITHELIUM -
+!       apical membrane, cytoplasm, basal membrane - so a single-membrane value
+!       does not transfer directly; in series the effective value is lower.
+!     - No measurement exists for coral calicoblastic cells, and the split
+!       between CO2 diffusion and HCO3- transporters there is unknown.
+!   See doc/README.md section 14 for the survey and sources.
+!
+!   Sensitivity is low: raising it 100-fold moved skeletal d13C by only 0.8
+!   permil and left G (7.09 -> 7.11), pH_cal and P/R essentially unchanged,
+!   because the leak and respiration dominate the calcifying-fluid carbon
+!   supply.  It matters only when those two are shut off.
+    real(8), parameter :: k_CO2i(2) =[ 1.5d-3, 1.5d-3 ]  ! 1.0d-4 (previous, 1/15 of the cited value)
+
 !   k_leak: conductivity of the paracellular leak between the coelenteron and
 !   the calcifying fluid (cm s-1).  ONE coefficient serves TA, DIC and CO2:
 !   the pathway is assumed non-selective, which is also why the leak carries
@@ -838,6 +878,9 @@ CONTAINS
     real(8) :: cHcal,cOHcal
     real(8) :: Fpp_CO2(N_Csp), Flux_CO2aq(N_Csp)
     real(8) :: kp1(N_Csp),km1(N_Csp),kp4(N_Csp),km4(N_Csp)
+    real(8) :: a_eqbd                                    ! R(HCO3-)/R(CO2aq) at equilibrium
+    real(8) :: a_los(N_Csp),b_gen(N_Csp),CO2ss(N_Csp)    ! for the exponential CO2* update
+    integer, save :: n_CO2clip = 0                       ! count of negative-CO2* clips
 # endif
 !----- for gross photosynthesis -------------------
     real(8) :: PFDsurf
@@ -1411,18 +1454,13 @@ CONTAINS
 !======================================================================
 # else
 !  ----- Gross photosynthetic rate (nmolC cm-2 s-1) ------------------------------------
-! Temperature dependent term
-    f_temp=1.d0
-!    f_temp=exp(Hact(n)*(TKamb-298.)/298./Rgas/TKamb)        &
-!          *(1.+exp((298.*Entr(n)-Hdeact(n))/298./Rgas))     &
-!          /(1.+exp((TKamb*Entr(n)-Hdeact(n))/TKamb/Rgas))
-
-! Gross photosynthesis rate (nmolO2 cm-2 s-1)
-!    Pg=Pgmax(n)*f_temp*tanh(PFDsurf/Ik(n))                  &
-!        *1./(V_HCO3(n)+V_CO2(n))                          &
-!          *( V_HCO3(n)*HCO3coe/(K_HCO3(n)+HCO3coe)        &
-!            +V_CO2(n)*CORAL(ng)%CO2coe(n,i,j)/(K_CO2(n)+CORAL(ng)%CO2coe(n,i,j))   &
-!           )
+!   Temperature dependent term
+# if defined CORAL_TEMP_DEPENDENT
+    f_temp = tempcorr2( Tamb+273.15d0, Tref_pht(n), T_A_pht(n), T_H_pht(n)  &
+                      , T_AH_pht(n), T_L_pht(n), T_AL_pht(n))
+# else
+    f_temp = 1.d0
+# endif
 
     CORAL(ng)%Pg(n,i,j) = Pgmax(n)*f_temp*tanh(PFDsurf/Ik(n))       &
                         * HCO3coe(iCt)/(K_HCO3(n)+HCO3coe(iCt))
@@ -1440,8 +1478,12 @@ CONTAINS
 !======================================================================
 
 !  Tissue decay rate (nmol cm-2 s-1)
-!   Temperature dependent decay term
-    f_temp=1.d0
+!   Temperature dependent decay term (no dimension)
+# if defined CORAL_TEMP_DEPENDENT
+    f_temp = tempcorr1(Tamb+273.15d0, Tref_dec(n), T_A_dec(n) )
+# else
+    f_temp = 1.d0
+# endif
 !    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
 
 !   QCv: Coral tissue carbon content (umolC cm-2)
@@ -1489,10 +1531,13 @@ CONTAINS
 !======================================================================
 
 !   Temperature dependent term
-    f_temp=1.d0
-!    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
-!    Rc = Rmax(n) * f_temp * CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j))   &
-!               * CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j))
+# if defined CORAL_TEMP_DEPENDENT
+    f_temp = tempcorr2( Tamb+273.15d0, Tref_rsp(n), T_A_rsp(n), T_H_rsp(n)  &
+                      , T_AH_rsp(n), T_L_rsp(n), T_AL_rsp(n))
+# else
+    f_temp = 1.d0
+# endif
+
     f_min = min( QCe_tmp/(K_QC(n)+QCe_tmp),                      &
                  DOcoe_tmp/(K_DO(n)+DOcoe_tmp) )  !  Michaelis-Menten equation
 !
@@ -1503,12 +1548,19 @@ CONTAINS
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
     F_DOcoe = F_DOcoe - Rc
     F_QCe(:)    = F_QCe(:)    - Rc *rQCe(:)
+!   Respired carbon leaves as CO2*, and CO2* is part of DIC, so it has to be
+!   credited to both pools - not one or the other.  This used to be an if/else
+!   that credited only F_CO2* under CORAL_NONE_CO2_EQ, leaving DIC unchanged;
+!   the diagnosed HCO3- (= DIC - CO2* - CO3) then absorbed the whole
+!   respiration as a loss, so carbon was created in CO2* and destroyed in
+!   HCO3- every step.  In the 5 um calcifying fluid that drove CO2* to
+!   178 umol L-1 against an equilibrium value near 1, and left skeletal d13C
+!   6 permil off the equilibrium branch even with the kinetics run 100x fast.
+    F_DICcoe(:) = F_DICcoe(:) + Rc *rQCe(:) *Rratio(n)
+    F_DICcal(:) = F_DICcal(:) + Rc *rQCe(:) *(1.0d0-Rratio(n))
 # if defined CORAL_NONE_CO2_EQ
     F_CO2coe(:) = F_CO2coe(:) + Rc *rQCe(:) *Rratio(n)
     F_CO2cal(:) = F_CO2cal(:) + Rc *rQCe(:) *(1.0d0-Rratio(n))
-# else
-    F_DICcoe(:) = F_DICcoe(:) + Rc *rQCe(:) *Rratio(n)
-    F_DICcal(:) = F_DICcal(:) + Rc *rQCe(:) *(1.0d0-Rratio(n))
 # endif
   
 
@@ -1699,10 +1751,19 @@ CONTAINS
     end if
     Fpp_DIC(iCt) = Fleak_DIC   ! exact, whatever Iso_ratio returned for a spent pool
 # if defined CORAL_NONE_CO2_EQ
-    Fleak_CO2 = k_leak(n) *(CORAL(ng)%CO2coe(iCt,n,i,j)-CORAL(ng)%CO2cal(iCt,n,i,j))
-    if ( Fleak_CO2 >= 0.0d0 ) then
+!   CO2* carried by the same paracellular leak.  Because the leak is
+!   non-selective, the CO2* it moves is the upstream CO2* fraction of the DIC
+!   it moves - not an independent concentration gradient.  Driving it from its
+!   own gradient would transport CO2* in a proportion unrelated to the bulk DIC
+!   going through the same pores, and the leak's direction could even disagree
+!   between the two.
+    if ( Fleak_DIC >= 0.0d0 ) then
+      Fleak_CO2  = Fleak_DIC * CORAL(ng)%CO2coe(iCt,n,i,j)                   &
+                             / max( CORAL(ng)%DICcoe(iCt,n,i,j), C_eps )
       Fpp_CO2(:) = Fleak_CO2 *rCO2coe(:)
     else
+      Fleak_CO2  = Fleak_DIC * CORAL(ng)%CO2cal(iCt,n,i,j)                   &
+                             / max( CORAL(ng)%DICcal(iCt,n,i,j), C_eps )
       Fpp_CO2(:) = Fleak_CO2 *rCO2cal(:)
     end if
     Fpp_CO2(iCt) = Fleak_CO2
@@ -1780,10 +1841,31 @@ CONTAINS
     kp4(:)=kp4_Johnson1982(TKamb, Samb)
     km4(:)=km4_Johnson1982(TKamb, Samb)
 #  if defined CARBON_ISOTOPE
+!   Kinetic isotope effects on the CO2* <-> HCO3- interconversion.
+!
+!   Paths 1 (hydration) and 4 (hydroxylation) connect the same pair of species,
+!   so the equilibrium fractionation they imply must agree with each other, and
+!   with the equilibrium branch of this model (a_db_Zhang1995, which partitions
+!   13C among the species when CORAL_NONE_CO2_EQ is off).  The published KIEs
+!   are independent estimates and do not satisfy that: taken at face value they
+!   give +8.9 permil for hydration but +15.8 permil for hydroxylation.  Path 4
+!   overtakes path 1 above about pH 8.5, so the implied equilibrium would drift
+!   from +11 permil in the coelenteron to +15 permil in the calcifying fluid,
+!   against the +9.1 permil the equilibrium branch uses.  Switching
+!   CORAL_NONE_CO2_EQ on and off would then measure that offset rather than the
+!   disequilibrium effect being studied.
+!
+!   So keep the forward KIEs, which carry the kinetic signal, and derive the
+!   reverse ones from the equilibrium fractionation - the same discipline the
+!   bulk constants already follow (km1 = kp1/K1, km4 = kp4*Kw/K1).  The
+!   published km1 of 1.022 already agrees with what this requires (1.0222);
+!   only km4 (1.027 against 1.0202) was out of line.  Deriving them also makes
+!   the temperature dependence follow a_db_Zhang1995 automatically.
+    a_eqbd = 1.0d0/a_db_Zhang1995(TKamb-273.15d0)
     kp1(iC13)=kp1(iCt)/1.013d0
-    km1(iC13)=km1(iCt)/1.022d0
     kp4(iC13)=kp4(iCt)/1.011d0
-    km4(iC13)=km4(iCt)/1.027d0
+    km1(iC13)=km1(iCt)/(1.013d0*a_eqbd)
+    km4(iC13)=km4(iCt)/(1.011d0*a_eqbd)
 #  endif
 #  if defined CLUMPED_ISOTOPE
     kp1(iD47)=kp1(iCt)/1.013d0  !??????????????????????????????????????????????????????
@@ -1798,30 +1880,47 @@ CONTAINS
     cHcal =10.d0**(-pHcal)
     cOHcal=Kw_Millero1995(TKamb, Samb)/cHcal
 
-!    [CO2*] (umol L-1) in coelectron
-    CORAL(ng)%CO2coe(:,n,i,j)=CORAL(ng)%CO2coe(:,n,i,j)              &
-                + F_CO2coe(:)/hcoe *dt                        &   !nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
-!     kinetics of CO2 system
-                +( (km1(:)*cHcoe+km4)*HCO3coe(:)                     & ! umol L-1 s-1
-                  -(kp1(:)+kp4(:)*cOHcoe)*CORAL(ng)%CO2coe(:,n,i,j)  & ! umol L-1 s-1
-                 ) *dt   ! umol L-1
+!   [CO2*] (umol L-1), exponential update.
+!
+!   dC/dt = S - a*C  is integrated exactly for constant coefficients, where
+!   a = kp1 + kp4*[OH-] is the loss rate and S collects the transport flux and
+!   the production from HCO3-.  Explicit Euler was unconditionally unstable
+!   here: a reaches 1.3 s-1 at pH 10.5 and 8 s-1 at pH 11.3, against a coral
+!   substep of 0.05 s, and it drove CO2* negative into a hard Stop.  The
+!   exponential form is stable at any pH and preserves positivity whenever
+!   S >= 0.
+!   Rate units: kp1 and km4 are s-1; kp4 and km1 are kg mol-1 s-1 and pair with
+!   [OH-] and [H+] in mol kg-1, so every term is (s-1) x (carbon concentration)
+!   and the umol L-1 carbon units carry through unchanged.
 
-    if(CORAL(ng)%CO2coe(iCt,n,i,j)<0.0d0) then
-      write(*,*) 'DEBUG1',CORAL(ng)%CO2coe(iCt,n,i,j)
-      Stop
-    endif
+!    [CO2*] (umol L-1) in coelectron
+    a_los(:) = kp1(:) + kp4(:)*cOHcoe
+    b_gen(:) = ( km1(:)*cHcoe + km4(:) )*HCO3coe(:) + F_CO2coe(:)/hcoe
+    CO2ss(:) = b_gen(:)/a_los(:)
+    CORAL(ng)%CO2coe(:,n,i,j) = CO2ss(:)                                     &
+        + ( CORAL(ng)%CO2coe(:,n,i,j) - CO2ss(:) )*exp( -a_los(:)*dt )
 
 !    [CO2*] (umol L-1) in calcified fulid
-    CORAL(ng)%CO2cal(:,n,i,j)=CORAL(ng)%CO2cal(:,n,i,j)              &
-                + F_CO2cal(:)/hcal *dt                        &!nmol cm-3 s-1 = 1./1.023 umol kg-1 s-1
-!     kinetics of CO2 system
-                +( (km1(:)*cHcal+km4(:))*HCO3cal(:)                  &! umol L-1 s-1
-                  -(kp1(:)+kp4(:)*cOHcal)*CORAL(ng)%CO2cal(:,n,i,j)  &! umol L-1 s-1
-                 ) *dt   ! umol L-1
-    
-    if(CORAL(ng)%CO2cal(iCt,n,i,j)<0.0d0) then
-      write(*,*) 'DEBUG2',CORAL(ng)%CO2cal(iCt,n,i,j)
-      Stop
+    a_los(:) = kp1(:) + kp4(:)*cOHcal
+    b_gen(:) = ( km1(:)*cHcal + km4(:) )*HCO3cal(:) + F_CO2cal(:)/hcal
+    CO2ss(:) = b_gen(:)/a_los(:)
+    CORAL(ng)%CO2cal(:,n,i,j) = CO2ss(:)                                     &
+        + ( CORAL(ng)%CO2cal(:,n,i,j) - CO2ss(:) )*exp( -a_los(:)*dt )
+
+!   A negative CO2* can now only come from a transport sink large enough to
+!   make S negative, which is a physical over-draw rather than a time-step
+!   problem.  Clamp instead of aborting a long run, but note that the clamp
+!   breaks carbon conservation, so a non-zero counter here needs investigating.
+    if( minval(CORAL(ng)%CO2coe(:,n,i,j))<0.0d0 .or.                         &
+        minval(CORAL(ng)%CO2cal(:,n,i,j))<0.0d0 ) then
+      n_CO2clip = n_CO2clip + 1
+      if( n_CO2clip<=10 ) then
+        write(*,*) 'WARNING: negative CO2* clipped at date',date,            &
+                   ' coe',CORAL(ng)%CO2coe(iCt,n,i,j),                       &
+                   ' cal',CORAL(ng)%CO2cal(iCt,n,i,j)
+      endif
+      CORAL(ng)%CO2coe(:,n,i,j) = max( CORAL(ng)%CO2coe(:,n,i,j), 0.0d0 )
+      CORAL(ng)%CO2cal(:,n,i,j) = max( CORAL(ng)%CO2cal(:,n,i,j), 0.0d0 )
     endif
 # endif
 
