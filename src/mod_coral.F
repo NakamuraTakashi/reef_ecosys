@@ -23,6 +23,7 @@ MODULE mod_coral
     real(8), pointer :: QCv(:,:,:,:)
     real(8), pointer :: QCr(:,:,:,:)
     real(8), pointer :: QCh(:,:,:,:)
+    real(8), pointer :: QCext(:,:,:,:)
     real(8), pointer :: CO2cal(:,:,:,:)
     real(8), pointer :: CO2coe(:,:,:,:)
 # if defined CORAL_NUTRIENTS
@@ -38,6 +39,8 @@ MODULE mod_coral
     real(8), pointer :: QPv(:,:,:,:)
     real(8), pointer :: QPr(:,:,:,:)
     real(8), pointer :: QPh(:,:,:,:)
+    real(8), pointer :: QNext(:,:,:,:)
+    real(8), pointer :: QPext(:,:,:,:)
 # endif
 # if defined CORAL_ZOOXANTHELLAE
     real(8), pointer :: ROS(:,:,:)
@@ -121,6 +124,7 @@ CONTAINS
     allocate( CORAL(ng)%QCv(N_Csp,Ncl,LBi:UBi,LBj:UBj)     )
     allocate( CORAL(ng)%QCr(N_Csp,Ncl,LBi:UBi,LBj:UBj)     )
     allocate( CORAL(ng)%QCh(N_Csp,Ncl,LBi:UBi,LBj:UBj)     )
+    allocate( CORAL(ng)%QCext(N_Csp,Ncl,LBi:UBi,LBj:UBj)   )
     allocate( CORAL(ng)%CO2cal(N_Csp,Ncl,LBi:UBi,LBj:UBj) )
     allocate( CORAL(ng)%CO2coe(N_Csp,Ncl,LBi:UBi,LBj:UBj) )
 # if defined CORAL_NUTRIENTS
@@ -135,6 +139,8 @@ CONTAINS
     allocate( CORAL(ng)%QPv(N_Psp,Ncl,LBi:UBi,LBj:UBj)   )
     allocate( CORAL(ng)%QPr(N_Psp,Ncl,LBi:UBi,LBj:UBj)   )
     allocate( CORAL(ng)%QPh(N_Psp,Ncl,LBi:UBi,LBj:UBj)   )
+    allocate( CORAL(ng)%QNext(N_Nsp,Ncl,LBi:UBi,LBj:UBj) )
+    allocate( CORAL(ng)%QPext(N_Psp,Ncl,LBi:UBi,LBj:UBj) )
 # endif     
 # if defined CORAL_ZOOXANTHELLAE
     allocate( CORAL(ng)%ROS(Ncl,LBi:UBi,LBj:UBj)  )
@@ -231,6 +237,7 @@ CONTAINS
             CORAL(ng)%QCv   (:,n,i,j) = 0.0d0
             CORAL(ng)%QCr   (:,n,i,j) = 0.0d0
             CORAL(ng)%QCh   (:,n,i,j) = 0.0d0
+            CORAL(ng)%QCext (:,n,i,j) = 0.0d0
 
 !      coral internal conditions
             CORAL(ng)%TAcal (n,i,j)=2500.d0 *1.024d0 !(umol/L)
@@ -307,6 +314,8 @@ CONTAINS
             CORAL(ng)%QNh(iN15,n,i,j)  &
                   = Ci_from_Ct_delta( CORAL(ng)%QNh(iNt,n,i,j), 5.d0, R15N_AIR )  !!!?????????????????????????????
 #  endif
+            CORAL(ng)%QNext(:,n,i,j) = 0.0d0
+            CORAL(ng)%QPext(:,n,i,j) = 0.0d0
             CORAL(ng)%PO4(  :,n,i,j) = 0.0d0  !!!!!!!!!!!!!!!!!!!!!!!!!!
             CORAL(ng)%QPe(  :,n,i,j) = 0.0d0 ! (pmolP/cell)
             CORAL(ng)%QPv(  :,n,i,j) = 0.0d0 ! (pmolP/cell)
@@ -538,7 +547,10 @@ CONTAINS
 !          *HCO3coe/(K_HCO3+HCO3coe)
 !          *hcoe
 
-    real(8), parameter :: Pgmax(2)=  [ 0.6d0, 0.6d0 ] !0.73d0*    !0.91d0    !Maximum photosynthesis rate (nmol O2 cm-2 s-1) Kuhl et al. (1995) *Tuned
+!   0.6 could not sustain QCv at QCv_max: it left Pg about 20% short of the
+!   reserve carbon needed to cover Rc plus tissue maintenance, so QCv drifted
+!   down to ~178 umolC cm-2.  Restored to the Kuhl et al. (1995) value.
+    real(8), parameter :: Pgmax(2)=  [ 0.73d0, 0.73d0 ] !0.6d0 !0.91d0    !Maximum photosynthesis rate (nmol O2 cm-2 s-1) Kuhl et al. (1995) *Tuned
     real(8), parameter :: Ik(2)=     [ 275.d0, 275.d0 ]   !(275 uEin m-2 s-1) * refference value
 
 !------ Goreau et al. (1996)------------------------------------------   
@@ -571,7 +583,28 @@ CONTAINS
     real(8), parameter :: K_QC(2)   = [  5.0d0,  5.0d0 ]     !!!5.0d0* umol cm-2!!!
     real(8), parameter :: K_DO(2)   = [ 46.0d0, 46.0d0 ]   ! ca. 46 (umol kg-1) Newton & Atkinson (1991)
 
-    real(8), parameter :: Rratio(2) = [ 0.5d0, 0.5d0 ] !!!0.9d0** 0.8d0  !1.0d0* !!!
+!   Rratio: fraction of host respiratory CO2 released into the coelenteron;
+!   the remainder goes straight into the calcifying fluid.  Only the
+!   calicoblastic epithelium can supply the sub-calicoblastic space directly,
+!   and that layer is a small part of the tissue, so 1-Rratio should be ~0.1-0.2.
+!   0.5 was needed only while the paracellular leak was written as a diffusive
+!   gradient, which pinned the calcifying fluid to the isotopically heavy
+!   coelenteron.  With the leak upwind, 0.85 gave skeletal d13C of -3.3 permil
+!   and matched the anatomical expectation.  Raising a_surf to 3 then lifted
+!   calcification into its measured band but drove the skeleton to -0.5 permil,
+!   so Rratio was lowered again to restore d13C.
+!   PROVISIONAL: 0.72 is set by skeletal d13C alone (-2.9 permil, measured
+!   -2 to -4).  It implies the calicoblastic layer accounts for 28% of host
+!   respiration, above the 10-20% its thickness suggests, so the anatomical
+!   argument that justified 0.85 no longer supports this value.  The
+!   alternative is to hold 0.85 and lighten the skeleton by cutting k_leak
+!   instead, which needs a_surf re-tuned to hold pH_cal - a three-parameter
+!   search that has not been done.  Revisit before publishing.
+!   Note Rratio trades d13C without costing calcification: lowering it feeds
+!   more respired CO2 to the calcifying fluid, which shrinks the coelenteron
+!   gradient and cuts the leak by almost the same amount (G changed 7.03 ->
+!   7.09 across 0.85 -> 0.72).
+    real(8), parameter :: Rratio(2) = [ 0.72d0, 0.72d0 ] !!!0.85d0 0.9d0** 0.8d0  !1.0d0* !!!
 
 !   Temperature dependency parameters (Hikosaka et al. 2006) 
 !      - Parameters estimated from data by Fujimura et al. (2008)
@@ -584,6 +617,30 @@ CONTAINS
 !    ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
 !    k_decay ~ 0.1/QCv ~ 0.1/(290*1d3) ~ 3.4d-7 (s-1)
     real(8), parameter :: k_decay(2) = [ 3.4d-7, 3.4d-7 ] ! (s-1)
+!   QCv_max: target areal tissue carbon (umolC cm-2); 290 from Tanaka et al., 2018
+!   QCv_min: structural floor that cannot be catabolised (umolC cm-2)
+!   k_rest : rate constant for restoring QCv towards QCv_max (s-1)
+!            1/k_rest = 39 d, i.e. the same order as the tissue turnover time
+!   k_mob  : rate constant for mobilising structural C into the reserve when
+!            the reserve runs short (s-1)
+    real(8), parameter :: QC_eps = 1.0d-8   ! (umolC cm-2) guard for quota-ratio denominators
+    real(8), parameter :: QCv_max(2) = [ 290.0d0, 290.0d0 ] ! (umolC cm-2)
+    real(8), parameter :: QCv_min(2) = [ 100.0d0, 100.0d0 ] ! (umolC cm-2)
+!   k_rest is deliberately fast (1/k_rest = 5.8 d) so that the instantaneous
+!   restoration demand exceeds the daytime energy supply while QCv is below
+!   target.  F_Crest then absorbs the whole surplus and F_Cext stays near zero,
+!   i.e. the colony does not extend while its tissue is still thin.  With a slow
+!   k_rest the daytime surplus leaked into QCext and could not repay the
+!   night-time decay, so QCv fell even when the daily budget allowed recovery.
+    real(8), parameter :: k_rest(2)  = [ 2.0d-6, 2.0d-6 ]   ! (s-1)
+    real(8), parameter :: k_mob(2)   = [ 1.0d-7, 1.0d-7 ]   ! (s-1)
+!   K_QCmob: reserve level at which mobilisation is half its maximum
+!            (umolC cm-2).  It must be well below the diel range of QCe,
+!            otherwise the switch never closes and mobilisation degenerates
+!            into a constant drain on the tissue.  Note it cannot be called
+!            K_mob: Fortran is case-insensitive, so that would collide with
+!            k_mob above.
+    real(8), parameter :: K_QCmob(2) = [ 0.5d0, 0.5d0 ]     ! (umolC cm-2)
     real(8), parameter :: p2r = 0.25d0    ! molC respiration/(molC protain) required respiration rate for 1 molC biosynthesis
 !    real(8), parameter :: Ebs = 5.29d5   ! (J molC-1), Energy content of reserves (Ren & Schiel, 2008)
 !  C6H12O6 + 6 O2 + 30 ADP + 30 Pi -> 6 CO2 + 6 H2O + 30 ATP
@@ -593,15 +650,55 @@ CONTAINS
 
 !----- for calcification ------------------------
 
-!    real(8), parameter :: eeff(2)  = [ 0.12d0, 0.12d0 ]   !!! 0.01d0** !0.3d0*!Energy efficency of calcification (<12%, 4~7%?; Lervik et al., 2012)
+!   eeff: thermodynamic efficiency of the Ca2+-ATPase, used as
+!   E_rq_H_transport = 2.3*R*T*dpH / eeff.  It is the dominant control on the
+!   calcifying-fluid pH: F_H = E_ca / E_rq_H_transport.
+!   0.12 is the measured efficiency of reconstituted SERCA at its optimum
+!   lipid composition (Lervik et al., 2012; 4.8-11% off-optimum), and it is
+!   also what reproduces the observed calcifying-fluid pH.  Running 0.30 and
+!   0.12 side by side as coral types 1 and 2 gave pH_cal peaks of 9.9 and 9.3
+!   against a measured maximum of ~9.3 (Al-Horani et al., 2003), and skeletal
+!   d13C of -1.5 and -2.9 permil against a measured -2 to -4.  Two independent
+!   lines of evidence therefore point at 0.12, so both types now use it.
+!   0.8 (Trevorrow & Haynes, 1983 - near-100% coupling) drove pH_cal past 11
+!   and is kept only for reference.
+!   NOTE: with both types identical, ctrl-crl01_* and ctrl-crl02_* must come
+!   out byte-identical.  Any divergence means a type-dependent parameter was
+!   left unequal somewhere.
+!    real(8), parameter :: eeff(2)  = [ 0.3d0, 0.12d0 ]   !!! comparison run
 !    real(8), parameter :: eeff(2)  = [ 0.8d0, 0.8d0 ]   !!! 100% Energy efficency (Trevorroe and Haynes, 1983)
-    real(8), parameter :: eeff(2)  = [ 0.3d0, 0.12d0 ]   !!! 30% energy efficiency, which is representative of ~12% energy efficiency (Lervik et al., 2012) considering F_pp leakages.
+    real(8), parameter :: eeff(2)  = [ 0.12d0, 0.12d0 ]   !!! Energy efficency of calcification (<12%, 4~7%?; Lervik et al., 2012)
 !    real(8), parameter :: E_m(2)=[ 2.0d4, 2.0d4 ]   !!! 1.0d4** ! 5.0d3* Energy flux for maintenance (nJ cm-2 s-1)
     real(8) :: E_m
 
     real(8), parameter :: k_CO2i(2) =[ 1.0d-4, 1.0d-4 ]  ! 1.5d-3* !permeability coefficient (cm s-1): Sueltemeyer and Rinast (1996): (1.49d-3 cm s-1)
-    real(8), parameter :: k_TA(2)   =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of TA through the leak pass (cm s-1) *Tuned
-    real(8), parameter :: k_DIC(2)  =[ 1.0d-4, 1.0d-4 ]  !!! 3.0d-4**  5.0d-5 !3.0d-3* !conductivity of DIC through the leak pass (cm s-1) *Tuned
+!   k_leak: conductivity of the paracellular leak between the coelenteron and
+!   the calcifying fluid (cm s-1).  ONE coefficient serves TA, DIC and CO2:
+!   the pathway is assumed non-selective, which is also why the leak carries
+!   the upstream isotopic composition (see Fpp_DIC) instead of a
+!   per-isotopologue gradient.  Do not split it back into separate k_TA and
+!   k_DIC - selective conductivities would contradict the upwind treatment.
+!   1.0d-4 left pH_cal peaking at 10.2 (measured max ~9.3, Al-Horani et al.
+!   2003); 3.0d-4 brings the peak to 9.5 while holding skeletal d13C at
+!   -3.3 permil.  1.0d-3 overshoots: the extra TA loss forces so much proton
+!   pumping that E_ca is exhausted and calcification collapses.
+    real(8), parameter :: k_leak(2) =[ 3.0d-4, 3.0d-4 ]  !!! 1.0d-4  5.0d-5 !3.0d-3* !*Tuned
+
+!   a_surf: ratio of the calcifying skeletal surface to the projected coral
+!   area.  The rate coefficients in the calcification section come from
+!   inorganic aragonite precipitation experiments, which normalise to *mineral*
+!   surface area, while G here is per unit *projected* area.  The calcifying
+!   interface follows the corallite relief (septa, walls, spines) and so
+!   exceeds the plan-view area it covers.  It multiplies dissolution as well:
+!   the same interface carries both.
+!   Do NOT fold colony-scale rugosity (5-20 for branching forms) in here - the
+!   model is already per unit polyp surface and P2R does the reef-scale
+!   conversion, so that would double count.
+!   a_surf = 1 left G at 4.1 umolC cm-2 d-1, below the measured 5-15 band.  It
+!   is the only lever that raises G and lowers pH_cal together: reaching a
+!   given G at lower omega shortens dpH, and E_ca/(2.3RT*dpH/eeff) then buys
+!   more proton pumping.  Protons per CaCO3 fall from 4.6 to 2.5 at a_surf = 3.
+    real(8), parameter :: a_surf(2) = [ 3.0d0, 3.0d0 ]  ! (-)
 
     real(8), parameter :: c2g(2) = [ 3.0d0, 3.0d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension)!!!!!!!! Tuning parameter
 
@@ -658,6 +755,7 @@ CONTAINS
     real(8) :: F_QCv(N_Csp)
     real(8) :: F_QCr(N_Csp)
     real(8) :: F_QCh(N_Csp)
+    real(8) :: F_QCext(N_Csp)
     real(8) :: F_CO2cal(N_Csp)
     real(8) :: F_CO2coe(N_Csp)
 # if defined CORAL_NUTRIENTS
@@ -673,6 +771,8 @@ CONTAINS
     real(8) :: F_QPv(N_Psp)
     real(8) :: F_QPr(N_Psp)
     real(8) :: F_QPh(N_Psp)
+    real(8) :: F_QNext(N_Nsp)
+    real(8) :: F_QPext(N_Psp)
 # endif
 # if defined CORAL_ZOOXANTHELLAE
     real(8) :: F_ROS
@@ -752,6 +852,10 @@ CONTAINS
     real(8) :: E_g  !!! Energy flux for growth (nJ cm-2 s-1)
     real(8) :: E_req  !!! Energy flux required for repair and growth (nJ cm-2 s-1)
     real(8) :: Fpm_CO2(N_Csp),Fpp_TA,Fpp_DIC(N_Csp)
+    real(8) :: Fleak_DIC   ! total-C paracellular leak; its sign picks the upwind pool
+# if defined CORAL_NONE_CO2_EQ
+    real(8) :: Fleak_CO2
+# endif
 !    real(8) :: Fpp_CO2,Fpp_HCO3,Fpp_CO3
     real(8), save :: E0_cal(Ncl) = 0.d0 ! Eneryg required for 1 mol CaCO3 production (J molC-1)
 
@@ -801,7 +905,16 @@ CONTAINS
     real(8) :: F_Pingest
 #  endif
 # endif
-    real(8) :: F_Crepair, F_Cgrowth
+!  Biosynthesis: F_bio is funded exactly by E_g and is split into the part that
+!  restores areal tissue (F_Crest -> QCv) and the part that funds colony
+!  extension (F_Cext -> QCext).  F_Cmob is the reverse transfer, structural
+!  tissue catabolised back into the reserve under starvation.
+    real(8) :: F_bio, F_bio_dmd, F_rest_dmd, F_Crest, F_Cext, F_Cmob
+# if defined CORAL_NUTRIENTS
+    real(8) :: rNC_v, rPC_v
+    real(8) :: F_Nbio, F_Nrest, F_Next
+    real(8) :: F_Pbio, F_Prest, F_Pext
+# endif
 # if defined CORAL_SIZE_DYNAMICS
 
     real(8) :: netCgrowth
@@ -833,7 +946,7 @@ CONTAINS
     real(8), save :: S_d11BargxGn_dt(Ncl) = 0.0d0
 #  endif
 # endif
-    real(8) :: k_CO2i_tmp(N_Csp), k_DIC_tmp(N_Csp), k_CO2_tmp(N_Csp)
+    real(8) :: k_CO2i_tmp(N_Csp)
     real(8) :: cff,cff2,cff3
     integer :: isp, m
 
@@ -872,6 +985,7 @@ CONTAINS
     F_QCv(:) = 0.0d0
     F_QCr(:) = 0.0d0
     F_QCh(:) = 0.0d0
+    F_QCext(:) = 0.0d0
 # if defined CORAL_NUTRIENTS
     F_NO3(:) = 0.0d0
     F_NH4(:) = 0.0d0
@@ -884,6 +998,8 @@ CONTAINS
     F_QPv(:) = 0.0d0
     F_QPr(:) = 0.0d0
     F_QPh(:) = 0.0d0
+    F_QNext(:) = 0.0d0
+    F_QPext(:) = 0.0d0
 # endif
 # if defined CORAL_ZOOXANTHELLAE
     F_ROS = 0.0d0
@@ -1040,6 +1156,25 @@ CONTAINS
       END DO
 # endif
     END DO
+
+!   The iCt component of every ratio above is 1 by definition: it exists only as
+!   an identity multiplier, so that one expression can carry both the bulk flux
+!   and its isotope split.  Iso_ratio() returns 0 for a non-positive pool, which
+!   switches the *bulk* flux off instead of merely guarding the isotope
+!   division.  For the organic pools that gates tissue repair while decay keeps
+!   running at full rate, so QCv ratchets down and can never recover, and the
+!   total and 13C pools drift out of proportion once QCe crosses zero.  Restore
+!   the identity explicitly.  This is only safe because every sink of QCe is now
+!   limited by QCe_tmp below, so the reserve cannot be overdrawn.
+    rQCe(iCt) = 1.0d0
+    rQCv(iCt) = 1.0d0
+
+!   Non-negative copies of the pools that drive Michaelis-Menten style limiters.
+!   Every sink of QCe is scaled by one of these, so the reserve can only decay
+!   towards zero asymptotically and never overshoots into negative values.
+    QCe_tmp   = max(CORAL(ng)%QCe(iCt,n,i,j), 0.0d0)
+    DOcoe_tmp = max(CORAL(ng)%DOcoe(n,i,j),   0.0d0)
+
 # if defined CORAL_NUTRIENTS
 !--- Nitrogen isotope or tracer ratio (R15N = 15N/14N) -----------------
     DO isp=1,N_Nsp
@@ -1159,7 +1294,7 @@ CONTAINS
 !
     DO m=1,Ndom
 !      F_Cmucus = ForgC(n,m)  !!!! constant value is assumed
-      F_Cmucus = k_mucus(n,m) * CORAL(ng)%QCe(iCt,n,i,j)*1.d3
+      F_Cmucus = k_mucus(n,m) * QCe_tmp*1.d3   ! QCe_tmp: never let a negative reserve reverse the flux
       Flux_DOC(:,m) = Flux_DOC(:,m) - F_Cmucus *rQCe(:) ! Ocean to coral is positive, coral to ocean is negative
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
       F_QCe(:)  = F_QCe(:) - F_Cmucus *rQCe(:)
@@ -1332,6 +1467,24 @@ CONTAINS
 
 
 !======================================================================
+!     Mobilization of structural C under reserve shortage (nmol cm-2 s-1)
+!======================================================================
+
+!  Catabolism of structural tissue when the reserve runs short.  This is a pure
+!  QCv -> QCe transfer, so it carries the tissue isotope ratio (rQCv) and
+!  conserves carbon exactly.  The switch K_QCmob/(K_QCmob+QCe) is 1 at QCe = 0 and
+!  falls towards 0 as the reserve fills, so it only acts on a starving polyp.
+!  QCv_min is the structural floor that cannot be catabolised.
+!  The energetic cost of autophagy itself is neglected.
+
+    F_Cmob = k_mob(n) * max( CORAL(ng)%QCv(iCt,n,i,j)-QCv_min(n), 0.0d0 )*1.d3   &
+                      * K_QCmob(n)/( K_QCmob(n) + QCe_tmp )
+
+!----- Summing Fluxes (nmol cm-2 s-1)--------------------------
+    F_QCe(:) = F_QCe(:) + F_Cmob *rQCv(:)
+    F_QCv(:) = F_QCv(:) - F_Cmob *rQCv(:)
+
+!======================================================================
 !     Respilation rate (nmol cm-2 s-1)
 !======================================================================
 
@@ -1340,8 +1493,6 @@ CONTAINS
 !    f_temp=exp(Eact(n)*(TKamb-298.)/298./Rgas/TKamb)
 !    Rc = Rmax(n) * f_temp * CORAL(ng)%QCe(iCt,n,i,j)/(K_QC(n)+CORAL(ng)%QCe(iCt,n,i,j))   &
 !               * CORAL(ng)%DOcoe(n,i,j)/(K_DO(n)+CORAL(ng)%DOcoe(n,i,j))
-    QCe_tmp   = max(CORAL(ng)%QCe(iCt,n,i,j), 0.0d0) !! Error handling
-    DOcoe_tmp = max(CORAL(ng)%DOcoe(n,i,j),   0.0d0) !! Error handling
     f_min = min( QCe_tmp/(K_QC(n)+QCe_tmp),                      &
                  DOcoe_tmp/(K_DO(n)+DOcoe_tmp) )  !  Michaelis-Menten equation
 !
@@ -1369,48 +1520,72 @@ CONTAINS
 
     E_tot = E_rsp * Rc  !nJ cm-2 s-1
 
-!  Required energy for tissue repair and growth (nJ cm-2 s-1) 
-!    F_Cdec: tissue decay rate (nmol cm-2 s-1)
-!    G: calciification rate (nmol CaCO3 cm-2 s-1)
-!    c2g: (calcification rate)/(net tissue growth rate) (no dimension)
-!    E_bio: energy required for 1 molC biosynthesis (nJ mol-1)
-!        
-    E_req = ( F_Cdec + CORAL(ng)%G(n,i,j)/c2g(n) ) * E_bio ! nJ cm-2 s-1
+!  Biosynthetic demand (nmol C cm-2 s-1)
+!    (1) F_Cdec  : replacement of the tissue lost to decay this step
+!    (2) k_rest  : restoration of areal biomass towards QCv_max
+!    (3) G/c2g   : tissue that must accompany newly deposited skeleton
+!    E_bio: energy required for 1 molC biosynthesis (nJ nmol-1 = J mol-1)
+!    G is clamped at zero so that dissolution (G<0) cannot credit the budget.
 
-!  Energy flux for biosynthesis (nJ cm-2 s-1)
-    E_g  = min( E_req, E_tot )
+    F_rest_dmd = F_Cdec                                                          &
+               + k_rest(n)*max( QCv_max(n)-CORAL(ng)%QCv(iCt,n,i,j), 0.0d0 )*1.d3
+    F_bio_dmd  = F_rest_dmd + max( CORAL(ng)%G(n,i,j), 0.0d0 )/c2g(n)
 
-!  Energy flux for CaCO3 production (nJ cm-2 s-1)
-    E_ca = max( 0.0d0, E_tot - E_req )
+    E_req = F_bio_dmd * E_bio ! nJ cm-2 s-1
+
+!  Energy partition.  E_g + E_ca == E_tot holds exactly by construction, so the
+!  energy budget closes whether or not respiration can meet the demand.
+    E_g  = min( E_req, E_tot )   ! biosynthesis
+    E_ca = E_tot - E_g           ! CaCO3 production (>= 0 since E_g <= E_tot)
 
 !======================================================================
 !     Mass fluxes related to growth (nmol cm-2 s-1)
 !======================================================================
 
-    F_Crepair = F_Cdec
-    F_Cgrowth = max( 0.0d0, ( E_g - F_Cdec*E_bio )/E_bio )
+!  Total biosynthesis, funded exactly by E_g.  Deriving it from E_g (rather
+!  than performing the repair unconditionally) is what keeps the mass and
+!  energy budgets consistent when respiration falls short of the demand.
+    F_bio   = E_g / E_bio
+
+!  Restore areal tissue first; whatever is left funds colony extension.
+    F_Crest = min( F_bio, F_rest_dmd )
+    F_Cext  = F_bio - F_Crest
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-    F_QCe(:) = F_QCe(:) - F_Crepair*rQCe(:)
-    F_QCv(:) = F_QCv(:) + F_Crepair*rQCe(:)
-    F_QCe(:) = F_QCe(:) - F_Cgrowth*rQCe(:)
+    F_QCe  (:) = F_QCe  (:) - F_bio  *rQCe(:)
+    F_QCv  (:) = F_QCv  (:) + F_Crest*rQCe(:)
+    F_QCext(:) = F_QCext(:) + F_Cext *rQCe(:)
 
 # if defined CORAL_NUTRIENTS
-    F_Nrepair = F_Ndec
-    F_Ngrowth = max( 0.0d0, ( E_g - F_Ndec*E_bio )/E_bio )
-    F_Prepair = F_Pdec
-    F_Pgrowth = max( 0.0d0, ( E_g - F_Pdec*E_bio )/E_bio )
+!  N and P follow the carbon fluxes stoichiometrically, at the current tissue
+!  quota ratio.  E_bio is an energy per mol *carbon*, so it must not appear in
+!  the N and P budgets.
+    rNC_v  = CORAL(ng)%QNv(iNt,n,i,j)/max(CORAL(ng)%QCv(iCt,n,i,j), QC_eps)
+    rPC_v  = CORAL(ng)%QPv(iPt,n,i,j)/max(CORAL(ng)%QCv(iCt,n,i,j), QC_eps)
+
+    F_Nbio  = F_bio  *rNC_v
+    F_Nrest = F_Crest*rNC_v
+    F_Next  = F_Cext *rNC_v
+    F_Pbio  = F_bio  *rPC_v
+    F_Prest = F_Crest*rPC_v
+    F_Pext  = F_Cext *rPC_v
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
-    F_QNe(:) = F_QNe(:) - F_Nrepair*rQNe(:)
-    F_QNv(:) = F_QNv(:) + F_Nrepair*rQNe(:)
-    F_QNe(:) = F_QNe(:) - F_Ngrowth*rQNe(:)
-    F_QPe(:) = F_QPe(:) - F_Prepair*rQPe(:)
-    F_QPv(:) = F_QPv(:) + F_Prepair*rQPe(:)
-    F_QPe(:) = F_QPe(:) - F_Pgrowth*rQPe(:)
+    F_QNe  (:) = F_QNe  (:) - F_Nbio  *rQNe(:)
+    F_QNv  (:) = F_QNv  (:) + F_Nrest *rQNe(:)
+    F_QNext(:) = F_QNext(:) + F_Next  *rQNe(:)
+    F_QPe  (:) = F_QPe  (:) - F_Pbio  *rQPe(:)
+    F_QPv  (:) = F_QPv  (:) + F_Prest *rQPe(:)
+    F_QPext(:) = F_QPext(:) + F_Pext  *rQPe(:)
 # endif
 
 # if defined CORAL_SIZE_DYNAMICS
+!!! TODO: this block still predates the F_bio / F_Crest / F_Cext split and does
+!!!       not compile.  It indexes F_Cgrowth/F_Ngrowth/F_Pgrowth as arrays when
+!!!       they no longer exist, reads E_m which is never assigned, divides by
+!!!       CORAL(ng)%G without guarding G=0, and has a dangling line continuation
+!!!       in the CORAL_NUTRIENTS branch below.  When it is reworked, QCext (and
+!!!       QNext/QPext) is the pool that should fund the increase in coral cover.
     netCgrowth = ( CORAL(ng)%growth(n,i,j)-CORAL(ng)%mort(n,i,j) )  &
                    *CORAL(ng)%QCv(iCt,n,i,j)*1.0d3    ! growth rate (nmol cm-2 s-1)=(cm2 cm-2 s-1)*(umol cm-2)*1.d3
     g2c_tmp = netCgrowth/CORAL(ng)%G(n,i,j)
@@ -1490,37 +1665,50 @@ CONTAINS
 !     Mass fluxes between coelenteron and calcifying fluid (nmol cm-2 s-1)
 !======================================================================
 
+!   k_CO2i is a membrane permeability: CO2* crosses the lipid bilayer by
+!   molecular diffusion, so each isotopologue follows its own gradient and
+!   carries a kinetic fractionation.
+!   k_leak is the conductivity of the paracellular leak, i.e. a bulk
+!   flow.  Bulk flow does not fractionate and the carbon it carries has the
+!   composition of the pool it leaves, so no per-species coefficient belongs
+!   here; the composition is applied upwind below.
     k_CO2i_tmp(:) = k_CO2i(n)
-    k_DIC_tmp(:)  = k_DIC(n)
-# if defined CORAL_NONE_CO2_EQ
-    k_CO2_tmp(:)  = k_DIC(n)/1.0007d0 !????????????????????????????????????
-# endif
 # if defined CARBON_ISOTOPE
     k_CO2i_tmp(iC13) = k_CO2i_tmp(iCt)/1.0007d0
-    k_DIC_tmp(iC13)  = k_DIC_tmp(iCt)/1.00087d0
-#  if defined CORAL_NONE_CO2_EQ
-    k_CO2_tmp(iC13) = k_CO2_tmp(iCt)/1.0007d0  !????????????????????????????????????
-#  endif
 # endif
 # if defined CLUMPED_ISOTOPE
     k_CO2i_tmp(iD47) = k_CO2i_tmp(iCt)/1.0007d0  !????????????????????????????????????
-    k_DIC_tmp(iD47)  = k_DIC_tmp(iCt)/1.00087d0  !????????????????????????????????????
-#  if defined CORAL_NONE_CO2_EQ
-    k_CO2_tmp(iD47)  = k_CO2_tmp(iCt)/1.0007d0  !????????????????????????????????????
-#  endif
 # endif
 
 !   CO2* flux (nmol cm-2 s-1) through membrane permeation
 !    Fpm_CO2(:)=k_CO2i(n)*(fCO2coe-fCO2cal)
     Fpm_CO2(:) = k_CO2i_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))!*rho_sw
-    
-!   DIC Leak flux (nmol cm-2 s-1) 
-    Fpp_DIC(:) = k_DIC_tmp(:) *(CORAL(ng)%DICcoe(:,n,i,j)-CORAL(ng)%DICcal(:,n,i,j))!*rho_sw
+
+!   DIC leak flux (nmol cm-2 s-1) through the paracellular pathway.
+!   Upwind, because this is a bulk leak rather than diffusion.  Applying the
+!   per-isotopologue gradient here instead made the 13C transfer
+!   disproportionate to the net carbon transfer: it pinned the calcifying fluid
+!   to the photosynthetically enriched coelenteron and left the skeleton
+!   several per mil too heavy.  The leak reverses within a day (DICcoe falls
+!   below DICcal around midday), so the branch is genuinely exercised.
+    Fleak_DIC = k_leak(n) *(CORAL(ng)%DICcoe(iCt,n,i,j)-CORAL(ng)%DICcal(iCt,n,i,j))!*rho_sw
+    if ( Fleak_DIC >= 0.0d0 ) then
+      Fpp_DIC(:) = Fleak_DIC *rDICcoe(:)   ! coelenteron -> calcifying fluid
+    else
+      Fpp_DIC(:) = Fleak_DIC *rDICcal(:)   ! calcifying fluid -> coelenteron
+    end if
+    Fpp_DIC(iCt) = Fleak_DIC   ! exact, whatever Iso_ratio returned for a spent pool
 # if defined CORAL_NONE_CO2_EQ
-    Fpp_CO2(:) = k_CO2_tmp(:) *(CORAL(ng)%CO2coe(:,n,i,j)-CORAL(ng)%CO2cal(:,n,i,j))!*rho_sw
+    Fleak_CO2 = k_leak(n) *(CORAL(ng)%CO2coe(iCt,n,i,j)-CORAL(ng)%CO2cal(iCt,n,i,j))
+    if ( Fleak_CO2 >= 0.0d0 ) then
+      Fpp_CO2(:) = Fleak_CO2 *rCO2coe(:)
+    else
+      Fpp_CO2(:) = Fleak_CO2 *rCO2cal(:)
+    end if
+    Fpp_CO2(iCt) = Fleak_CO2
 # endif
 !   TA Leak flux (nmol cm-2 s-1) 
-    Fpp_TA = k_TA(n) *(CORAL(ng)%TAcoe(n,i,j)-CORAL(ng)%TAcal(n,i,j))!*rho_sw
+    Fpp_TA = k_leak(n) *(CORAL(ng)%TAcoe(n,i,j)-CORAL(ng)%TAcal(n,i,j))!*rho_sw
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
     F_TAcoe = F_TAcoe - Fpp_TA
@@ -1537,9 +1725,9 @@ CONTAINS
 !======================================================================
  
     if (Wargcal .ge. 1.d0) then
-      CORAL(ng)%G(n,i,j)=1.1d-3*(Wargcal-1.d0)**1.63d0
+      CORAL(ng)%G(n,i,j)= a_surf(n)*1.1d-3*(Wargcal-1.d0)**1.63d0
     else
-      CORAL(ng)%G(n,i,j)=-2.7d-2*(1.d0-Wargcal)**2.5d0
+      CORAL(ng)%G(n,i,j)=-a_surf(n)*2.7d-2*(1.d0-Wargcal)**2.5d0
     endif
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
@@ -1557,6 +1745,14 @@ CONTAINS
     CORAL(ng)%QCv(:,n,i,j) = CORAL(ng)%QCv(:,n,i,j) + F_QCv(:)*1.d-3 *dt    !nmol cm-2 =1.e-3 umol cm-2
     CORAL(ng)%QCr(:,n,i,j) = CORAL(ng)%QCr(:,n,i,j) + F_QCr(:)*1.d-3 *dt    !nmol cm-2 =1.e-3 umol cm-2
     CORAL(ng)%QCh(:,n,i,j) = CORAL(ng)%QCh(:,n,i,j) + F_QCh(:)*1.d-3 *dt    !nmol cm-2 =1.e-3 umol cm-2
+!   QCext: carbon committed to colony extension.  Holding it in a pool (rather
+!   than dropping it) keeps the organic carbon budget closed until
+!   CORAL_SIZE_DYNAMICS consumes it to grow new coral cover.
+    CORAL(ng)%QCext(:,n,i,j) = CORAL(ng)%QCext(:,n,i,j) + F_QCext(:)*1.d-3 *dt
+# if defined CORAL_NUTRIENTS
+    CORAL(ng)%QNext(:,n,i,j) = CORAL(ng)%QNext(:,n,i,j) + F_QNext(:)*1.d-3 *dt
+    CORAL(ng)%QPext(:,n,i,j) = CORAL(ng)%QPext(:,n,i,j) + F_QPext(:)*1.d-3 *dt
+# endif
 
 !    DIC & TA (umol L-1) in calcified fulid
     CORAL(ng)%DICcal(:,n,i,j) = CORAL(ng)%DICcal(:,n,i,j)         &
@@ -1723,7 +1919,8 @@ CONTAINS
 # if defined CORAL_SIZE_DYNAMICS
           ,'growth','mort','Damage'                             &
 # endif
-          ,'E_ca','F_Cgrowth','F_Crepair','Si_DIC','Si_DO', 'F_H'
+          ,'E_ca','F_bio','F_Crest','F_Cext','F_Cmob','F_Cdec','QCext'  &
+          ,'Si_DIC','Si_DO', 'F_H'
 
       else
         dsec(n)=dsec(n)+CORAL_OUTPUT_INTERVAL*60.0d0
@@ -1761,7 +1958,8 @@ CONTAINS
 #  if defined CORAL_SIZE_DYNAMICS
        , CORAL(ng)%growth(n,i,j), CORAL(ng)%mort(n,i,j) , Damage                 &
 #  endif
-       , E_ca, F_Cgrowth, F_Crepair, Si_DIC(iCt), Si_DO, F_H
+       , E_ca, F_bio, F_Crest, F_Cext, F_Cmob, F_Cdec                             &
+       , CORAL(ng)%QCext(iCt,n,i,j), Si_DIC(iCt), Si_DO, F_H
     END IF
 
 !    IF(mod(int(date*86400.0d0), int(CORAL_AVERAGE_INTERVAL*86400.0d0))==0) THEN

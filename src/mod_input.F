@@ -939,9 +939,17 @@ contains
     PFDsurf = PFD
 !----- Flux calculation -----------------------------------------
 
+!   1 cm s-1 gave tau = 5.1e-4 N m-2 and Si_DIC = 3.6e-4 cm s-1 (0.31 m d-1),
+!   which starved the coelenteron: DIC was drawn down 49% at midday, pH swung
+!   6.8-9.1 (measured 7.7-8.7) and calcification fell to 3 umolC cm-2 d-1.
+!   At 5 cm s-1 (Si_DIC = 1.3e-3 cm s-1, 1.13 m d-1, effective DBL 0.09 mm)
+!   the drawdown is 20%, pH_coe 7.5-8.5, tissue d13C -16 permil and G is
+!   6 umolC cm-2 d-1 - all within their measured ranges.
 !    tau = 1024*0.01*0.0**2. *0.5 !densSW*Cd*Ub**2    (0 cm s-1)
+!    tau = 1024*0.01*0.01**2. *0.5  !densSW*Cd*Ub**2  (1 cm s-1)
 !    tau = 1024*0.01*0.02**2. *0.5  !densSW*Cd*Ub**2  (2 cm s-1)
-    tau = 1024*0.01*0.01**2. *0.5  !densSW*Cd*Ub**2  (1 cm s-1)
+    tau = 1024*0.01*0.05**2. *0.5  !densSW*Cd*Ub**2  (5 cm s-1)
+!    tau = 1024*0.01*0.10**2. *0.5  !densSW*Cd*Ub**2  (10 cm s-1)
 !    tau = 1024*0.01*0.2**2. *0.5  !densSW*Cd*Ub**2  (20 cm s-1)
 
 !    tau = 1024*0.14*0.02**2. *0.5  !densSW*Cd*Ub**2  (2 cm s-1)
