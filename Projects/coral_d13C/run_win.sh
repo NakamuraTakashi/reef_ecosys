@@ -19,6 +19,17 @@ INCLUDE="-I${PWD}"
 FFLAGS="-fbounds-check -ffree-form -O3"
 #FFLAGS="-fbounds-check -ffree-form -O0 -g -fcheck=array-temps,bounds,do,mem,pointer,recursion"
 
+# --- Debug build: catch uninitialised values ---------------------------------
+#   Fortran namelist input assigns only the variables that appear in the .in file
+#   and leaves the rest untouched, without any diagnostic.  A variable that has no
+#   initialiser and is omitted from the .in therefore holds whatever was in memory
+#   (a test read back -1.14e+294 for a real and 0 for an integer).  Every variable
+#   in the "initial" namelist now has a default in mod_param.F, but the flags below
+#   catch anything that slips through: uninitialised reals are filled with
+#   signaling NaN, so the first use aborts with SIGFPE and a backtrace instead of
+#   quietly propagating.  Worth running once after adding a namelist variable.
+#FFLAGS="-fbounds-check -ffree-form -O0 -g -fbacktrace -finit-real=snan -finit-integer=-99999 -ffpe-trap=invalid,zero,overflow"
+
 gfortran ${FFLAGS} \
   ${SRC_DIR}/mod_calendar.f90 \
   ${SRC_DIR}/mod_geochem.F  \
@@ -44,12 +55,12 @@ gfortran ${FFLAGS} \
 
 rm *.mod
 #
-mkdir -p output01
+mkdir -p output02
 #
 ./ecosys_test.exe < coral_01.in
 #
 # Plot time series CSV files (full period)
-uv run ../../postproc/python/plot_csv_timeseries.py -o output01 -p output01/plots
+uv run ../../postproc/python/plot_csv_timeseries.py -o output02 -p output02/plots
 #
 # Plot the diel cycle over a short window
 if [ -z "${ZOOM_START}" ]; then
@@ -57,9 +68,9 @@ if [ -z "${ZOOM_START}" ]; then
                 gsub(/[^0-9.]/,"",v); if (v+0>0) printf "%.0f", v/2; exit}' coral_01.in)
 fi
 if [ -n "${ZOOM_START}" ]; then
-  echo "Diel plots: day ${ZOOM_START} + ${ZOOM_DAYS} days -> output01/plots_diel"
-  uv run ../../postproc/python/plot_csv_timeseries.py -o output01 --no-full \
-    -s "${ZOOM_START}" -d "${ZOOM_DAYS}" -z output01/plots_diel
+  echo "Diel plots: day ${ZOOM_START} + ${ZOOM_DAYS} days -> output02/plots_diel"
+  uv run ../../postproc/python/plot_csv_timeseries.py -o output02 --no-full \
+    -s "${ZOOM_START}" -d "${ZOOM_DAYS}" -z output02/plots_diel
 else
   echo "run_win.sh: could not read Tmax from coral_01.in; skipping diel plots."
   echo "            Set ZOOM_START explicitly, e.g. ZOOM_START=180 ./run_win.sh"

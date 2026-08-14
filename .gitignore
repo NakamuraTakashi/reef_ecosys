@@ -50,3 +50,6 @@ fort.*
 # Editor settings
 .vscode/
 
+# Documents for only internal use
+Projects/coral_d13C/doc/
+doc/

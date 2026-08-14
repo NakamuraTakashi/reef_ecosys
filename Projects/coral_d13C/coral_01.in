@@ -23,7 +23,7 @@
 
   dt = 1.0d0
 
-  depth = 5.0d0 ! Set depth (m)
+  depth = 2.0d0 ! Set depth (m)  ! 5.0d0 until 2026-08-14; 2 m suits a reef flat
 
   isplitc   = 20
 
@@ -80,7 +80,7 @@
 /
 
 &output   
-  OUTFILE_prefix = 'output01/ctrl'
+  OUTFILE_prefix = 'output02/temp_seasonal'
 /
 
 &sedeco_config
@@ -154,18 +154,32 @@
 d13C_TIC0 = 0.7d0      ! d13C_TIC (permill VPDB)
 d13C_DOC_0 = -15.0d0, -15.0d0 ! d13C_DOC (permill VPDB)
 d13C_POC_0 = -15.0d0, -15.0d0, -15.0d0  ! d13C_POC (permill VPDB)
-d13C_PhyC_0 = -15.0d0, -15.0d0, -15.0d0 ! d13C_phytoplankton1 (permill VPDB)
+d13C_PhyC_0 = -15.0d0, -15.0d0, -15.0d0, -15.0d0 ! d13C_phytoplankton (permill VPDB); Nphy=4 - the 4th was missing and read as undefined
 d13C_ZooC_0 = -20.0d0 ! d13C_zooplankton (permill VPDB)
-d13C_PIC_0 = -5.0d0   ! d13C_PIC (permill VPDB)
+d13C_PIC_0 = -5.0d0, -5.0d0   ! d13C_PIC (permill VPDB); Npim=2 - the 2nd was missing and read as undefined
 
 d15N_NO3_0 = 0.7d0       ! d15N_NO3 (permill)
 d15N_NH4_0 = 0.7d0       ! d15N_TIC (permill)
 d15N_DON_0 = -15.0d0, -15.0d0   ! d15N_DOC (permill)
 d15N_PON_0 = -15.0d0,-15.0d0,-15.0d0    ! d15N_POC (permill)
-d15N_PhyN_0 = -15.0d0,-15.0d0,-15.0d0   ! d15N_phytoplankton (permill)
+d15N_PhyN_0 = -15.0d0,-15.0d0,-15.0d0,-15.0d0   ! d15N_phytoplankton (permill); Nphy=4 - the 4th was missing and read as undefined
 d15N_ZooN_0 = -20.0d0   ! d15N_zooplankton (permill)
 
-p_coral_0 = 0.5d0, 0.5d0  ! Coral coverage (0-1): inner reef, outer reef 
+! U_0: reference near-bottom current speed (cm s-1).
+!   tau = 0.5*densSW*Cd_tau*(U_0*0.01)^2 drives the coral-seawater mass transfer.
+!   The 0.5 and Cd_tau = 0.02 follow Falter et al. (2016) equation (3); see the
+!   comment on tau in mod_input.F before changing either.
+!   0 falls back to the molecular-diffusion floor of the 1 mm ciliary boundary
+!   layer.  See doc/README.md section 18 for the U sweep and section 25 for the
+!   Cd_tau revision (Cd_tau 0.01 -> 0.02 and U_0 5 -> 3 on 2026-08-14).
+U_0 = 5.0d0
+
+! Coral coverage (0-1) per type.  The two types share every parameter, so type 2
+! is a byte-for-byte duplicate of type 1 - setting it to 0 skips its computation
+! (mod_reef_ecosys.F guards the coral_polyp call with p_coral > 0) and leaves the
+! crl02 output files empty.  Restore 0.5d0, 0.5d0 to run a 2-point sensitivity
+! scan with the two types given different parameters.
+p_coral_0 = 0.5d0, 0.0d0  ! Coral coverage (0-1): inner reef, outer reef 
 p_algae_0  = 0.0d0  ! Macro algae coverage (0-1)
 p_sgrass_0 = 0.0d0  ! Seagrass coverage (0-1)
 p_sand_0   = 1.0d0  ! Sand coverage (0-1)

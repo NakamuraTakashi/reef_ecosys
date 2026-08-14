@@ -48,9 +48,9 @@
 
 /*** Coral Polyp model options. ***/
 # if defined CORAL_POLYP
-/*#  define CORAL_TEMP_DEPENDENT*/
+#  define CORAL_TEMP_DEPENDENT
 /*#  define CORAL_ZOOXANTHELLAE*/
-/*#  define CORAL_MUCUS*/           /*Mucus release from coral */
+#  define CORAL_MUCUS             /*Mucus release from coral */
 /*#  define CORAL_INGESTION*/
 /*#  define CORAL_NONE_CO2_EQ*/
 /*#  define CORAL_NUTRIENTS*/
@@ -104,6 +104,9 @@
 /*#define LONGWAVE_IN*/
 /*#define INPUT_BOTTOM_PFD*/
 #define ANA_SWRAD_ZILLMAN
+#define ANA_WTEMP_SEASONAL   /* Analytical seasonal SST (mod_input.F); needed for
+                                CORAL_TEMP_DEPENDENT - without it wtemp is a
+                                constant 25 degC and there is no seasonal signal */
 
 /*#define REEF_FLOW*/
 

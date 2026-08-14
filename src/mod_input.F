@@ -809,6 +809,36 @@ contains
 
     integer :: id_tmp
 
+    real(8), parameter :: pi = 3.141592654d0
+
+!   Analytical seasonal sea surface temperature (used when no wtemp file is given)
+!     SST_mean : annual mean (degC)
+!     SST_amp  : half the annual range (degC)
+!     SST_pday : day of year of the maximum
+!   The maximum on day 227 (15 Aug) lags the solstice (day 172, when the analytical
+!   PFD peaks) by 55 days.  That phase lag is the point of using a sinusoid rather
+!   than scaling the light curve: it lets a light-driven signal be told apart from
+!   a temperature-driven one by its phase.
+!
+!   21-29 degC (mean 25, amp 4) is a deliberately round forcing, not a site
+!   climatology; it was narrowed from 20-30 (amp 5.0) on 2026-08-14.  The
+!   Ishigaki values it replaces were mean 26.1 with amp 3.0 (23-29 degC, 29 degC in
+!   July-August, 23 degC in February; a reef flat such as Shiraho swings about
+!   1 degC wider).  Doubling the range was tested first: it raises the summer/winter
+!   ratio of Pg from 1.58 to 1.92 and of respiration from 1.32 to 1.60, and improves
+!   the seasonality of organic carbon release (2.04 -> 2.50 against 5.0 measured by
+!   Tanaka et al. 2018), while the annual mean skeletal d13C moves only -2.994 ->
+!   -2.965 and its annual amplitude does not grow (0.705 -> 0.646 permil).  The
+!   round numbers were adopted because nothing of consequence depends on the exact
+!   values.  Restore 26.1/3.0 to run the Ishigaki climatology.
+    real(8), parameter :: SST_mean = 25.0d0
+    real(8), parameter :: SST_amp  =  4.0d0
+    real(8), parameter :: SST_pday = 227.0d0
+
+!   Bed drag parameters used to turn U_0 into tau (see below)
+    real(8), parameter :: densSW_tau = 1024.0d0   ! (kg m-3) seawater density
+    real(8), parameter :: Cd_tau     = 0.02d0     ! (-)      drag coefficient
+
     namelist/sedeco_config/sgd_flux_in
 
 ! -- Set solar radiation data -----------------------------------------------
@@ -910,7 +940,22 @@ contains
         t(1,:,:,:,iTemp) = wtemp
       endif
     else
+#if defined ANA_WTEMP_SEASONAL
+!   Analytical seasonal cycle.  time is in days from the start of the run and the
+!   analytical solar radiation starts on 1 January (start_day = 1 in short_radi),
+!   so day of year = time + 1 and the maximum falls on SST_pday.
+!   The tracer array has to be written too: under nSetting = 1 nothing else
+!   updates t(:,:,:,:,iTemp), so setting the local wtemp alone would leave the
+!   ecosystem at the initial T0.
+      wtemp = SST_mean + SST_amp*cos( 2.0d0*pi*(time-(SST_pday-1.0d0))/365.0d0 )
+      if(nSetting==4) then
+        t(2,:,:,:,iTemp) = wtemp
+      else
+        t(1,:,:,:,iTemp) = wtemp
+      endif
+#else
       wtemp = 25.0d0
+#endif
     endif
 ! -- Set tide data -----------------------------------------------
     if(in_file(itide)>0) then
@@ -945,18 +990,38 @@ contains
 !   At 5 cm s-1 (Si_DIC = 1.3e-3 cm s-1, 1.13 m d-1, effective DBL 0.09 mm)
 !   the drawdown is 20%, pH_coe 7.5-8.5, tissue d13C -16 permil and G is
 !   6 umolC cm-2 d-1 - all within their measured ranges.
-!    tau = 1024*0.01*0.0**2. *0.5 !densSW*Cd*Ub**2    (0 cm s-1)
-!    tau = 1024*0.01*0.01**2. *0.5  !densSW*Cd*Ub**2  (1 cm s-1)
-!    tau = 1024*0.01*0.02**2. *0.5  !densSW*Cd*Ub**2  (2 cm s-1)
-    tau = 1024*0.01*0.05**2. *0.5  !densSW*Cd*Ub**2  (5 cm s-1)
-!    tau = 1024*0.01*0.10**2. *0.5  !densSW*Cd*Ub**2  (10 cm s-1)
-!    tau = 1024*0.01*0.2**2. *0.5  !densSW*Cd*Ub**2  (20 cm s-1)
-
-!    tau = 1024*0.14*0.02**2. *0.5  !densSW*Cd*Ub**2  (2 cm s-1)
-!    tau = 1024*0.14*0.05**2. *0.5  !densSW*Cd*Ub**2  (5 cm s-1)
-!    tau = 1024*0.14*0.10**2. *0.5  !densSW*Cd*Ub**2  (10 cm s-1)
-
-!    tau = 1024*0.01*0.2**2. *0.5 !densSW*Cd*Ub**2   (20 cm s-1)
+!   Bottom shear stress from the reference current speed U_0 (cm s-1), which is
+!   read from the "initial" namelist in the .in file - no longer edited here.
+!
+!     tau = 0.5 * densSW * Cd * Ub^2 ,  Ub = U_0 * 0.01  [m s-1]
+!
+!   DO NOT REMOVE THE FACTOR 0.5.  It is not a stray dynamic-pressure term.  This
+!   is verbatim equation (3) of Falter et al. (2016, GRL 43:9764-9771), the paper
+!   that calibrates ak = 340 in S_i (mod_coral.F):
+!
+!     tau_bot = 1/2 * rho * C_D * U_inf^2 ,   U_inf = ambient speed above benthos
+!
+!   Their tau_bot is a form drag per planar area (their equations (4)-(5) divide
+!   1/2*rho*h*Cd,cyl*U^2 by the planar area of each canopy element), so the 1/2
+!   belongs to the definition.  ak is fitted against tau defined this way; drop
+!   the 1/2 and the mass-transfer calibration is wrong by 2^0.4 = 1.32.
+!   Note mod_reef_flow.F uses tau = rho*Cd*|u|*u (no 1/2) with Cd = 0.02 from
+!   Lowe et al. (2009).  That is a DIFFERENT convention for a different purpose
+!   (reef-scale momentum balance on the depth-averaged speed), not an
+!   inconsistency.  C_D in the Falter convention is twice the bed-stress c_d of
+!   the same flow, so the two numbers are not directly comparable.
+!
+!   Cd_tau = 0.02 is the top of the range Falter et al. measured for their own
+!   canopies under UNIDIRECTIONAL flow (C_D = 0.016-0.022), which they state is
+!   consistent with bottom drag over natural reefs.  Under oscillatory (wave)
+!   flow the same canopies gave C_D = 0.048-0.313, an order of magnitude higher.
+!   U_0 is a steady current, so the unidirectional range is the applicable one.
+!   Note Eosc = 1.05 in S_i sits halfway between their pure-current (1.0) and
+!   pure-wave (1.1) values, so the wave contribution is admitted there but not
+!   here; revisit if a wave-exposed setting is wanted.
+!   0.01 was used until 2026-08-14 and is below even the unidirectional range;
+!   0.14 appears in some older commented-out lines and is not used.
+    tau = 0.5d0 * densSW_tau * Cd_tau * (U_0*0.01d0)**2   !  (N m-2)
     
     pCO2air = 400.0d0 !(uatm)
     

@@ -170,6 +170,17 @@ MODULE mod_param
 
   real(8) :: PFDsurf    
   real(8) :: tau        
+
+!  U_0: reference near-bottom current speed (cm s-1), read from the "initial"
+!  namelist.  mod_input.F turns it into the bottom shear stress that drives the
+!  mass-transfer coefficient S_i, so this is the single knob for flow speed:
+!    tau = 0.5 * densSW * Cd * (U_0*0.01)^2   [N m-2]
+!  Flow controls coral-seawater exchange and therefore almost everything else -
+!  at U_0 = 0 the coelenteron DIC is drawn down 26% and calcification collapses,
+!  at 20 cm s-1 the drawdown is 3.6%.  See doc/README.md section 18.
+!  Default 5.0 so input files written before this knob existed keep their old
+!  behaviour, which was a hard-coded 5 cm s-1.
+  real(8) :: U_0 = 5.0d0
   real(8) :: pCO2air    
   real(8) :: U10        
   
@@ -307,17 +318,34 @@ contains
 !
     integer :: ic
 
-    real(8) :: T0, S0, Sed1_0
-    real(8) :: TAlk0, TIC_0, Oxyg0
-    real(8) :: NO3_0, NH4_0, PO4_0
-    real(8) :: DOC_0(Ndom), POC_0(Npom), PhyC_0(Nphy), ZooC_0(Nzoo), PIC_0(Npim)
+!  Defaults for every variable in the "initial" namelist.
+!  Fortran namelist input assigns ONLY the variables that appear in the file and
+!  silently leaves the rest at whatever they held before - it is not an error to
+!  omit one.  Without an initialiser that means an undefined value: a test with
+!  an uninitialised real read back -1.14e+294, and an uninitialised integer read
+!  back 0, neither with any diagnostic.  Giving every namelist variable a default
+!  here turns an omission from silent corruption into a documented fallback, and
+!  lets short .in files leave out what they do not need.  Anything present in the
+!  .in file still overrides these, so existing input files behave exactly as before.
+!  To catch the remaining cases, build with
+!    -finit-real=snan -ffpe-trap=invalid,zero,overflow
+!  which makes any use of an uninitialised real abort instead of propagating.
+    real(8) :: T0 = 25.0d0, S0 = 34.0d0, Sed1_0 = 0.0d0
+    real(8) :: TAlk0 = 2232.0d0, TIC_0 = 1915.0d0, Oxyg0 = 250.0d0
+    real(8) :: NO3_0 = 0.2d0, NH4_0 = 0.26d0, PO4_0 = 0.04d0
+    real(8) :: DOC_0(Ndom) = 0.0d0, POC_0(Npom) = 0.0d0
+    real(8) :: PhyC_0(Nphy) = 0.0d0, ZooC_0(Nzoo) = 0.0d0, PIC_0(Npim) = 0.0d0
 !    real(8) :: DON_0(Ndom), PON_0(Npom), PhyN_0(Nphy), ZooN_0(Nzoo)
 !    real(8) :: DOP_0(Ndom), POP_0(Npom), PhyP_0(Nphy), ZooP_0(Nzoo)
-    real(8) :: d13C_TIC0, d13C_DOC_0(Ndom), d13C_POC_0(Npom)
-    real(8) :: d13C_PhyC_0(Nphy), d13C_ZooC_0(Nzoo), d13C_PIC_0(Npim)
-    real(8) :: d15N_NO3_0, d15N_NH4_0, d15N_DON_0(Ndom), d15N_PON_0(Npom)
-    real(8) :: d15N_PhyN_0(Nphy), d15N_ZooN_0(Nzoo)
-    real(8) :: p_coral_0(Ncl), p_algae_0(Nag), p_sgrass_0(Nsg), p_sand_0
+    real(8) :: d13C_TIC0 = 0.7d0
+    real(8) :: d13C_DOC_0(Ndom) = -15.0d0, d13C_POC_0(Npom) = -15.0d0
+    real(8) :: d13C_PhyC_0(Nphy) = -15.0d0, d13C_ZooC_0(Nzoo) = -20.0d0
+    real(8) :: d13C_PIC_0(Npim) = -5.0d0
+    real(8) :: d15N_NO3_0 = 0.7d0, d15N_NH4_0 = 0.7d0
+    real(8) :: d15N_DON_0(Ndom) = -15.0d0, d15N_PON_0(Npom) = -15.0d0
+    real(8) :: d15N_PhyN_0(Nphy) = -15.0d0, d15N_ZooN_0(Nzoo) = -20.0d0
+    real(8) :: p_coral_0(Ncl) = 0.0d0, p_algae_0(Nag) = 0.0d0
+    real(8) :: p_sgrass_0(Nsg) = 0.0d0, p_sand_0 = 1.0d0
 #ifdef AQUACULTURE
     real(8) :: dens_aqua0(5)
 #endif
@@ -332,6 +360,7 @@ contains
     namelist/initial/d15N_NO3_0, d15N_NH4_0, d15N_DON_0, d15N_PON_0
     namelist/initial/d15N_PhyN_0, d15N_ZooN_0
     namelist/initial/p_coral_0, p_algae_0, p_sgrass_0, p_sand_0
+    namelist/initial/U_0
 #ifdef AQUACULTURE
     namelist/aquaculture_config/dens_aqua0
     namelist/aquaculture_config/f_dens

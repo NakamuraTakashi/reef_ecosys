@@ -7,16 +7,68 @@ module mod_geochem
 
   implicit none
 
+!  Counts how many times a carbonate-system solve hit its iteration cap and fell
+!  back to pH 8.  Should stay 0; a non-zero value at the end of a run means some
+!  state went outside what the solver can handle and those pH values are fiction.
+  integer :: n_ph_fallback = 0
+
 !----- Carbon isotope fractionation ------------------------
 #if defined CARBON_TRACE
-  real(8), parameter :: aC_phot(3) = [ 1.0d0, 1.0d0, 1.0d0 ]
+  real(8), parameter :: aC_phot(3)     = [ 1.0d0, 1.0d0, 1.0d0 ]
+  real(8), parameter :: aC_phot_crl(3) = [ 1.0d0, 1.0d0, 1.0d0 ]
+  real(8), parameter :: aC_phot_zox(3) = [ 1.0d0, 1.0d0, 1.0d0 ]
 !  real(8), parameter :: aC_resp(3) = [ 1.0d0, 1.0d0, 1.0d0 ]
   real(8), parameter :: aC_calc(3) = [ 1.0d0, 1.0d0, 1.0d0 ] 
   real(8), parameter :: aC_co2 (3) = [ 1.0d0, 1.0d0, 1.0d0 ]
   real(8), parameter :: aC_grz (3) = [ 1.0d0, 1.0d0, 1.0d0 ]
 #else
-                                     ! iCt      iC13             iD47 (clumped isotope)              
-  real(8), parameter :: aC_phot(3) = [ 1.0d0, -20.0d-3 +1.0d0, -20.0d-3 +1.0d0 ] !!!!! To Be Confirmed
+!  Photosynthetic carbon isotope fractionation.  These are APPARENT (expressed)
+!  fractionations, not intrinsic Rubisco values, and each one is referenced to the
+!  isotope ratio of the pool it is actually multiplied by - check that before
+!  reusing one of them somewhere else.
+!
+!  aC_phot     : generic autotroph, referenced to BULK DIC.  Used by mod_foodweb
+!                (phytoplankton), mod_macroalgae and mod_seagrass.
+!                Marine POM d13C is conventionally taken as -20 +/- 1 permil; with
+!                ambient DIC at +1 permil that is an apparent fractionation of
+!                21 +/- 1 against bulk DIC, so 20 gives -19 permil.  Strictly
+!                eps_p is defined against CO2(aq) and depends on [CO2aq] and growth
+!                rate - cultures span a 20 permil range (Hinga et al. 1994; Rau et
+!                al. 1997) - so a constant is an approximation.
+!                TODO seagrass d13C is -5 to -15 permil and macroalgae -8 to -30,
+!                so neither is well served by the phytoplankton value.  Split them
+!                when those modules are used in anger.
+!
+!  aC_phot_crl : coral holobiont, referenced to BULK DIC of the coelenteron.
+!                Smaller than the free-living value because Symbiodiniaceae run a
+!                strong CCM (carbonic anhydrase plus active HCO3- uptake, Brading
+!                et al. 2013) and the coelenteron is carbon-limited.  Measured
+!                apparent fractionation is 11.6-18.2 permil, mean 14.5, over 192
+!                samples of 10 species (Nahon et al. 2013): host tissue
+!                -13.8 +/- 1.6, symbionts -14.1 +/- 1.6, the two differing by only
+!                0.27 +/- 0.76.  17 puts equilibrium tissue d13C at -14.0 and
+!                skeletal d13C at -3.13.  The intrinsic Form II Rubisco value of
+!                22-30 permil (27 measured in a dinoflagellate, Wilkes et al. 2017)
+!                is NOT the right number here - the CCM suppresses what is shown.
+!                Like eps_p this should not really be a constant: the
+!                depletion-diffusion hypothesis (Grottoli 2000) has fractionation
+!                shrink at high photosynthesis in shallow water, and the depth
+!                trend in symbiont d13C bears that out.
+!                See doc/kinetic_isotope_detailed_balance.md section 9.
+!
+!  aC_phot_zox : PROVISIONAL.  Used only by the CORAL_ZOOXANTHELLAE branch of
+!                mod_coral.F, which multiplies by rCO2, i.e. it is referenced to
+!                CO2(aq) rather than bulk DIC.  In the coelenteron CO2(aq) runs
+!                about 8.6 permil lighter than bulk DIC, so the value consistent
+!                with aC_phot_crl = 17 is 17 - 8.6 = 8.4.  That is a conversion,
+!                not a measurement: no CO2-referenced fractionation has been
+!                fitted for the zooxanthellae sub-model, and the 8.6 permil offset
+!                is itself a model output that moves with pH and photosynthesis.
+!                Revisit before using CORAL_ZOOXANTHELLAE for anything.
+                                          ! iCt      iC13             iD47 (clumped isotope)              
+  real(8), parameter :: aC_phot(3)     = [ 1.0d0, -20.0d-3 +1.0d0, -20.0d-3 +1.0d0 ]
+  real(8), parameter :: aC_phot_crl(3) = [ 1.0d0, -17.0d-3 +1.0d0, -17.0d-3 +1.0d0 ]
+  real(8), parameter :: aC_phot_zox(3) = [ 1.0d0,  -8.4d-3 +1.0d0,  -8.4d-3 +1.0d0 ] !!!!! PROVISIONAL
 !  real(8), parameter :: aC_resp(3) = [ 1.0d0,   0.0d-3 +1.0d0,   0.0d-3 +1.0d0 ]
   real(8), parameter :: aC_calc(3) = [ 1.0d0,   2.7d-3 +1.0d0,   2.7d-3 +1.0d0 ] 
   real(8), parameter :: aC_co2 (3) = [ 1.0d0,  -7.0d-3 +1.0d0,  -7.0d-3 +1.0d0 ] !!!!! To Be Confirmed. Maybe ~-8-4.4
@@ -1118,6 +1170,7 @@ contains
     real(8)  x0,x1,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF
     real(8)  q, q0, q1
     real(8)  p, p0, p1
+    integer  it
 
 !    real(8)  func
 
@@ -1126,7 +1179,11 @@ contains
     q0=func(p0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
     q1=func(p1,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
 
-    do while (abs(q1).gt.1.d-7)
+!   Bounded like the other two.  This secant variant is not called anywhere - the
+!   call site in pH_fromATCT is commented out - but an unbounded loop left in the
+!   file is a trap for whoever re-enables it.
+    do it = 1, 200
+      if(.not.(abs(q1).gt.1.d-7)) exit
       if(q1.eq.q0) then
         p1=1.d-8
         exit
@@ -1156,41 +1213,99 @@ contains
     real(8)  xini
 
 !    real(8)  func,dfunc
-    integer i
+    integer it, ipre, ineg
 
-    i=0
+!   Iteration bounds.  Measured over 193,851 real calls (ambient water, coelenteron
+!   and calcifying fluid, 224 simulated days of the coral_d13C configuration):
+!     Newton loop   3-6 iterations, max 6   (5 iterations in 52% of calls)
+!     y<0 pre-loop  0-2 iterations, max 2
+!     x<0 guard     never taken (0 iterations in 100% of calls)
+!   The caps below therefore sit an order of magnitude above anything the model
+!   produces.  They exist because the previous Do while loops had no bound at all:
+!   x0=x0*0.1 underflows to zero after ~320 steps and 0*0.1 is 0, so a state the
+!   solver cannot bracket span the loop forever at 100% CPU.
+    integer, parameter :: ITMAX = 50   ! Newton loop     (measured max 6)
+    integer, parameter :: ITPRE = 60   ! y<0 pre-loop    (measured max 2)
+    integer, parameter :: ITNEG = 60   ! x<0 guard       (measured max 0)
+#if defined _OPENACC
+    integer, parameter :: NITER = 8    ! fixed Newton steps on GPU (measured max 6)
+    integer, parameter :: NPRE  = 4    ! fixed pre-loop steps      (measured max 2)
+#endif
+
+#if defined _OPENACC
+!   GPU path: fixed trip counts, no early exit.  A GPU runs 32 threads of a warp in
+!   lock-step, so a data-dependent Do while makes every thread pay for the slowest
+!   one anyway; taking the worst case unconditionally costs nothing extra and
+!   removes the divergence, and the compiler can then unroll and keep the iterates
+!   in registers.  NITER/NPRE are set above the measured maxima (6 and 2).  Newton
+!   converges quadratically near the root, so iterating past convergence only adds
+!   corrections below rounding.  The x<0 guard becomes a predicated assignment
+!   rather than an inner loop - it never fired in 193,851 measured calls.
+!   NOTE this branch does NOT reproduce the CPU result bit for bit; it runs a fixed
+!   number of Newton steps instead of stopping at the tolerance.
     xini=x0
 
     y=func(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
-    Do while (y.lt.0.d0)! Error handring
+    do ipre = 1, NPRE
+      if(y.lt.0.d0) x0=x0*0.1
+      y=func(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
+    end do
+    dy=dfunc(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
+
+    do it = 1, NITER
+      x =x0-y/dy
+      if(x.lt.0.d0) x=x0*0.1d0
+      y =func (x,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
+      dy=dfunc(x,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
+      x0=x
+    end do
+
+    Newton_Raphson2 = x0
+
+    return
+#else
+    xini=x0
+
+    y=func(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
+    do ipre = 1, ITPRE          ! was: Do while (y.lt.0.d0)
+      if(.not.(y.lt.0.d0)) exit ! .not.(a.lt.b) keeps NaN behaving as before
       x0=x0*0.1
       y=func(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
     end do
     dy=dfunc(x0,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
 
-    do while (abs(y).gt.1.d-7)
+    do it = 1, ITMAX            ! was: do while (abs(y).gt.1.d-7)
+      if(.not.(abs(y).gt.1.d-7)) exit
 
       x =x0-y/dy
 
-      Do while (x.lt.0.d0)! Error handring
+      do ineg = 1, ITNEG        ! was: Do while (x.lt.0.d0)
+        if(.not.(x.lt.0.d0)) exit
         x=xini*0.1d0
         xini=x
         y=func(x,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
-       !i=0
       end do
 
       y=func(x,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
       dy=dfunc(x,AT,CT,BT,ST,FT,K1,K2,Kw,KB,KS,KF)
       x0=x
-      i=i+1
-      if(i.eq.200) then
-        !write(50,*) 'pH error: pH = ', -Log10(x),', AT = ', AT,', CT = ',CT
-        x=10.**(-8.)
-        exit
-      endif
     enddo
 
+!   Fall back to pH 8 if the Newton loop never met its tolerance.  The old code
+!   assigned the fallback to x, but the function returns x0, so the fallback was
+!   dead and a non-converged iterate was returned instead.
+    if(abs(y).gt.1.d-7) then
+      x0 = 1.0d-8
+#if !defined _OPENACC
+      n_ph_fallback = n_ph_fallback + 1
+      if(n_ph_fallback.le.10) then
+        write(*,*) 'WARNING pH solver hit ITMAX, returning pH 8. AT=',AT,' CT=',CT
+      endif
+#endif
+    endif
+
     Newton_Raphson2 = x0
+#endif
 
     return
   end function Newton_Raphson2
@@ -1259,13 +1374,19 @@ contains
     real(8)  xini
 
 !    real(8)  func,dfunc
-    integer i
+    integer i, ipre, ineg
+!   Bounded for the same reason as Newton_Raphson2 - see the note there.  This
+!   variant serves the CORAL_NONE_CO2_EQ path and was not exercised in the
+!   193,851-call measurement, so the caps are carried over unchanged.
+    integer, parameter :: ITPRE = 60
+    integer, parameter :: ITNEG = 60
 
     i=0
     xini=x0
 
     y=func_noneq(x0,AT,CT,cCO2aq,BT,ST,FT,K2,Kw,KB,KS,KF)
-    Do while (y.lt.0.d0)! Error handring
+    do ipre = 1, ITPRE          ! was: Do while (y.lt.0.d0)
+      if(.not.(y.lt.0.d0)) exit
       x0=x0*0.1
       y=func_noneq(x0,AT,CT,cCO2aq,BT,ST,FT,K2,Kw,KB,KS,KF)
     end do
@@ -1275,11 +1396,11 @@ contains
 
       x =x0-y/dy
 
-      Do while (x.lt.0.d0)! Error handring
+      do ineg = 1, ITNEG        ! was: Do while (x.lt.0.d0)
+        if(.not.(x.lt.0.d0)) exit
         x=xini*0.1d0
         xini=x
         y=func_noneq(x,AT,CT,cCO2aq,BT,ST,FT,K2,Kw,KB,KS,KF)
-       !i=0
       end do
 
       y=func_noneq(x,AT,CT,cCO2aq,BT,ST,FT,K2,Kw,KB,KS,KF)
@@ -1288,7 +1409,7 @@ contains
       i=i+1
       if(i.eq.200) then
         !write(6,*) 'pH calculation error: pH = ', -Log10(x)
-        x=10.**(-8.)
+        x0=10.**(-8.)
         exit
       endif
     enddo

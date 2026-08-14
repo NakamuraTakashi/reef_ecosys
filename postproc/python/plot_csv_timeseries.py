@@ -125,7 +125,22 @@ def plot_csv_timeseries(output_dir=None, plot_output_dir=None,
         csv_path = os.path.join(output_dir, csv_file)
         csv_stem = csv_file[:-4] if csv_file.endswith('.csv') else csv_file
 
-        df = pd.read_csv(csv_path)
+        # An output file can legitimately be empty: the model opens one CSV per
+        # coral type regardless of coverage, so a type with p_coral_0 = 0 is never
+        # computed and leaves a 0-byte file behind.  A run killed part-way leaves
+        # the same thing.  pandas raises EmptyDataError on those, which used to
+        # abort the whole loop - and because the files are processed in sorted
+        # order, an empty crl02 stopped ecosys and env from ever being plotted.
+        try:
+            df = pd.read_csv(csv_path)
+        except pd.errors.EmptyDataError:
+            print(f'Skipping (empty): {csv_file}')
+            print()
+            continue
+        if df.empty or len(df.columns) == 0:
+            print(f'Skipping (no rows): {csv_file}')
+            print()
+            continue
         df.columns = df.columns.str.strip()
 
         # The time axis is the first column ('time' in days for *_his.csv,

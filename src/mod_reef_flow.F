@@ -334,6 +334,7 @@ CONTAINS
     real(8), parameter :: err = 0.01d0  ! calculation error (m)
     
     real(8) :: L2
+    integer :: it
 !-----------------------------------------------------------------------
 !
 !   c= L/T=sqrt( (g*L/2/pi*tanh(2*pi*h/L)) ) 
@@ -343,7 +344,11 @@ CONTAINS
     ! Initial wave length
     L = sqrt( g*h )*T  ! wave length of shallow water wave
     L2 = sqrt( (0.5d0*g*L/pi*tanh(2.0d0*pi*h/L)) )*T
-    do while (abs(L-L2)>err)
+!   Bounded fixed-point iteration.  The dispersion relation converges in a handful
+!   of steps for any physical (h, T); the cap only stops h<=0 or T<=0 slipping in
+!   and spinning the loop forever.  Same reason as the solvers in mod_geochem.F.
+    do it = 1, 100
+      if(.not.(abs(L-L2)>err)) exit
       L=L2
       L2 = sqrt( (0.5d0*g*L/pi*tanh(2.0d0*pi*h/L)) )*T
 !      L2 = 0.5d0*g/pi*tanh(2.0d0*pi*h/L)*T*T

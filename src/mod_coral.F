@@ -256,14 +256,21 @@ CONTAINS
             CORAL(ng)%CO2coe(iCt,n,i,j)=33.d0
 
 # if defined CARBON_ISOTOPE || defined CLUMPED_ISOTOPE
+!   -14.0 permil: the equilibrium tissue d13C for aC_phot = 17 permil.  At steady
+!   state F_Crest*R_QCe = (F_Cdec + F_Cmob)*R_QCv exactly, so the structural pool
+!   converges on the reserve; the reserve sits at -14.00 with eps_phot = 17 and
+!   the measured means are -13.8 (host) and -14.1 (symbiont, Nahon et al. 2013).
+!   The previous -16.5 was itself read back off an earlier equilibrium and is now
+!   stale.  It matters because k_decay = 4.8d-8 gives QCv a 259 d turnover, so a
+!   badly placed initial value is dragged through a whole year of simulation.
             CORAL(ng)%QCe   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -16.5d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -14.0d0, R13C_VPDB )
             CORAL(ng)%QCv   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -16.5d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -14.0d0, R13C_VPDB )
             CORAL(ng)%QCr   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -16.5d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -14.0d0, R13C_VPDB )
             CORAL(ng)%QCh   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -16.5d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -14.0d0, R13C_VPDB )
             CORAL(ng)%DICcoe(iC13,n,i,j)   &
                       = Ci_from_Ct_delta( CORAL(ng)%DICcoe(iCt,n,i,j),  0.0d0, R13C_VPDB )
             CORAL(ng)%DICcal(iC13,n,i,j)   &
@@ -566,12 +573,70 @@ CONTAINS
     real(8), parameter :: K_CO2(2)=[ 5.d0, 5.d0 ]     !uM
     real(8), parameter :: V_CO2(2)=[ 2.d0, 2.d0 ]     !nmol O2 (ug Chl a)-1 min-1
 
-!   Temperature dependency parameters
-    real(8), parameter :: Tref_pht(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
-    real(8), parameter :: T_A_pht(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
-    real(8), parameter :: T_H_pht(2)  = [  298.0d0,  298.0d0 ] ! (K) Upper boundary tolerance range
-    real(8), parameter :: T_AH_pht(2) = [30000.0d0, 30000.0d0] ! (K) Arrhenius temp. for upper boundary
-    real(8), parameter :: T_L_pht(2)  = [  276.0d0,  276.0d0 ] ! (K) Lower boundary tolerance range
+!   Temperature dependency parameters (tempcorr2, mod_deb_model.F)
+!
+!   tempcorr2 has the same functional form as the Sharpe-Schoolfield model, so
+!   thermal-performance-curve parameters from the literature transfer directly:
+!     T_A  = E   / k_B ,  T_AH = E_h / k_B ,  T_H = T_h ,  k_B = 8.617e-5 eV K-1
+!   and tempcorr2 returns exactly 1 at T = Tref.
+!
+!   The previous values here were a copy of the oyster parameters in
+!   mod_bivalve.F (Crassostrea gigas; van der Veer et al. 2006 / Bourles et al.
+!   2009).  T_H = 298 K put the thermal optimum at 21 degC and cut Pg to 43% at
+!   30 degC - backwards for a tropical coral.
+!
+!   Tref: 25 degC, the temperature at which Pgmax was tuned.  Because tempcorr2
+!         is 1 at Tref, the existing calibration survives switching the flag on.
+!   T_A : 4000 K = 0.345 eV.  Metabolic theory gives 0.32 eV for photosynthesis-
+!         limited rates (Brown et al. 2004); coral TPC fits give 0.46 eV.  The
+!         low end is taken because Pg is already light- and HCO3-limited by the
+!         tanh and Michaelis-Menten terms, so T_A carries only the enzymatic part.
+!   All six photosynthesis/respiration temperature parameters now come from one
+!   source: Sci Rep 15:33181 (2025) "Thermal extremes likely trigger metabolic
+!   imbalance in coral holobionts", Table 1, total dataset over 35 coral species,
+!   fitted with Sharpe-Schoolfield at a reference temperature of 25 degC - the
+!   same Tref this module uses, so the values transfer without rescaling:
+!
+!                    E (eV)          E_D (eV)        Topt (degC)
+!     gross phot.    0.46 +/- 0.03   6.28 +/- 1.62   29.9 +/- 1.0
+!     dark resp.     0.47 +/- 0.03   2.98 +/- 0.72   30.5 +/- 1.8
+!
+!   with T_A = E/k_B, T_AH = E_D/k_B and T_H solved from Topt via
+!     T_H = 1/( 1/Topt + ln(T_A/(T_AH - T_A))/T_AH ).
+!
+!   History and the trade-off this choice makes.  Earlier settings were assembled
+!   from several sources: T_A_pht = 4000 K from metabolic theory (0.32 eV, Brown
+!   et al. 2004), T_A_rsp = 6155 K from Fujimura et al. (2008), and T_H/T_AH tuned
+!   by hand.  The hand-tuned version (Topt_pht 26.4 degC, a steep 6.59 eV collapse)
+!   gave a larger skeletal d13C annual amplitude - 1.261 permil against 0.704 here -
+!   but was worse on everything else (365 d runs, seasonal SST 23.1-29.1 degC,
+!   U_0 = 5 cm s-1):
+!
+!                                   hand-tuned    Sci Rep    observed
+!     organic C release summer/winter   0.565       2.041      5.0 (Tanaka 2018)
+!     annual-cycle fit R2               0.901       0.988
+!     skeletal d13C peak day             72.2       164.6      ~172 = light max
+!     QCe daily minimum                  2.20        7.70      > 0
+!     skeletal d13C amplitude           1.261       0.704
+!
+!   The hand-tuned version had photosynthesis falling in summer while respiration
+!   rose, which drained QCe and made mucus release run ANTI-phase with the season -
+!   the opposite sign to Tanaka et al. (2018).  The Sci Rep values put both Topt
+!   above the summer peak, so Pg rises 58% into summer, QCe roughly doubles and the
+!   release comes out in phase.  Amplitude is the one thing given up; it should be
+!   recovered through Rratio or flow speed, neither of which is yet tuned for it.
+!   See doc/README.md section 22.
+!
+!   T_L : photosynthesis keeps 15 degC while respiration uses 276 K (2.85 degC).
+!         The paper does not constrain the cold end.  Photosynthesis is far more
+!         cold-sensitive than respiration - f_pht is 0.005 at 10 degC against
+!         f_rsp 0.335 - which matches the temperature response of PAM-measured
+!         photosynthetic activity (Fv/Fm).
+    real(8), parameter :: Tref_pht(2) = [  298.15d0, 298.15d0] ! (K) Refernce temperature (25 degC)
+    real(8), parameter :: T_A_pht(2)  = [ 5338.0d0, 5338.0d0 ] ! (K) = 0.46 eV  (Sci Rep 2025 Table 1)
+    real(8), parameter :: T_H_pht(2)  = [ 306.28d0, 306.28d0 ] ! (K) -> Topt = 29.9 degC (Sci Rep 2025); 303.0d0 = 26.4 degC previously
+    real(8), parameter :: T_AH_pht(2) = [72876.0d0, 72876.0d0] ! (K) = 6.28 eV  (Sci Rep 2025); 76420.0d0 = 6.59 eV previously
+    real(8), parameter :: T_L_pht(2)  = [  288.15d0, 288.15d0] ! (K) Lower boundary tolerance range (15 degC)
     real(8), parameter :: T_AL_pht(2) = [75000.0d0, 75000.0d0] ! (K) Arrhenius temp. for lower boundary
 
 !----- for respiration --------------------------
@@ -581,8 +646,20 @@ CONTAINS
 
                                              !!! * Nakamura et al. 2013 setting; ** New setting
 
-    real(8), parameter :: Rmax(2)   = [  0.4d0,  0.4d0 ] !!!0.53d0*  0.37d0** !Maximum respiration rate (nmol O2 cm-2 s-1) *Tuned using Kuhl et al (1995), Al-Horani et al. (2003) data
-    real(8), parameter :: K_QC(2)   = [  5.0d0,  5.0d0 ]     !!!5.0d0* umol cm-2!!!
+!   K_QC was carried over from Nakamura et al. (2013), where the Michaelis-Menten
+!   term acted on QC, the whole tissue carbon pool (~290 umolC cm-2).  There
+!   QC/(K_QC+QC) was ~0.98 and respiration was effectively DO-limited, which is
+!   the intended physiology: respiration should be insensitive to the reserve and
+!   controlled by oxygen.  Splitting QC into the reserve QCe and the structure QCv
+!   left the same constant acting on QCe (2-4 umolC cm-2), which put respiration
+!   on the steep part of the curve: with K_QC = 5 the DO branch of the min() never
+!   controlled - 0.0% of the time over day 20-25.  At K_QC = 1 the DO branch
+!   controls 33% of the time, restoring the intended behaviour.
+!   Rmax is then reduced to keep P/R in its measured 1.5-2.5 band; it has always
+!   been a tuning parameter.  0.15 gives a maximum of 0.54 and a realised
+!   0.35 umol O2 cm-2 h-1, inside the measured range for coral dark respiration.
+    real(8), parameter :: Rmax(2)   = [ 0.15d0, 0.15d0 ] !!!0.4d0 (with K_QC=5) 0.53d0*  0.37d0** !Maximum respiration rate (nmol O2 cm-2 s-1) *Tuned using Kuhl et al (1995), Al-Horani et al. (2003) data
+    real(8), parameter :: K_QC(2)   = [  1.0d0,  1.0d0 ]     !!!5.0d0* umol cm-2 (for the pre-split QC)!!!
     real(8), parameter :: K_DO(2)   = [ 46.0d0, 46.0d0 ]   ! ca. 46 (umol kg-1) Newton & Atkinson (1991)
 
 !   Rratio: fraction of host respiratory CO2 released into the coelenteron;
@@ -595,41 +672,117 @@ CONTAINS
 !   and matched the anatomical expectation.  Raising a_surf to 3 then lifted
 !   calcification into its measured band but drove the skeleton to -0.5 permil,
 !   so Rratio was lowered again to restore d13C.
-!   PROVISIONAL: 0.72 is set by skeletal d13C alone (-2.9 permil, measured
-!   -2 to -4).  It implies the calicoblastic layer accounts for 28% of host
-!   respiration, above the 10-20% its thickness suggests, so the anatomical
-!   argument that justified 0.85 no longer supports this value.  The
-!   alternative is to hold 0.85 and lighten the skeleton by cutting k_leak
-!   instead, which needs a_surf re-tuned to hold pH_cal - a three-parameter
-!   search that has not been done.  Revisit before publishing.
+!   PROVISIONAL: set by skeletal d13C alone (measured -2 to -4 permil).  It
+!   implies the calicoblastic layer accounts for 30% of host respiration, above
+!   the 10-20% its thickness suggests, so the anatomical argument that justified
+!   0.85 no longer supports this value.  The alternative is to hold 0.85 and
+!   lighten the skeleton by cutting k_leak instead, which needs a_surf re-tuned
+!   to hold pH_cal - a three-parameter search that has not been done.  Revisit
+!   before publishing.
+!
+!   An 11-point sweep (1.00 to 0.50 in steps of 0.05, 365-day runs) showed the
+!   annual mean is linear in Rratio to within 0.04 permil over a 6.25 permil span:
+!
+!     mean d13C = 12.489*Rratio - 11.962
+!
+!   so -3.0 permil fixes Rratio at 0.718 and the choice is unique.  0.70 is that
+!   value rounded; it gives -3.24 permil at 23.1-29.1 degC.
+!
+!   The same sweep showed Rratio is a mean-offset knob and nothing else.  The
+!   annual amplitude spans only 0.691-0.896 permil across the whole sweep, is
+!   non-monotonic (minimum at 0.60), and is pinned to 0.69-0.73 once the mean is
+!   held inside the measured band - a mean:amplitude sensitivity ratio near 30:1.
+!   Lowering Rratio widens the coelenteron-to-calcifying-fluid d13C gradient
+!   (4.20 -> 11.04 permil) but changes neither the pool size nor the exchange
+!   rate, so it adds a constant offset rather than a seasonal signal.  Do not
+!   reach for Rratio to fix the annual amplitude.
+!
 !   Note Rratio trades d13C without costing calcification: lowering it feeds
 !   more respired CO2 to the calcifying fluid, which shrinks the coelenteron
-!   gradient and cuts the leak by almost the same amount (G changed 7.03 ->
-!   7.09 across 0.85 -> 0.72).
-    real(8), parameter :: Rratio(2) = [ 0.72d0, 0.72d0 ] !!!0.85d0 0.9d0** 0.8d0  !1.0d0* !!!
+!   gradient and cuts the leak by almost the same amount.  Over the full sweep
+!   G moved 12.17 -> 12.59 umolC cm-2 d-1 (+3.4%) and P/R 1.887 -> 1.886, while
+!   Pg, Pn and R are identical to within 0.15% at every point of the diel cycle.
+    real(8), parameter :: Rratio(2) = [ 0.70d0, 0.70d0 ] !!!0.72d0 0.85d0 0.9d0** 0.8d0  !1.0d0* !!!
 
-!   Temperature dependency parameters
-!      - Parameters estimated from data by Fujimura et al. (2008)
-
+!   Temperature dependency parameters (tempcorr2, mod_deb_model.F)
+!
+!   T_A : 6155 K = Eact/Rgas with Eact = 5.117e4 J mol-1, the value estimated
+!         from Fujimura et al. (2008) that this module already carried (the
+!         commented-out line below).  It gives Q10 = 1.98, matching the measured
+!         Q10 ~ 2 for Acropora tenuis and Pocillopora damicornis (Nakamura et al.
+!         2015) and metabolic theory's 0.65 eV for respiration (Brown et al. 2004).
+!         Three independent sources agree, so this is the best-constrained of the
+!         temperature parameters.
+!   T_H : set so that Topt = 34 degC.  Measured Topt for coral respiration is
+!         29-40 degC (Jurriaans & Hoogenboom 2019), i.e. respiration rises
+!         monotonically across the whole Ishigaki range, unlike photosynthesis.
+!         Keeping T_A_rsp > T_A_pht and Topt_rsp > Topt_pht makes P/R fall with
+!         warming, as observed by Coles & Jokiel (1977) over 18-31 degC.
+!   T_L : 3 degC, not the 15 degC used for photosynthesis.  15 degC left f_rsp at
+!         0.003 by 10 degC, i.e. respiration essentially switched off in cold
+!         water, which is not what corals do - they keep respiring well below the
+!         temperature at which photosynthesis stops.  3 degC puts f_rsp at 0.335
+!         at 10 degC and 0.104 at 3 degC.  Above 20 degC the curve is unchanged
+!         (25 degC: 1.000, 29.1: 1.307, 34: 1.587), so nothing in the Ishigaki
+!         range moves; this only matters for cold-water scenarios.  276 K is the
+!         value the oyster parameters carried (Bourles et al. 2009), which the
+!         first pass of section 15 had replaced by 15 degC.
+!
 !    real(8), parameter :: Eact(2)   = [ 5.117d4, 5.117d4 ] !Activation energy (J mol-1)) *Tuned
-!   Temperature dependency parameters
-    real(8), parameter :: Tref_rsp(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
-    real(8), parameter :: T_A_rsp(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
-    real(8), parameter :: T_H_rsp(2)  = [  298.0d0,  298.0d0 ] ! (K) Upper boundary tolerance range
-    real(8), parameter :: T_AH_rsp(2) = [30000.0d0, 30000.0d0] ! (K) Arrhenius temp. for upper boundary
-    real(8), parameter :: T_L_rsp(2)  = [  276.0d0,  276.0d0 ] ! (K) Lower boundary tolerance range
+    real(8), parameter :: Tref_rsp(2) = [  298.15d0, 298.15d0] ! (K) Refernce temperature (25 degC)
+    real(8), parameter :: T_A_rsp(2)  = [ 5454.0d0, 5454.0d0 ] ! (K) = 0.47 eV  (Sci Rep 2025 Table 1); 6155.0d0 = Fujimura et al. 2008 previously
+    real(8), parameter :: T_H_rsp(2)  = [ 308.18d0, 308.18d0 ] ! (K) -> Topt = 30.5 degC (Sci Rep 2025); 311.1d0 = 34 degC previously
+    real(8), parameter :: T_AH_rsp(2) = [34582.0d0, 34582.0d0] ! (K) = 2.98 eV  (Sci Rep 2025); 45000.0d0 previously
+    real(8), parameter :: T_L_rsp(2)  = [  276.0d0,  276.0d0 ] ! (K) Lower boundary tolerance range (2.85 degC) (288.15d0 = 15 degC previously)
     real(8), parameter :: T_AL_rsp(2) = [75000.0d0, 75000.0d0] ! (K) Arrhenius temp. for lower boundary
 
 ! ---- OC turnover ---------------------
 !    real(8), parameter :: C_dec(2) = [ 0.02d0, 0.02d0 ] ! (nmol cm-2 s-1) ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
 !   k_decay: Tissue decay rate constant (s-1)
-!    ~0.1 (nmol cm-2 s-1) Tanaka et al., 2018
-!    k_decay ~ 0.1/QCv ~ 0.1/(290*1d3) ~ 3.4d-7 (s-1)
-    real(8), parameter :: k_decay(2) = [ 3.4d-7, 3.4d-7 ] ! (s-1)
+!
+!   The old value 3.4d-7 came from reading Tanaka et al. (2018) as 0.1 nmolC
+!   cm-2 s-1 of organic carbon release.  That is 360 nmolC cm-2 h-1, but the
+!   paper (PeerJ 6:e5728, Acropora tenuis) measured POC 47.7 + DOC 17.5 = 65
+!   nmolC cm-2 h-1 in summer daytime, and a daily total organic carbon release
+!   of 1094 (summer) and 219 (winter) nmolC cm-2 d-1 - 6.5% and 1.6% of net
+!   carbon fixation.  The old constant produced 8.5 umolC cm-2 d-1, 7.8x the
+!   summer measurement and 41% of gross photosynthesis.
+!
+!   Every unit of F_Cdec has to be rebuilt out of the reserve through F_Crest,
+!   and F_rest_dmd does not depend on QCe, so the oversized decay imposed a
+!   constant 24 h drain of 14.6 umolC cm-2 d-1 (70% of gross photosynthesis).
+!   That emptied QCe about 5 h after sunset on every one of 345 days and left
+!   E_ca at zero for 65% of the night (37% of all hours).
+!
+!   k_decay = 1094 nmolC cm-2 d-1 / 86400 s / (QCv ~ 264 umolC cm-2 * 1d3)
+!           = 4.8d-8 s-1,  i.e. a tissue turnover time of 241 d.
+    real(8), parameter :: k_decay(2) = [ 4.8d-8, 4.8d-8 ] ! (s-1) 3.4d-7 (old, 7.8x Tanaka et al. 2018)
 
-!   Temperature dependency parameters
-    real(8), parameter :: Tref_dec(2) = [  293.15d0, 293.15d0] ! (K) Refernce temperature
-    real(8), parameter :: T_A_dec(2)  = [ 5800.0d0, 5800.0d0 ] ! (K) Arrhenius temperature
+!   Temperature dependency parameters (tempcorr1, mod_deb_model.F)
+!
+!   No direct measurement of the temperature dependence of coral tissue decay was
+!   found.  It is kept equal to T_A_rsp, following the DEB convention that
+!   maintenance and turnover share one Arrhenius temperature - so it moved from
+!   6155 to 5454 K when respiration adopted the Sci Rep (2025) value.
+!   The choice barely matters: a sweep over 4000 / 6155 / 8000 K (365 d, seasonal
+!   SST) changed skeletal d13C by 0.001 permil and G by 0.02 umolC cm-2 d-1:
+!
+!     T_A_dec    F_Cdec   mucus   total release   skeletal d13C   G
+!       4000      1.275   5.723       6.998          -3.362      12.52
+!       6155      1.321   5.685       7.006          -3.362      12.51
+!       8000      1.364   5.649       7.014          -3.361      12.50
+!
+!   Mucus absorbs the change: faster decay raises the repair demand, which draws
+!   QCe down, and the release k_mucus*QCe falls by almost exactly the amount the
+!   decay rose.  That is the self-stabilising behaviour section 17.6 relies on,
+!   seen from the other side.  tempcorr1 has no upper deactivation, which is right
+!   for a degradative process.  See doc/README.md section 22.
+!   Validation target: Fitt et al. (2000) - tissue biomass peaks in spring and is
+!   lowest in late summer.  NOTE k_rest and k_mob below are NOT temperature-
+!   corrected, so the demand side of tissue repair is asymmetric with decay; if
+!   the seasonal QCv swing comes out too large, that is the first thing to fix.
+    real(8), parameter :: Tref_dec(2) = [  298.15d0, 298.15d0] ! (K) Refernce temperature (25 degC)
+    real(8), parameter :: T_A_dec(2)  = [ 5454.0d0, 5454.0d0 ] ! (K) Arrhenius temperature (= T_A_rsp; 6155.0d0 previously)
 
 !   QCv_max: target areal tissue carbon (umolC cm-2); 290 from Tanaka et al., 2018
 !   QCv_min: structural floor that cannot be catabolised (umolC cm-2)
@@ -740,7 +893,26 @@ CONTAINS
 !   more proton pumping.  Protons per CaCO3 fall from 4.6 to 2.5 at a_surf = 3.
     real(8), parameter :: a_surf(2) = [ 3.0d0, 3.0d0 ]  ! (-)
 
-    real(8), parameter :: c2g(2) = [ 3.0d0, 3.0d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension)!!!!!!!! Tuning parameter
+!   c2g = (calcification rate)/(net tissue growth rate).  CORAL_SIZE_DYNAMICS
+!   defines the tissue side as netCgrowth = (growth-mort)*QCv, where growth and
+!   mort are relative area rates (cm2 cm-2 s-1), so
+!       c2g = G / ( mu * QCv ) ,   mu = relative rate of change of coral cover.
+!   For a circular colony spreading at v cm yr-1, mu = 2v/r, and with G = 10.75
+!   and QCv = 290 umolC cm-2 this gives c2g = 0.0371/mu (mu in d-1):
+!
+!     Acropora  r =  5 cm, v = 2.92 cm yr-1  -> mu = 1.17 yr-1 -> c2g = 12
+!     Acropora  r = 15 cm, v = 2.92          -> mu = 0.39      -> c2g = 35
+!     Acropora  r = 30 cm, v = 2.92          -> mu = 0.19      -> c2g = 70
+!     Pocilloporidae r = 15 cm, v = 3.54     -> mu = 0.47      -> c2g = 29
+!   (radial extension from structure-from-motion at Ningaloo Reef; Ross et al.
+!   2019 J Exp Mar Biol Ecol.)  Because mu is the NET rate, a reef whose cover
+!   has equilibrated implies c2g -> infinity; 12-70 is the gross-expansion end.
+!
+!   The old 3.0 implied mu = 4.51 yr-1, i.e. 33.8 cm yr-1 of radial extension for
+!   a 15 cm colony - 11.6x the measured rate.  It was letting tissue extension
+!   absorb 3.58 umolC cm-2 d-1 of photosynthate that a real coral cannot use that
+!   way; that surplus now leaves as mucus instead (see k_mucus below).
+    real(8), parameter :: c2g(2) = [ 35.0d0, 35.0d0 ]  ! (calcification rate)/(net tissue growth rate) (no dimension) 3.0d0 (old, 11.6x too fast)
 
 # if defined CORAL_MUCUS
     !                  ForgC(Ncl,Ndom)      Coral1        Coral2     
@@ -755,10 +927,29 @@ CONTAINS
     !   Thus: 200*1.16d-3/P2R =  0.232/P2R nmol cm-2 s-1 for inner reef corals
     !!!       -63*1.16d-3/P2R = -0.073/P2R nmol cm-2 s-1 for reef slope corals  ****** To Be Confirmed
 
-    !            k_mucus(Ncl,Ndom)    Coral1   Coral2 
+    !   F_Cmucus = k_mucus * QCe, so mucus release is the only sink proportional
+    !   to the reserve and it is what closes the reserve budget.  Photosynthesis
+    !   does not depend on QCe, respiration is DO-limited once K_QC = 1, tissue
+    !   repair is capped at F_Cdec once QCv sits at QCv_max, and extension is
+    !   capped at G/c2g.  Without mucus the surplus photosynthate (Pg 16.0 minus
+    !   R 9.45, F_Crest 1.09 and F_Cext 3.59 = 1.9 umolC cm-2 d-1) had nowhere to
+    !   go and QCe grew without bound.  The old 1.0d-7 released 0.019 umolC cm-2
+    !   d-1, 1% of that surplus.
+    !
+    !   Steady state is QCe = surplus/(sum(k_mucus)*1d3).  With c2g = 35 the
+    !   surplus is 5.15 umolC cm-2 d-1, so sum = 4.0d-6 puts the reserve at
+    !   ~15 umolC cm-2, about one day of gross photosynthesis.  That release is
+    !   32% of gross photosynthesis, inside the 5-45% of photosynthetically fixed
+    !   carbon reported as DOC/mucus loss; Wild et al. (2004, Nature 428:66) put
+    !   it at up to half of the carbon assimilated by the symbionts.  Tanaka et
+    !   al. (2018) measured only 6.5%, but that is the fraction recoverable from
+    !   incubation water, a lower bound.
+    !   Being proportional to QCe it is self-stabilising: a seasonal rise in Pg
+    !   raises QCe, which raises the release, with no retuning.
+    !            k_mucus(Ncl,Ndom)    Coral1   Coral2
     real(8), parameter :: k_mucus(2,2)  = reshape(                          &
-                                     [ 1.0d-7, 1.0d-7    & ! LDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned
-                                     , 1.0d-8, 1.0d-8 ]  & ! RDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned
+                                     [ 3.6d-6, 3.6d-6    & ! LDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned  (1.0d-7 old)
+                                     , 3.6d-7, 3.6d-7 ]  & ! RDOM  !! Organic carbon release rate(+) or uptake rate(-) (s-1) *Tuned  (1.0d-8 old)
                                      , [2,2] ) !
 # endif
 # if defined CORAL_INGESTION
@@ -1468,8 +1659,8 @@ CONTAINS
 
 !----- Summing Fluxes (nmol cm-2 s-1)--------------------------
     F_DOcoe = F_DOcoe + CORAL(ng)%Pg(n,i,j)
-    F_QCe(:)    = F_QCe(:)    + CORAL(ng)%Pg(n,i,j) *rDICcoe(:)*aC_phot(1:N_Csp)
-    F_DICcoe(:) = F_DICcoe(:) - CORAL(ng)%Pg(n,i,j) *rDICcoe(:)*aC_phot(1:N_Csp)
+    F_QCe(:)    = F_QCe(:)    + CORAL(ng)%Pg(n,i,j) *rDICcoe(:)*aC_phot_crl(1:N_Csp)
+    F_DICcoe(:) = F_DICcoe(:) - CORAL(ng)%Pg(n,i,j) *rDICcoe(:)*aC_phot_crl(1:N_Csp)
 
 # endif
 
@@ -2012,6 +2203,7 @@ CONTAINS
           ,'d11Barg'                                            &
 # endif
           ,'LDOCuptake','RDOCuptake'                            &
+          ,'LPOCuptake','RPOCuptake','CPOCuptake'               &
 # if defined CORAL_INGESTION
           ,'ZOOuptake'                                          &
 # endif
@@ -2051,6 +2243,7 @@ CONTAINS
        , d11Barg                                                                 &
 #  endif
        , Flux_DOC(iCt,:)                                                         &
+       , Flux_POC(iCt,:)                                                         &
 #  if defined CORAL_INGESTION
        , Flux_ZooC(iCt,:)                                                        &
 #  endif
@@ -2129,13 +2322,18 @@ CONTAINS
     implicit none
     real(8), intent(in) :: tau  ! Bottom shear stress (N m-2)
     real(8), intent(in) :: D    ! Molecular diffusion coefficient (m2 s-1)
-    real(8), intent(in) :: ak   ! Scaling coefficient (Falter et al., 2016)
-                                ! 240-280: most experimental reef communities
-                                ! 300-400 (median~340): natural reef communities
-    real(8), intent(in) :: Eosc ! Ratio ofmasstransfer ratesunderoscillatory 
+    real(8), intent(in) :: ak   ! Scaling coefficient (Falter et al., 2016 eq.8)
+                                ! 260 +- 20: most experimental reef communities
+                                ! 300-400 (median 340): natural reef communities
+    real(8), intent(in) :: Eosc ! Ratio of mass transfer rates under oscillatory
                                 ! to unidirectional flow (Falter et al., 2016);
                                 ! 1.1: pure wave-driven oscillatory flow
                                 ! 1.0: pure unidirectional flow
+!   S = ak * Eosc * tau^0.4 * Sc^-0.6   is equation (8) of Falter, Lowe & Zhang
+!   (2016) GRL 43:9764-9771.  S comes out in m d-1, hence the /86400 below.
+!   tau MUST be the Falter tau_bot = 0.5*rho*C_D*U_inf^2 (their equation (3));
+!   see the comment on tau in mod_input.F - the factor 0.5 is part of the
+!   calibration of ak and must not be removed.
     
     real(8), parameter :: vis_sw = 0.94d-6  ! kinematic viscosity   (m2 s-1)
     real(8), parameter :: d_DBL = 1.0d-3    ! Maximum boundary layer depth (m)
@@ -2416,7 +2614,7 @@ CONTAINS
       
 !----- CO2 fixation rate (pmol cell-1 s-1) ---------------------------
 
-    F_zCO2(:) = F_zCO2(:) - ZOOX(ng)%Pg(n,i,j) *aC_phot(1:N_Csp)*rCO2(:)
+    F_zCO2(:) = F_zCO2(:) - ZOOX(ng)%Pg(n,i,j) *aC_phot_zox(1:N_Csp)*rCO2(:)   ! rCO2: referenced to CO2(aq), not bulk DIC
 
 !----- peroxynitrite (ONOO-) flux (nmol cm-2 s-1)------------------------------------
 !
