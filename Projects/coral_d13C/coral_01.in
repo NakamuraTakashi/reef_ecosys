@@ -151,7 +151,11 @@
   PIC_0 = 0.00d0, 0.05d0       ! PIC (umol L-1) 
                                ! *PIC_0(1)=PIC_0(iLive) is dummy data. Internally calculated from rCaCp (Ca:OrgC) value.
 
-d13C_TIC0 = 0.7d0      ! d13C_TIC (permill VPDB)
+d13C_TIC0 = 0.0d0      ! d13C_TIC (permill VPDB)
+                       !   0.0 is a generic open-ocean surface DIC value.
+                       !   0.7d0 until 2026-08-14 (summer measurement at Ishigaki);
+                       !   the skeleton transcribes this almost 1:1, so changing it
+                       !   shifts skeletal d13C by the same amount.
 d13C_DOC_0 = -15.0d0, -15.0d0 ! d13C_DOC (permill VPDB)
 d13C_POC_0 = -15.0d0, -15.0d0, -15.0d0  ! d13C_POC (permill VPDB)
 d13C_PhyC_0 = -15.0d0, -15.0d0, -15.0d0, -15.0d0 ! d13C_phytoplankton (permill VPDB); Nphy=4 - the 4th was missing and read as undefined

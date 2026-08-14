@@ -337,7 +337,7 @@ contains
     real(8) :: PhyC_0(Nphy) = 0.0d0, ZooC_0(Nzoo) = 0.0d0, PIC_0(Npim) = 0.0d0
 !    real(8) :: DON_0(Ndom), PON_0(Npom), PhyN_0(Nphy), ZooN_0(Nzoo)
 !    real(8) :: DOP_0(Ndom), POP_0(Npom), PhyP_0(Nphy), ZooP_0(Nzoo)
-    real(8) :: d13C_TIC0 = 0.7d0
+    real(8) :: d13C_TIC0 = 0.0d0
     real(8) :: d13C_DOC_0(Ndom) = -15.0d0, d13C_POC_0(Npom) = -15.0d0
     real(8) :: d13C_PhyC_0(Nphy) = -15.0d0, d13C_ZooC_0(Nzoo) = -20.0d0
     real(8) :: d13C_PIC_0(Npim) = -5.0d0
