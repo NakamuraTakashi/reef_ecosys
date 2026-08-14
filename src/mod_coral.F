@@ -264,13 +264,13 @@ CONTAINS
 !   stale.  It matters because k_decay = 4.8d-8 gives QCv a 259 d turnover, so a
 !   badly placed initial value is dragged through a whole year of simulation.
             CORAL(ng)%QCe   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -14.0d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCe   (iCt,n,i,j), -14.5d0, R13C_VPDB )
             CORAL(ng)%QCv   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -14.0d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCv   (iCt,n,i,j), -14.5d0, R13C_VPDB )
             CORAL(ng)%QCr   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -14.0d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCr   (iCt,n,i,j), -14.5d0, R13C_VPDB )
             CORAL(ng)%QCh   (iC13,n,i,j)   &
-                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -14.0d0, R13C_VPDB )
+                      = Ci_from_Ct_delta( CORAL(ng)%QCh   (iCt,n,i,j), -14.5d0, R13C_VPDB )
             CORAL(ng)%DICcoe(iC13,n,i,j)   &
                       = Ci_from_Ct_delta( CORAL(ng)%DICcoe(iCt,n,i,j),  0.0d0, R13C_VPDB )
             CORAL(ng)%DICcal(iC13,n,i,j)   &
